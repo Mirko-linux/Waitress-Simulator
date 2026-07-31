@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waitress Simulator</title>
+    <meta name="description" content="Gioco di gestione ristorante ispirato al classico The Waitress">
+    <meta name="author" content="Mirko Yuri Donato">
+    <meta name="license" content="MIT">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="loading-card">
+            <div class="restaurant-icon">🍽️</div>
+            <h1 class="loading-title">WAITRESS SIMULATOR</h1>
+            <p class="loading-subtitle">Prepara i tavoli, accogli i clienti!</p>
+            
+            <div class="loading-bar-container">
+                <div class="loading-bar">
+                    <div class="loading-fill" id="loading-fill"></div>
+                </div>
+            </div>
+            
+            <div class="loading-status">
+                <span class="status-text" id="loading-text">Preparazione ingredienti...</span>
+                <span class="loading-percent" id="loading-percent">0%</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="game-container"></div>
+    <script src="js/bathroom.js"></script>
+    <script src="js/phone.js"></script>
+    <script src="js/lang.js"></script>
+    <script src="js/score.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/house.js"></script>
+    <script src="js/tilemap.js"></script>
+    <script src="js/kitchen.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+/* ============================================
+   STILE GENERALE
+============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #1a0a04;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Poppins', 'Fredoka', sans-serif;
+}
+
+#game-container {
+    width: 800px;
+    height: 600px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(210, 125, 45, 0.3);
+}
+
+/* ============================================
+   LOADING SCREEN
+============================================ */
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #110906;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 0.6s ease;
+}
+
+#loading-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loading-card {
+    background: #21120a;
+    padding: 50px 60px;
+    border-radius: 20px;
+    border: 2px solid #d27d2d;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(210, 125, 45, 0.15);
+    max-width: 420px;
+    width: 90%;
+}
+
+.restaurant-icon {
+    font-size: 64px;
+    margin-bottom: 10px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.loading-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #ffd700;
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+}
+
+.loading-subtitle {
+    font-size: 14px;
+    color: #e0d5c1;
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+}
+
+.loading-bar-container {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.loading-bar {
+    width: 100%;
+    height: 6px;
+    background: #2c1a11;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.loading-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #d27d2d, #ffd700);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.loading-status {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #a08070;
+    letter-spacing: 0.5px;
+}
+
+.loading-percent {
+    color: #ffd700;
+    font-weight: 600;
+}
+
+/* ============================================
+   RESPONSIVE
+============================================ */
+@media (max-width: 820px) {
+    #game-container {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+    
+    .loading-card {
+        padding: 30px 24px;
+    }
+    
+    .loading-title {
+        font-size: 22px;
+    }
+}
