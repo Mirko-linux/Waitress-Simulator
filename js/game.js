@@ -192,8 +192,7 @@
             offsetY: -10,
             age: 30,
             gender: 'female',
-            bio: 'Giovane donna di 30 anni, grande amante della bicicletta.',
-            hasChildren: false
+            bio: 'Giovane donna di 30 anni, grande amante della bicicletta.'
         },
         'Elena': {
             hasTilesheet: true,
@@ -206,7 +205,6 @@
             age: 20,
             gender: 'female',
             bio: 'Studentessa universitaria sui 20 anni. Gentile ma incasinata con gli studi.',
-            hasChildren: false,
             adoptTrigger: true
         },
         'Massimo': {
@@ -219,8 +217,7 @@
             offsetY: -10,
             age: 50,
             gender: 'male',
-            bio: 'Ingegnere di 50 anni, classico padre di famiglia.',
-            hasChildren: false
+            bio: 'Ingegnere di 50 anni, classico padre di famiglia.'
         },
         'Francesco': {
             hasTilesheet: true,
@@ -240,24 +237,21 @@
             emojiChar: '👵',
             age: 80,
             gender: 'female',
-            bio: 'Anziana signora di 80 anni, molto gentile e prodiga di consigli.',
-            hasChildren: false
+            bio: 'Anziana signora di 80 anni, molto gentile e prodiga di consigli.'
         },
         'Chiara': {
             hasTilesheet: false,
             emojiChar: '👩‍🏫',
             age: 40,
             gender: 'female',
-            bio: 'Madre di 40 anni, lavora come insegnante.',
-            hasChildren: false
+            bio: 'Madre di 40 anni, lavora come insegnante.'
         },
         'Sofia': {
             hasTilesheet: false,
             emojiChar: '👩‍💼',
             age: 30,
             gender: 'female',
-            bio: 'Donna in carriera sui 30 anni.',
-            hasChildren: false
+            bio: 'Donna in carriera sui 30 anni.'
         }
     };
 
@@ -439,6 +433,7 @@
             this.load.image('st_spillatore', 'assets/cucina/spillatore_birra.png');
             this.load.image('st_cuoco', 'assets/cucina/cuoco_cucina.png');
             this.load.image('st_bancone', 'assets/cucina/bancone_sala.png');
+            this.load.image('phone', 'assets/cucina/phone.png'); 
 
             // --- CARICAMENTO TEXTURE CIBI ---
             Object.keys(FOOD_TEXTURES).forEach(foodName => {
@@ -504,6 +499,7 @@
             this.gameActive = true;
             this.cheatClicks = 0;
             this.bathroom = null;
+            this.phone = null;
         }
         
         create() {
@@ -541,6 +537,11 @@
             // --- INIZIALIZZA IL BAGNO ---
             if (typeof window.BathroomSystem === 'function') {
                 this.bathroom = new window.BathroomSystem(this);
+            }
+
+            // --- INIZIALIZZA IL TELEFONO ---
+            if (typeof window.PhoneSystem === 'function') {
+                this.phone = new window.PhoneSystem(this);
             }
             
             if (typeof window.AIDialogueManager === 'function') {
@@ -1000,8 +1001,8 @@
                 gender = name.endsWith('a') ? 'female' : 'male';
             }
 
-            // Disattivata la comparsa dei bambini
-            const bringsChild = false;
+            // DISATTIVATA LA COMPARSA DEI BAMBINI
+            let bringsChild = false;
             
             const customer = {
                 name: name,
@@ -1017,7 +1018,6 @@
                 adoptTrigger: npcConfig.adoptTrigger || false,
                 patienceMultiplier: npcConfig.patienceMultiplier || 1.0,
                 bringsChild: bringsChild,
-                childName: '',
                 emojiChar: npcConfig.emojiChar || (gender === 'female' ? '👩' : '👨'),
                 x: freeTable.x,
                 y: freeTable.y,
@@ -1456,6 +1456,11 @@
                 this.bathroom.update(time, delta);
             }
 
+            // Aggiornamento del sistema Telefono
+            if (this.phone) {
+                this.phone.update(time, delta);
+            }
+
             // Forza il ridimensionamento delle stazioni della cucina ad ogni frame
             this.fixKitchenScales();
             
@@ -1574,11 +1579,12 @@
         
         levelComplete() {
             this.gameActive = false;
-            
             this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
             triggerSfx('coin');
             
             this.time.delayedCall(1200, () => {
+                // --- CORREZIONE: AVVIA LA SCENA DEL PUNTEGGIO ---
+                // Usa la scena LevelSummary se esiste.
                 if (window.LevelSummaryScene && !this.scene.get('LevelSummary')) {
                     this.scene.add('LevelSummary', window.LevelSummaryScene, false);
                 }
@@ -1591,10 +1597,13 @@
                         lives: GAME.lives,
                         level: GAME.level
                     });
-                } else if (window.HouseScene && !this.scene.get('House')) {
-                    this.scene.add('House', window.HouseScene, true);
                 } else {
-                    this.scene.start('House');
+                    // Se non trova la scena, va avanti comunque (fallback)
+                    GAME.level++;
+                    GAME.customersServed = 0;
+                    GAME.customersTarget = 6 + GAME.level * 4;
+                    GAME.lives = 3;
+                    this.scene.restart();
                 }
             });
         }

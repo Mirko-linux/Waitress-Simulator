@@ -6,13 +6,10 @@ class BathroomSystem {
         this.scene = scene;
         this.needIncrementRate = 0.15; // Incremento per secondo
         
-        // --- POSIZIONE BAGNO (SOTTO LA SPILLATRICE) ---
-        // Dalla tua immagine, la spillatrice è a X~690, Y~320. 
-        // Il bagno sarà subito sotto, occupando l'angolo in basso a destra.
-        this.bathroomDoorX = 690; // Porta d'ingresso
+        this.bathroomDoorX = 690; 
         this.bathroomDoorY = 420;
         
-        this.bathroomX = 750; // Punto esatto dove va il cliente
+        this.bathroomX = 750; 
         this.bathroomY = 540;
         
         this.bathroomOccupied = false;
@@ -24,8 +21,6 @@ class BathroomSystem {
     createBathroomGraphics() {
         const scene = this.scene;
         
-        // 1. DISEGNIAMO LE PIASTRELLE DEL BAGNO (CAMBIA COLORE)
-        // Occupiamo la zona sotto la birra (dalla Y 390 fino a 600)
         for (let y = 4; y < 6; y++) {
             for (let x = 7; x < 8; x++) {
                 const color = (x + y) % 2 === 0 ? 0x7f8c8d : 0x95a5a6; // Grigio chiaro
@@ -33,12 +28,9 @@ class BathroomSystem {
             }
         }
 
-        // 2. MURI DEL BAGNO
-        // Muro di sinistra (sotto la parete della cucina)
         const leftWall = scene.add.rectangle(630, 480, 16, 140, 0x1a252f).setDepth(2);
         leftWall.setStrokeStyle(2, 0x2c3e50);
         
-        // Muro in basso (bordo schermo) - giusto per estetica
         const bottomWall = scene.add.rectangle(730, 610, 140, 16, 0x1a252f).setDepth(2);
 
         // 3. SAGOMA DELLA PORTA (con effetto apertura)
