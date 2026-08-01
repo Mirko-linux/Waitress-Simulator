@@ -19,9 +19,11 @@
         'pl': { name: 'Polski', flag: '🇵🇱' },
         'hu': { name: 'Magyar', flag: '🇭🇺' },
         'pt': { name: 'Português', flag: '🇵🇹' },
+        'pt-BR': { name: 'Português (Brasil)', flag: '🇧🇷' },
         'hi': { name: 'हिन्दी', flag: '🇮🇳' },
         'ko': { name: '한국어', flag: '🇰🇷' },
         'zh': { name: '中文', flag: '🇨🇳' },
+        'ar': { name: 'العربية', flag: '🇸🇦' },
         'haw': { name: 'Ōlelo Hawaiʻi', flag: '🌺' }
     };
 
