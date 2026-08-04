@@ -1,13 +1,4 @@
-// ============================================
-// WAITRESS SIMULATOR - Gioco Ristorante & Casa
-// Creato da Mirko Yuri Donato
-// Sistema Modulare NPC & Spritesheet Animati & Multi-lingua - 2026
-// Licenza MIT
-// ============================================
-
-// Isolamento dello scope per prevenire errori di ridichiarazione
 {
-    // --- SISTEMA INTERNAZIONALIZZAZIONE & MULTI-LINGUA ---
     const LOCAL_LANGUAGES = {
         'it': { name: 'Italiano', flag: '🇮🇹' },
         'es': { name: 'Español', flag: '🇪🇸' },
@@ -24,7 +15,9 @@
         'ko': { name: '한국어', flag: '🇰🇷' },
         'zh': { name: '中文', flag: '🇨🇳' },
         'ar': { name: 'العربية', flag: '🇸🇦' },
-        'haw': { name: 'Ōlelo Hawaiʻi', flag: '🌺' }
+        'haw': { name: 'Ōlelo Hawaiʻi', flag: '🌺' },
+        'me': { name: 'Crnogorski', flag: '🇲🇪' },
+        'ku': { name: 'Kurdî (Kurmancî)', flag: '🌞' }
     };
 
     const LOCAL_AUTO_TRANSLATIONS = {
@@ -135,7 +128,6 @@
         }
     }
 
-    // CONFIGURAZIONE DI BASE
     const CONFIG = {
         width: 800,
         height: 600,
@@ -163,6 +155,8 @@
                 panino: 3000,
                 pizza: 4000,
                 patatine: 2500,
+                risotto: 4500,
+                caponata: 3500,
                 acqua: 1000,
                 birra: 1500,
                 cola: 1200,
@@ -171,64 +165,48 @@
         }
     };
 
-    // MAPPA DEI CIBI PER LE TEXTURE
     const FOOD_TEXTURES = {
         'Pizza': 'Pizza',
         'Patatine': 'Patatine',
         'Panino': 'Panino',
+        'Risotto': 'Risotto',
+        'Caponata': 'Caponata',
         'Caffè': 'Caffè',
         'Cola': 'Cola',
         'Acqua': 'Acqua',
         'Birra': 'Birra'
     };
 
-    // REGISTRO COMPLETO DEGLI NPC
     const NPC_REGISTRY = {
         'Maria': {
-            hasTilesheet: true,
-            key: 'npc_maria',
-            path: 'assets/tilesheets/Maria.png',
-            frameWidth: 48,
-            frameHeight: 48,
-            scale: 0.55,
-            offsetY: -10,
+            hasTilesheet: false,
+            emojiChar: '👩',
             age: 30,
             gender: 'female',
             bio: 'Giovane donna di 30 anni, grande amante della bicicletta.'
         },
         'Elena': {
             hasTilesheet: true,
-            key: 'npc_elena',
-            path: 'assets/tilesheets/Elena.png',
-            frameWidth: 48,
-            frameHeight: 48,
-            scale: 0.55,
-            offsetY: -10,
+            key: 'elena_sheet',
+            path: 'Elena.jpg',
+            frameWidth: 32,
+            frameHeight: 32,
+            emojiChar: '👩‍🎓',
             age: 20,
             gender: 'female',
             bio: 'Studentessa universitaria sui 20 anni. Gentile ma incasinata con gli studi.',
             adoptTrigger: true
         },
         'Massimo': {
-            hasTilesheet: true,
-            key: 'npc_massimo',
-            path: 'assets/tilesheets/Massimo.png',
-            frameWidth: 48,
-            frameHeight: 48,
-            scale: 0.55,
-            offsetY: -10,
+            hasTilesheet: false,
+            emojiChar: '👨',
             age: 50,
             gender: 'male',
             bio: 'Ingegnere di 50 anni, classico padre di famiglia.'
         },
         'Francesco': {
-            hasTilesheet: true,
-            key: 'npc_francesco',
-            path: 'assets/tilesheets/Francesco.png',
-            frameWidth: 48,
-            frameHeight: 48,
-            scale: 0.55,
-            offsetY: -10,
+            hasTilesheet: false,
+            emojiChar: '👱‍♂️',
             age: 25,
             gender: 'male',
             bio: 'Ragazzo innamorato della cameriera che cerca di corteggiarla.',
@@ -283,6 +261,8 @@
             { id: 'coffee', name: 'Macchina Espresso', price: 140, emoji: '☕', x: 620, y: 280, desc: 'Caffeina pura! Tempo di lavaggio stoviglie ridotto del 45%' }
         ]
     };
+
+    window.HOUSE_STATE = HOUSE_STATE;
 
     function applyUpgrades() {
         CONFIG.waitress.speed = 300;
@@ -424,6 +404,7 @@
 
             this.load.image('floor_sala', 'assets/ambiente/1.png');
             this.load.image('floor_cucina', 'assets/ambiente/2.png');
+            this.load.image('floor_bagno', 'assets/ambiente/4.png');
             this.load.image('wall', 'assets/ambiente/3.png');
             this.load.image('st_frigo', 'assets/cucina/frigo_acqua.png');
             this.load.image('st_tagliere', 'assets/cucina/banco_lavoro.png');
@@ -437,17 +418,18 @@
             this.load.image('st_bancone', 'assets/cucina/bancone_sala.png');
             this.load.image('phone', 'assets/cucina/phone.png'); 
 
-            // --- CARICAMENTO TEXTURE CIBI ---
             Object.keys(FOOD_TEXTURES).forEach(foodName => {
                 const fileName = FOOD_TEXTURES[foodName];
                 this.load.image(foodName, `assets/Cibo/${fileName}.png`);
             });
 
-            // --- CARICAMENTO NPC COME IMMAGINI INTERE ---
             Object.keys(NPC_REGISTRY).forEach(npcName => {
                 const npcData = NPC_REGISTRY[npcName];
                 if (npcData.hasTilesheet && npcData.path) {
-                    this.load.image(npcData.key, npcData.path);
+                    this.load.spritesheet(npcData.key, npcData.path, {
+                        frameWidth: npcData.frameWidth || 32,
+                        frameHeight: npcData.frameHeight || 32
+                    });
                 }
             });
 
@@ -460,34 +442,29 @@
             }
         }
         create() {
-            // --- CREAZIONE DEI FRAME PER GLI NPC ---
             Object.keys(NPC_REGISTRY).forEach(npcName => {
                 const npcData = NPC_REGISTRY[npcName];
-                if (npcData.hasTilesheet && this.textures.exists(npcData.key)) {
-                    try {
-                        const sourceKey = npcData.key;
-                        const destKey = npcData.key + '_frame';
+                if (npcData.hasTilesheet && npcData.key) {
+                    if (this.textures.exists(npcData.key)) {
+                        const texture = this.textures.get(npcData.key);
+                        const totalFrames = texture.frameTotal - 1;
                         
-                        this.textures.addSpriteSheet(
-                            destKey,
-                            this.textures.get(sourceKey).getSourceImage(),
-                            {
-                                frameWidth: npcData.frameWidth,
-                                frameHeight: npcData.frameHeight,
-                                startFrame: 0,
-                                endFrame: 0,
-                                spacing: 0,
-                                margin: 0
+                        if (totalFrames > 0) {
+                            for (let i = 0; i < totalFrames; i++) {
+                                if (!this.anims.exists(`${npcData.key}_idle_${i}`)) {
+                                    this.anims.create({
+                                        key: `${npcData.key}_idle_${i}`,
+                                        frames: [{ key: npcData.key, frame: i }],
+                                        frameRate: 1,
+                                        repeat: -1
+                                    });
+                                }
                             }
-                        );
-                        npcData._renderedKey = destKey;
-                    } catch (e) {
-                        console.warn("Errore nel ritaglio di " + npcName, e);
-                        npcData._renderedKey = npcData.key;
+                        }
                     }
                 }
             });
-            
+
             applyUpgrades();
             this.scene.start('Menu');
         }
@@ -510,10 +487,13 @@
             GAME.customersServed = 0;
             GAME.dirtyPlates = 0;
             GAME.lives = 3;
-            GAME.customersTarget = 6 + GAME.level * 4;
+            GAME.customersTarget = 0;
+            GAME.level = 0;
             GAME.carriedOrder = null;
+            
             this.gameActive = true;
             this.cheatClicks = 0;
+            this.tutorialActive = false;
 
             applyUpgrades();
 
@@ -536,12 +516,10 @@
                 this.kitchen = new window.KitchenSystem(this);
             }
             
-            // --- INIZIALIZZA IL BAGNO ---
             if (typeof window.BathroomSystem === 'function') {
                 this.bathroom = new window.BathroomSystem(this);
             }
 
-            // --- INIZIALIZZA IL TELEFONO ---
             if (typeof window.PhoneSystem === 'function') {
                 this.phone = new window.PhoneSystem(this);
             }
@@ -552,6 +530,26 @@
 
             this.createWaitress();
             this.createSink();
+
+            this.time.removeAllEvents();
+
+            const tutorialSkipped = localStorage.getItem('waitress_tutorial_done') === 'true';
+
+            if (!tutorialSkipped && typeof window.TutorialSystem === 'function') {
+                this.tutorialActive = true;
+                this.tutorial = new TutorialSystem(this);
+            } else {
+                GAME.level = 1;
+                GAME.customersTarget = 6 + GAME.level * 4;
+                if (GAME.score === 0) {
+                    GAME.customersServed = 0;
+                    GAME.lives = 3;
+                    GAME.dirtyPlates = 0;
+                    GAME.carriedOrder = null;
+                }
+                this.startSpawning();
+            }
+
             this.createBanconeZone();
             this.createHUD();
             this.createNotepadUI();
@@ -566,20 +564,46 @@
                     this.pendingAction = null;
                 }
             });
+        }
+
+        startSpawning() {
+            if (GAME.customersTarget === 0) {
+                GAME.customersServed = 0;
+                GAME.dirtyPlates = 0;
+                GAME.lives = 3;
+                GAME.level = 1;
+                GAME.customersTarget = 6 + GAME.level * 4;
+                GAME.carriedOrder = null;
+            }
+            
+            this.gameActive = true;
+            this.tutorialActive = false;
+            
+            this.time.delayedCall(100, () => {
+                this.updateHUD();
+            });
             
             const spawnInterval = GAME.settings.difficulty === 'facile' ? 11000 : 
                                   GAME.settings.difficulty === 'difficile' ? 7000 : 9000;
             
             this.time.addEvent({
                 delay: spawnInterval,
-                callback: () => { if (this.gameActive) this.spawnCustomer(); },
+                callback: () => { if (this.gameActive) this.trySpawnCustomer(); },
                 loop: true
             });
             
-            this.time.delayedCall(1000, () => this.spawnCustomer());
+            this.time.delayedCall(500, () => this.trySpawnCustomer());
+            this.time.delayedCall(1000, () => this.trySpawnCustomer());
+            
+            this.showFloatingText(400, 300, `🎉 GIORNO ${GAME.level} INIZIATO!`, '#2ecc71');
         }
 
-        // Forza le dimensioni corrette delle stazioni cucina (spillatore e macchina del caffè)
+        trySpawnCustomer() {
+            if (!this.tutorialActive) {
+                this.spawnCustomer();
+            }
+        }
+
         fixKitchenScales() {
             const checkAndScale = (child) => {
                 if (!child) return;
@@ -597,7 +621,7 @@
                 
                 if (key.includes('spillatore') || key.includes('birra')) {
                     if (typeof child.setDisplaySize === 'function') {
-                        child.setDisplaySize(70, 65);
+                        child.setDisplaySize(90, 85);
                     }
                 } else if (key.includes('caffe')) {
                     if (typeof child.setDisplaySize === 'function') {
@@ -618,7 +642,7 @@
                     if (lowerKey.includes('spillatore') || lowerKey.includes('birra')) {
                         ['sprite', 'graphic', 'image', 'icon', 'container'].forEach(prop => {
                             if (st[prop] && typeof st[prop].setDisplaySize === 'function') {
-                                st[prop].setDisplaySize(70, 65);
+                                st[prop].setDisplaySize(90, 85);
                             }
                         });
                     }
@@ -645,6 +669,8 @@
                 'Pizza': '🍕',
                 'Patatine': '🍟',
                 'Panino': '🍔',
+                'Risotto': '🍚',
+                'Caponata': '🍆',
                 'Caffè': '☕',
                 'Cola': '🥤',
                 'Acqua': '💧',
@@ -756,9 +782,17 @@
         
         createWaitress() {
             this.waitressShadow = this.add.ellipse(300, 320, 30, 10, 0x000000, 0.3);
+            
             this.waitress = this.add.text(300, 300, '👩‍🍳', {
                 fontSize: '36px'
             }).setOrigin(0.5).setDepth(10);
+
+            if (this.tilemap && this.tilemap.wallGroup) {
+                this.physics.add.existing(this.waitress, false);
+                this.waitress.body.setSize(24, 24);
+                this.waitress.body.setOffset(6, 12);
+                this.physics.add.collider(this.waitress, this.tilemap.wallGroup);
+            }
         }
         
         createHUD() {
@@ -969,17 +1003,26 @@
         }
         
         updateHUD() {
-            if (!this.waitressState) return;
-            if (!this.scoreText) return;
-
-            this.scoreText.setText(`${t('INCASSO')} ${GAME.score}€`);
-            this.levelText.setText(`${t('GIORNO')} ${GAME.level}`);
-            this.servedText.setText(`${t('SERVITI')} ${GAME.customersServed}/${GAME.customersTarget}`);
-            this.livesText.setText(`❤️ ${'❤️'.repeat(Math.max(0, GAME.lives))}`);
-            this.trayText.setText(`${t('VASSOIO')} ${this.waitressState.tray.length}/4`);
-            this.platesText.setText(`${t('PIATTI')} ${GAME.dirtyPlates}`);
-            
-            if (this.sinkText) {
+            if (!this.waitressState || !this.scoreText || !this.scoreText.active) return;
+            if (this.scoreText && this.scoreText.active) {
+                this.scoreText.setText(`${t('INCASSO')} ${GAME.score}€`);
+            }
+            if (this.levelText && this.levelText.active) {
+                this.levelText.setText(`${t('GIORNO')} ${GAME.level}`);
+            }
+            if (this.servedText && this.servedText.active) {
+                this.servedText.setText(`${t('SERVITI')} ${GAME.customersServed}/${GAME.customersTarget}`);
+            }
+            if (this.livesText && this.livesText.active) {
+                this.livesText.setText(`❤️ ${'❤️'.repeat(Math.max(0, GAME.lives))}`);
+            }
+            if (this.trayText && this.trayText.active) {
+                this.trayText.setText(`${t('VASSOIO')} ${this.waitressState.tray.length}/4`);
+            }
+            if (this.platesText && this.platesText.active) {
+                this.platesText.setText(`${t('PIATTI')} ${GAME.dirtyPlates}`);
+            }
+            if (this.sinkText && this.sinkText.active) {
                 this.sinkText.setText(`${t('LAVELLO')}\n${GAME.dirtyPlates}`);
             }
         }
@@ -988,22 +1031,15 @@
             const freeTable = this.tables.find(t => !t.occupied);
             if (!freeTable) return;
             
-            const foods = ['Pizza', 'Patatine', 'Panino', 'Caffè', 'Cola', 'Acqua', 'Birra'];
+            const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra'];
             const selectedFood = foods[Phaser.Math.Between(0, foods.length - 1)];
             
-            const names = Object.keys(NPC_REGISTRY).concat(['Marco', 'Paolo', 'Giulia', 'Andrea']);
+            const names = Object.keys(NPC_REGISTRY);
             const name = names[Phaser.Math.Between(0, names.length - 1)];
             
             const npcConfig = NPC_REGISTRY[name] || {};
 
-            let gender = 'male';
-            if (npcConfig.gender) {
-                gender = npcConfig.gender;
-            } else {
-                gender = name.endsWith('a') ? 'female' : 'male';
-            }
-
-            // DISATTIVATA LA COMPARSA DEI BAMBINI
+            let gender = npcConfig.gender || 'male';
             let bringsChild = false;
             
             const customer = {
@@ -1021,6 +1057,8 @@
                 patienceMultiplier: npcConfig.patienceMultiplier || 1.0,
                 bringsChild: bringsChild,
                 emojiChar: npcConfig.emojiChar || (gender === 'female' ? '👩' : '👨'),
+                hasTilesheet: npcConfig.hasTilesheet || false,
+                tilesheetKey: npcConfig.key || null,
                 x: freeTable.x,
                 y: freeTable.y,
                 orderBubble: null,
@@ -1048,30 +1086,20 @@
         
         createCustomerGraphics(customer) {
             const table = customer.table;
-            const npcData = NPC_REGISTRY[customer.name];
             
             customer.shadow = this.add.ellipse(table.x, table.y + 35, 40, 10, 0x000000, 0.25);
             
-            let useSprite = false;
-            let spriteKey = null;
-
-            if (npcData && npcData.hasTilesheet) {
-                const renderKey = npcData._renderedKey || npcData.key;
-                if (this.textures.exists(renderKey)) {
-                    useSprite = true;
-                    spriteKey = renderKey;
-                }
-            }
-
-            if (useSprite) {
-                const offsetY = npcData.offsetY || 0;
-                customer.sprite = this.add.sprite(table.x, table.y + offsetY, spriteKey, 0);
-                customer.sprite.setScale(npcData.scale || 0.55);
+            if (customer.hasTilesheet && customer.tilesheetKey && this.textures.exists(customer.tilesheetKey)) {
+                customer.sprite = this.add.sprite(table.x, table.y + 10, customer.tilesheetKey, 0);
+                customer.sprite.setScale(1.2);
                 customer.sprite.setDepth(5);
                 customer.sprite.setInteractive({ useHandCursor: true });
+                
+                if (this.anims.exists(`${customer.tilesheetKey}_idle_0`)) {
+                    customer.sprite.play(`${customer.tilesheetKey}_idle_0`);
+                }
             } else {
-                const charToUse = customer.emojiChar;
-                customer.emoji = this.add.text(table.x, table.y + 10, charToUse, {
+                customer.emoji = this.add.text(table.x, table.y + 10, customer.emojiChar, {
                     fontSize: '36px'
                 }).setOrigin(0.5).setDepth(5).setInteractive({ useHandCursor: true });
             }
@@ -1114,11 +1142,11 @@
                 }
             };
             
-            if (customer.sprite) {
-                customer.sprite.on('pointerdown', handleTableClick);
-            }
             if (customer.emoji) {
                 customer.emoji.on('pointerdown', handleTableClick);
+            }
+            if (customer.sprite) {
+                customer.sprite.on('pointerdown', handleTableClick);
             }
             
             customer.orderBubble.on('pointerdown', handleTableClick);
@@ -1134,7 +1162,7 @@
             customer.timerEvent = this.time.addEvent({
                 delay: 100,
                 callback: () => {
-                    if (!this.gameActive || customer.isDead) return;
+                    if (!this.gameActive || customer.isDead || this.tutorialActive) return;
                     
                     const baseDecay = 100 / (CONFIG.customers.patienceDuration / 100);
                     const decayAmount = baseDecay * customer.patienceMultiplier;
@@ -1204,8 +1232,8 @@
             }
             
             if (customer.timerEvent) customer.timerEvent.remove();
-            if (customer.sprite) customer.sprite.destroy();
             if (customer.emoji) customer.emoji.destroy();
+            if (customer.sprite) customer.sprite.destroy();
             if (customer.childGraphic) customer.childGraphic.destroy();
             if (customer.orderBubble) customer.orderBubble.destroy();
             if (customer.chatBubble) customer.chatBubble.destroy();
@@ -1222,6 +1250,19 @@
         }
         
         interactWithTable(table) {
+            if (this.tutorialActive && this.tutorialStepTarget) {
+                if (this.tutorialStepTarget === 'take_order' && table.customer === this.tutorial.fakeCustomer) {
+                    this.tutorial.progressStep();
+                } else if (this.tutorialStepTarget === 'serve_food' && table.customer === this.tutorial.fakeCustomer) {
+                    this.tutorial.progressStep();
+                } else if (this.tutorialStepTarget === 'clear_table' && table === this.tutorial.fakeCustomer.table) {
+                    this.tutorial.progressStep();
+                } else if (this.tutorialActive) {
+                    this.showFloatingText(table.x, table.y - 40, "⚠️ Segui le frecce del tutorial!", '#f39c12');
+                    return;
+                }
+            }
+
             const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, table.x, table.y);
             if (dist > CONFIG.waitress.interactRange) {
                 this.showFloatingText(table.x, table.y - 40, t('ERR_CLOSE_TABLE'), '#ff4444');
@@ -1308,6 +1349,13 @@
         }
         
         interactWithBancone() {
+            if (this.tutorialActive && this.tutorialStepTarget === 'counter') {
+                this.tutorial.progressStep();
+            } else if (this.tutorialActive && this.tutorialStepTarget) {
+                this.showFloatingText(560, this.waitress.y - 30, "⚠️ Segui le frecce del tutorial!", '#f39c12');
+                return;
+            }
+
             const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 560, this.waitress.y);
             if (dist > CONFIG.waitress.interactRange) {
                 this.showFloatingText(this.waitress.x, this.waitress.y - 30, t('ERR_CLOSE_COUNTER'), '#ff4444');
@@ -1323,6 +1371,8 @@
                     'pizza': 'forno',
                     'patatine': 'friggitrice',
                     'panino': 'fornelli',
+                    'risotto': 'fornelli',
+                    'caponata': 'fornelli',
                     'caffè': 'caffe', 'caffe': 'caffe',
                     'birra': 'spillatore', 'cola': 'bevande',
                     'acqua': 'frigo'
@@ -1391,6 +1441,16 @@
         }
         
         washDishes() {
+            if (this.tutorialActive && this.tutorialStepTarget === 'wash_sink') {
+                this.tutorial.progressStep();
+                GAME.dirtyPlates = 0;
+                this.updateHUD();
+                return;
+            } else if (this.tutorialActive && this.tutorialStepTarget) {
+                this.showFloatingText(75, 510, "⚠️ Segui le frecce del tutorial!", '#f39c12');
+                return;
+            }
+
             const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 100, 540);
             if (dist > CONFIG.waitress.interactRange) {
                 this.showFloatingText(this.waitress.x, this.waitress.y - 30, t('ERR_CLOSE_SINK'), '#ff4444');
@@ -1448,29 +1508,27 @@
         
         update(time, delta) {
             if (!this.gameActive) return;
+
+            if (!this.tutorialActive) {
+                if (this.kitchen) {
+                    this.kitchen.update();
+                }
+
+                if (this.bathroom) {
+                    this.bathroom.update(time, delta);
+                }
+
+                if (this.phone) {
+                    this.phone.update(time, delta);
+                }
+
+                this.fixKitchenScales();
+            }
             
-            if (this.kitchen) {
-                this.kitchen.update();
-            }
-
-            // Aggiornamento del sistema Bagno
-            if (this.bathroom) {
-                this.bathroom.update(time, delta);
-            }
-
-            // Aggiornamento del sistema Telefono
-            if (this.phone) {
-                this.phone.update(time, delta);
-            }
-
-            // Forza il ridimensionamento delle stazioni della cucina ad ogni frame
-            this.fixKitchenScales();
-            
-            // Trucco Tastiera: SHIFT + K completa subito il livello e va allo Score
             if (Phaser.Input.Keyboard.JustDown(this.keys.k) && this.keys.shift.isDown) {
                 GAME.customersServed = GAME.customersTarget;
                 GAME.score += 100;
-                this.showFloatingText(400, 250, '🔑 TRUCCO ATTIVATO!', '#ffd700');
+                this.showFloatingText(400, 250, '🔑 Trucco attivato!', '#ffd700');
                 this.levelComplete();
                 return;
             }
@@ -1584,9 +1642,25 @@
             this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
             triggerSfx('coin');
             
+            const saveData = {
+                score: GAME.score,
+                level: GAME.level + 1,
+                customersServed: 0,
+                lives: 3,
+                dirtyPlates: 0,
+                settings: GAME.settings,
+                housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
+            };
+            
+            if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
+                window.SaveManager.saveGame(saveData).then(() => {
+                    console.log("💾 Gioco salvato correttamente!");
+                }).catch(err => {
+                    console.error("Errore salvataggio:", err);
+                });
+            }
+            
             this.time.delayedCall(1200, () => {
-                // --- CORREZIONE: AVVIA LA SCENA DEL PUNTEGGIO ---
-                // Usa la scena LevelSummary se esiste.
                 if (window.LevelSummaryScene && !this.scene.get('LevelSummary')) {
                     this.scene.add('LevelSummary', window.LevelSummaryScene, false);
                 }
@@ -1600,11 +1674,12 @@
                         level: GAME.level
                     });
                 } else {
-                    // Se non trova la scena, va avanti comunque (fallback)
                     GAME.level++;
                     GAME.customersServed = 0;
-                    GAME.customersTarget = 6 + GAME.level * 4;
                     GAME.lives = 3;
+                    GAME.dirtyPlates = 0;
+                    GAME.carriedOrder = null;
+                    GAME.customersTarget = 6 + GAME.level * 4;
                     this.scene.restart();
                 }
             });
@@ -1663,13 +1738,12 @@
             
             this.createButton(400, 240, t('GIOCA'), () => {
                 triggerSfx('click');
-                GAME.score = 0;
-                GAME.level = 1;
-                HOUSE_STATE.purchased = [];
                 
-                localStorage.removeItem('waitress_house_data');
-                
-                this.scene.start('Game');
+                if (typeof window.SaveMenu === 'function') {
+                    new window.SaveMenu(this).showMenu();
+                } else {
+                    this.scene.start('Game');
+                }
             });
             
             this.createButton(400, 310, t('IMPOSTAZIONI'), () => {
@@ -1821,7 +1895,6 @@
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
             
-            // Impostazioni Audio
             this.add.text(400, 125, t('AUDIO_SETTINGS'), {
                 fontSize: '15px',
                 color: '#ffffff',
@@ -1846,7 +1919,6 @@
                 audioTxt.setText(GAME.settings.soundEnabled ? t('ACTIVE') : t('DISABLED'));
             });
             
-            // Impostazioni Difficoltà
             this.add.text(400, 205, t('DIFFICULTY_LEVEL'), {
                 fontSize: '15px',
                 color: '#ffffff',
@@ -1878,7 +1950,6 @@
                 });
             });
             
-            // Impostazioni Controlli
             this.add.text(400, 285, t('CONTROL_SYSTEM'), {
                 fontSize: '15px',
                 color: '#ffffff',
@@ -1902,7 +1973,6 @@
                 ctrlTxt.setText(`${t('KEYBOARD')} ${GAME.settings.controls.toUpperCase()}`);
             });
 
-            // Selettore della Lingua
             this.add.text(400, 365, t('LANGUAGE_SELECT'), {
                 fontSize: '15px',
                 color: '#ffffff',
@@ -1937,7 +2007,6 @@
                 this.scene.restart();
             });
             
-            // Pulsante di Ritorno
             const backBtn = this.add.rectangle(400, 465, 260, 38, 0xd27d2d);
             backBtn.setStrokeStyle(2, 0xffd700);
             backBtn.setInteractive({ useHandCursor: true });
@@ -2034,7 +2103,7 @@
         scene: scenesList,
         physics: CONFIG.physics,
         scale: {
-            mode: Phaser.Scale.FIT,
+            model: Phaser.Scale.FIT,
             autoCenter: Phaser.Scale.CENTER_BOTH
         },
         render: {
@@ -2055,7 +2124,5 @@
         
         const game = new Phaser.Game(config);
         window.game = game;
-        
-        console.log('🍽️ Waitress Simulator: Sistema Casa, Cucina & Multi-Lingua Attivati!');
     });
 }

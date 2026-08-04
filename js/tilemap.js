@@ -1,21 +1,9 @@
-// ============================================
-// TILEMAP SYSTEM NORMALIZZATO (TOP-DOWN 2D)
-// ============================================
-
 class TilemapSystem {
     constructor(scene) {
         this.scene = scene;
         this.tileSize = 32;
-        this.mapWidth = 25;  // 800px / 32
-        this.mapHeight = 19; // 600px / 32
-        
-        // Tipi di Tile
-        this.tiles = {
-            FLOOR_SALA: 0,
-            FLOOR_CUCINA: 1,
-            WALL_TOP: 2,
-            WALL_FRONT: 3
-        };
+        this.mapWidth = 25;  
+        this.mapHeight = 19; 
         
         this.mapData = [];
         this.collisionLayer = [];
@@ -25,38 +13,64 @@ class TilemapSystem {
     }
     
     initMap() {
-        // Inizializza le matrici
         for (let row = 0; row < this.mapHeight; row++) {
             this.mapData[row] = [];
             this.collisionLayer[row] = [];
-            
             for (let col = 0; col < this.mapWidth; col++) {
                 let isWall = false;
-                let tileType = this.tiles.FLOOR_SALA;
+                let tileType = 0; 
                 
-                // Muro Perimetrale Superiore (Riga 0 = Tetto del muro, Riga 1 = Facciata frontale)
-                if (row === 0) {
-                    tileType = this.tiles.WALL_TOP;
-                    isWall = true;
-                } else if (row === 1) {
-                    tileType = this.tiles.WALL_FRONT;
-                    isWall = true;
+                const isPerimeter = (row === 0 || row === this.mapHeight - 1 || col === 0 || col === this.mapWidth - 1);
+                
+                if (isPerimeter) {
+                    
+                    if (row === this.mapHeight - 1 && (col >= 6 && col <= 8)) {
+                        tileType = 0;
+                        isWall = false;
+                    } else {
+                        tileType = 3; 
+                        isWall = true;
+                    }
                 } 
-                // Muri Perimetrali Laterali ed Inferiori
-                else if (row === this.mapHeight - 1 || col === 0 || col === this.mapWidth - 1) {
-                    tileType = this.tiles.WALL_TOP;
-                    isWall = true;
+                
+                else if (col === 18) {
+                    if (row >= 5 && row <= 7) { 
+                        tileType = 1; 
+                        isWall = false;
+                    } else if (row >= 13 && row <= 15) { 
+                        tileType = 2; 
+                        isWall = false;
+                    } else {
+                        tileType = 3; 
+                        isWall = true;
+                    }
                 }
-                // Muro divisorio centrale (es. colonna 18 con varco/porta al centro)
-                else if (col === 18 && (row < 8 || row > 11)) {
-                    tileType = this.tiles.WALL_TOP;
-                    isWall = true;
+                
+                else if (row === 11 && col > 18) {
+                    if (col === 21) { 
+                        tileType = 1;
+                        isWall = false;
+                    } else {
+                        tileType = 3;
+                        isWall = true;
+                    }
                 }
-                // Pavimenti
+                
                 else if (col > 18) {
-                    tileType = this.tiles.FLOOR_CUCINA;
-                } else {
-                    tileType = this.tiles.FLOOR_SALA;
+                    if (row < 11) {
+                        tileType = 1; 
+                        isWall = false;
+                    } else if (row > 11) {
+                        tileType = 2; 
+                        isWall = false;
+                    } else {
+                        tileType = 3;
+                        isWall = true;
+                    }
+                } 
+                else {
+                    tileType = 0; 
+                    isWall = false;
                 }
                 
                 this.mapData[row][col] = tileType;
@@ -66,41 +80,69 @@ class TilemapSystem {
     }
     
     createTileMap() {
-        this.destroy(); // Pulizia
+        this.destroy();
         
-        // Gruppo di fisica statico per le collisioni con i muri
         if (this.scene.physics) {
             this.wallGroup = this.scene.physics.add.staticGroup();
         }
 
+        
+        
         for (let row = 0; row < this.mapHeight; row++) {
             for (let col = 0; col < this.mapWidth; col++) {
                 const x = col * this.tileSize;
                 const y = row * this.tileSize;
+                const isWall = this.collisionLayer[row][col];
                 const tileType = this.mapData[row][col];
                 
-                // 1. Disegna SEMPRE prima il pavimento di fondo (depth: 0)
-                const floorKey = (col > 18) ? 'floor_cucina' : 'floor_sala';
-                const floor = this.scene.add.image(x, y, floorKey);
-                floor.setOrigin(0, 0);
-                floor.setDisplaySize(this.tileSize, this.tileSize);
-                floor.setDepth(0);
-
-                // 2. Disegna i Muri sopra il pavimento
-                if (tileType === this.tiles.WALL_TOP || tileType === this.tiles.WALL_FRONT) {
-                    const wallKey = 'wall'; // Puoi separare in 'wall_top' e 'wall_front' se hai sprite dedicati
+                if (!isWall) {
+                    let floorKey = 'floor_sala';
+                    if (tileType === 1) floorKey = 'floor_cucina';
+                    else if (tileType === 2) floorKey = 'floor_bagno';
                     
-                    if (this.wallGroup) {
-                        const wall = this.wallGroup.create(x + 16, y + 16, wallKey);
-                        wall.setDisplaySize(this.tileSize, this.tileSize);
-                        wall.refreshBody();
-                        wall.setDepth(10); // Imposta la profondità sopra il pavimento
-                    } else {
-                        const wall = this.scene.add.image(x, y, wallKey);
-                        wall.setOrigin(0, 0);
-                        wall.setDisplaySize(this.tileSize, this.tileSize);
-                        wall.setDepth(10);
-                    }
+                    this.scene.add.image(x, y, floorKey)
+                        .setOrigin(0, 0)
+                        .setDisplaySize(this.tileSize, this.tileSize)
+                        .setDepth(0); 
+                }
+            }
+        }
+
+        
+        
+        for (let row = 0; row < this.mapHeight; row++) {
+            for (let col = 0; col < this.mapWidth; col++) {
+                const isWall = this.collisionLayer[row][col];
+                
+                if (isWall) {
+                    const x = col * this.tileSize + 16;
+                    const y = row * this.tileSize + 16;
+                    
+                    
+                    const wall = this.wallGroup.create(x, y, 'wall');
+                    wall.setDisplaySize(this.tileSize, this.tileSize);
+                    wall.setDepth(2);
+                    wall.refreshBody();
+
+                    
+                    
+                    
+                }
+            }
+        }
+        
+        
+        
+        
+        const rightEdgeCol = this.mapWidth - 1;
+        for (let row = 1; row < this.mapHeight - 1; row++) {
+            
+            if (row !== 11) { 
+                
+                
+                if (this.collisionLayer[row] && this.collisionLayer[row][rightEdgeCol]) {
+                    
+                    this.collisionLayer[row][rightEdgeCol] = false;
                 }
             }
         }
@@ -109,11 +151,7 @@ class TilemapSystem {
     isWalkable(x, y) {
         const col = Math.floor(x / this.tileSize);
         const row = Math.floor(y / this.tileSize);
-        
-        if (col < 0 || col >= this.mapWidth || row < 0 || row >= this.mapHeight) {
-            return false;
-        }
-        
+        if (col < 0 || col >= this.mapWidth || row < 0 || row >= this.mapHeight) return false;
         return !this.collisionLayer[row][col];
     }
 

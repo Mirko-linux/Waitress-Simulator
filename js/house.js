@@ -1,13 +1,8 @@
-// ============================================
-// HOUSE.JS - Casa della Cameriera (Hub tra i livelli)
-// Creato da Mirko Yuri Donato
-// ============================================
-
 const HOUSE_CONFIG = {
     rent: {
         base: 50,
         increasePerLevel: 15,
-        dueEvery: 3 // livelli
+        dueEvery: 3 
     },
     rooms: {
         soggiorno: { x: 400, y: 300, name: 'Soggiorno', emoji: '🛋️' },
@@ -25,9 +20,9 @@ const HOUSE_CONFIG = {
     }
 };
 
-// ============================================
-// SCENA CASA - Hub Principale
-// ============================================
+
+
+
 class HouseScene extends Phaser.Scene {
     constructor() {
         super('House');
@@ -54,9 +49,9 @@ class HouseScene extends Phaser.Scene {
         window.houseScene = this;
     }
 
-    // ============================================
-    // HUD
-    // ============================================
+    
+    
+    
     createHouseHUD() {
         const hudBg = this.add.rectangle(400, 25, 780, 40, 0x110906, 0.9)
             .setStrokeStyle(1.5, 0xd27d2d)
@@ -98,9 +93,9 @@ class HouseScene extends Phaser.Scene {
         workBtn.on('pointerout', () => workBtn.setFillStyle(0x27ae60));
     }
 
-    // ============================================
-    // DATI CASA
-    // ============================================
+    
+    
+    
     loadHouseData() {
         const saved = localStorage.getItem('waitress_house_data');
         if (saved) {
@@ -140,9 +135,9 @@ class HouseScene extends Phaser.Scene {
         localStorage.setItem('waitress_house_data', JSON.stringify(this.houseData));
     }
 
-    // ============================================
-    // SFONDO
-    // ============================================
+    
+    
+    
     createHouseBackground() {
         const bg = this.add.graphics();
         bg.fillStyle(0x2c1810);
@@ -164,9 +159,9 @@ class HouseScene extends Phaser.Scene {
         }).setDepth(100);
     }
 
-    // ============================================
-    // PLAYER
-    // ============================================
+    
+    
+    
     createPlayer() {
         this.player = this.add.text(400, 300, '👩‍🍳', {
             fontSize: '42px'
@@ -175,9 +170,9 @@ class HouseScene extends Phaser.Scene {
         this.playerShadow = this.add.ellipse(400, 320, 30, 10, 0x000000, 0.3).setDepth(49);
     }
 
-    // ============================================
-    // STANZE
-    // ============================================
+    
+    
+    
     createRooms() {
         this.createRoom('soggiorno', 400, 300, [
             { type: 'divano', x: 400, y: 280, emoji: '🛋️', label: 'Riposati', action: 'rest' },
@@ -274,9 +269,9 @@ class HouseScene extends Phaser.Scene {
         });
     }
 
-    // ============================================
-    // INTERAZIONE
-    // ============================================
+    
+    
+    
     interactWithObject(obj) {
         if (this.isMoving) return;
         this.movePlayerTo(obj.x, obj.y, () => {
@@ -312,9 +307,9 @@ class HouseScene extends Phaser.Scene {
         }
     }
 
-    // ============================================
-    // MOVIMENTO
-    // ============================================
+    
+    
+    
     movePlayerTo(targetX, targetY, callback) {
         this.isMoving = true;
         const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, targetX, targetY);
@@ -337,9 +332,9 @@ class HouseScene extends Phaser.Scene {
         });
     }
 
-    // ============================================
-    // CONTROLLI
-    // ============================================
+    
+    
+    
     setupControls() {
         this.keys = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -369,9 +364,9 @@ class HouseScene extends Phaser.Scene {
         });
     }
 
-    // ============================================
-    // TRUCCO SEGRETO
-    // ============================================
+    
+    
+    
     activateCheat() {
         if (this.cheatActivated) return;
         this.cheatActivated = true;
@@ -390,9 +385,9 @@ class HouseScene extends Phaser.Scene {
         });
     }
 
-    // ============================================
-    // AZIONI STANZE
-    // ============================================
+    
+    
+    
     doRest() {
         this.showMessage('🛋️ La cameriera si riposa sul divano... Energia recuperata!', '#2ecc71');
         this.houseData.bonuses.patienceBoost += 0.5;
@@ -422,10 +417,6 @@ class HouseScene extends Phaser.Scene {
         this.houseData.bonuses.steelBladder += 0.5;
         this.saveHouseData();
     }
-
-    // ============================================
-    // COMPUTER
-    // ============================================
     openComputer() {
         this.computerScene.start('Computer');
     }
