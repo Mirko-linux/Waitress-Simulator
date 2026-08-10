@@ -1,79 +1,25 @@
-
-
-const LANGUAGES = {
-    "it": {
-        "name": "Italiano",
-        "flag": "🇮🇹"
-    },
-    "es": {
-        "name": "Español",
-        "flag": "🇪🇸"
-    },
-    "fr": {
-        "name": "Français",
-        "flag": "🇫🇷"
-    },
-    "de": {
-        "name": "Deutsch",
-        "flag": "🇩🇪"
-    },
-    "tr": {
-        "name": "Türkçe",
-        "flag": "🇹🇷"
-    },
-    "ru": {
-        "name": "Русский",
-        "flag": "🇷🇺"
-    },
-    "ja": {
-        "name": "日本語",
-        "flag": "🇯🇵"
-    },
-    "pl": {
-        "name": "Polski",
-        "flag": "🇵🇱"
-    },
-    "hu": {
-        "name": "Magyar",
-        "flag": "🇭🇺"
-    },
-    "pt": {
-        "name": "Português",
-        "flag": "🇵🇹"
-    },
-    "hi": {
-        "name": "हिन्दी",
-        "flag": "🇮🇳"
-    },
-    "ko": {
-        "name": "한국어",
-        "flag": "🇰🇷"
-    },
-    "zh": {
-        "name": "中文",
-        "flag": "🇨🇳"
-    },
-    "haw": {
-        "name": "Ōlelo Hawaiʻi",
-        "flag": "🌺"
-    },
-    "ar": {
-        "name": "العربية",
-        "flag": "🇸🇦"
-    },
-    "me": {
-        "name": "Crnogorski",
-        "flag": "🇲🇪"
-    },
-    "ku": {
-        "name": "Kurdi",
-        "flag": "🇹🇯"
-    }
+const LOCAL_LANGUAGES = {
+    'it': { name: 'Italiano', flag: '🇮🇹' },
+    'es': { name: 'Español', flag: '🇪🇸' },
+    'fr': { name: 'Français', flag: '🇫🇷' },
+    'de': { name: 'Deutsch', flag: '🇩🇪' },
+    'tr': { name: 'Türkçe', flag: '🇹🇷' },
+    'ru': { name: 'Русский', flag: '🇷🇺' },
+    'ja': { name: '日本語', flag: '🇯🇵' },
+    'pl': { name: 'Polski', flag: '🇵🇱' },
+    'hu': { name: 'Magyar', flag: '🇭🇺' },
+    'pt': { name: 'Português', flag: '🇵🇹' },
+    'pt-BR': { name: 'Português (Brasil)', flag: '🇧🇷' },
+    'hi': { name: 'हिन्दी', flag: '🇮🇳' },
+    'ko': { name: '한국어', flag: '🇰🇷' },
+    'zh': { name: '中文', flag: '🇨🇳' },
+    'ar': { name: 'العربية', flag: '🇸🇦' },
+    'haw': { name: 'Ōlelo Hawaiʻi', flag: '🌺' },
+    'me': { name: 'Crnogorski', flag: '🇲🇪' },
+    'ku': { name: 'Kurdî (Kurmancî)', flag: '🌞' }
 };
 
-let CURRENT_LANG = localStorage.getItem('waitress_game_lang') || 'it';
-
-const AUTO_TRANSLATIONS = {
+const LOCAL_AUTO_TRANSLATIONS = {
     "it": {
         "GIOCA": "▶ GIOCA",
         "IMPOSTAZIONI": "⚙ IMPOSTAZIONI",
@@ -141,139 +87,137 @@ const AUTO_TRANSLATIONS = {
         "TABLE_SHORT": "Tav."
     },
     "me": {
-    "GIOCA": "▶ IGRAJ",
-    "IMPOSTAZIONI": "⚙ PODEŠAVANJA",
-    "CREDITI": "ℹ KREDITI",
-    "TORNA": "↩ NAZAD U MENI",
-    "VAI A CASA": "🏠 IDI KUĆI",
-    "GIORNO": "⭐ Dan",
-    "INCASSO": "💰 Zarada:",
-    "SERVITI": "👥 Posluženi:",
-    "VASSOIO": "📋 Poslužavnik:",
-    "PIATTI": "🍽️",
-    "LAVELLO": "🚿 SUDOPER",
-    "PRONTO": "Spremno! 👨‍🍳",
-    "OCCUPATO": "Stanica zauzeta!",
-    "LOADING": "Učitavanje...",
-    "MENU_TITLE": "🍽️ WAITRESS SIMULATOR",
-    "MENU_SUBTITLE": "SIMULATOR KONOBARICE & KUĆNOG ŽIVOTA",
-    "NOTEPAD_TITLE": "📝 PORUDŽBINA",
-    "NOTEPAD_EMPTY": "Prazna sveska",
-    "NOTEPAD_READY": "Spremno za porudžbine",
-    "NOTEPAD_TABLE": "Sto:",
-    "DAY_COMPLETE": "⭐ DAN ZAVRŠEN! ⭐",
-    "DAY_FAILED": "💀 DAN NEUSPJEŠAN 💀",
-    "DAY_FAILED_DESC": "Izgubio si sve živote zbog ljutih gostiju!",
-    "SAVINGS_LEFT": "💰 Preostala ušteđevina:",
-    "DAYS_WORKED": "📅 Radnih dana:",
-    "FURNITURE_BOUGHT": "🛋️ Kupljeni namještaj:",
-    "AUDIO_SETTINGS": "🔊 Zvuk igre",
-    "ACTIVE": "AKTIVNO",
-    "DISABLED": "ISKLJUČENO",
-    "DIFFICULTY_LEVEL": "📊 Nivo težine",
-    "EASY": "LAKO",
-    "NORMAL": "NORMALNO",
-    "HARD": "TEŠKO",
-    "CONTROL_SYSTEM": "🎮 Sistem kontrola",
-    "KEYBOARD": "TASTATURA:",
-    "LANGUAGE_SELECT": "🌐 Jezik / Language",
-    "CREDITS_TITLE": "ℹ KREDITI RAZVOJA",
-    "CREDITS_IDEATION": "🎮 IDEJA & ORIGINALNI KOD",
-    "CREDITS_SUPPORT": "🏠 UZ PODRŠKU",
-    "CREDITS_GRAPHICS": "🎨 GRAFIKA & ANIMACIJE",
-    "CREDITS_TECH": "🛠️ INTEGRISANE TEHNOLOGIJE",
-    "CREDITS_LICENSE": "📝 LICENCA",
-    "ERR_CLOSE_TABLE": "🚫 Priđi stolu!",
-    "ERR_ALREADY_ORDER": "❌ Već imaš porudžbinu!",
-    "ERR_SINK_FULL": "🚨 Sudoper pun! Operi posuđe!",
-    "ERR_CLOSE_COUNTER": "🚫 Priđi pultu!",
-    "ERR_NO_FOOD_SERVED": "❌ Ne služimo ovo jelo!",
-    "ERR_TRAY_FULL": "❌ Poslužavnik pun!",
-    "ERR_NO_READY_FOOD": "📦 Nema spremnog jela!",
-    "ERR_CLOSE_SINK": "🚫 Priđi sudoperu!",
-    "MSG_ORDER_TAKEN": "📝 Porudžbina zapisana!",
-    "MSG_ORDER_REC": "📝 Porudžbina primljena!",
-    "MSG_SERVED": "🍽️ Posluženo!",
-    "MSG_TABLE_CLEARED": "🧹 Sto očišćen!",
-    "MSG_TABLE_FREE": "🪑 Sto slobodan",
-    "FOOD_READY": "spremno!",
-    "FOOD_TAKEN": "uzeto!",
-    "TRICK_CLICKS": "🔑 Trik:",
-    "CLICKS_LEFT": "klikova...",
-    "WASHING": "🧼 Pranje...",
-    "WASH_CLEAN": "✨ Posuđe čisto!",
-    "WASH_NONE": "🧼 Nema posuđa",
-    "LEAVING_ANGRY": "😡 Odlazi!",
-    "TABLE_SHORT": "Sto."
-},
-
+        "GIOCA": "▶ IGRAJ",
+        "IMPOSTAZIONI": "⚙ PODEŠAVANJA",
+        "CREDITI": "ℹ KREDITI",
+        "TORNA": "↩ NAZAD U MENI",
+        "VAI A CASA": "🏠 IDI KUĆI",
+        "GIORNO": "⭐ Dan",
+        "INCASSO": "💰 Zarada:",
+        "SERVITI": "👥 Posluženi:",
+        "VASSOIO": "📋 Poslužavnik:",
+        "PIATTI": "🍽️",
+        "LAVELLO": "🚿 SUDOPER",
+        "PRONTO": "Spremno! 👨‍🍳",
+        "OCCUPATO": "Stanica zauzeta!",
+        "LOADING": "Učitavanje...",
+        "MENU_TITLE": "🍽️ WAITRESS SIMULATOR",
+        "MENU_SUBTITLE": "SIMULATOR KONOBARICE & KUĆNOG ŽIVOTA",
+        "NOTEPAD_TITLE": "📝 PORUDŽBINA",
+        "NOTEPAD_EMPTY": "Prazna sveska",
+        "NOTEPAD_READY": "Spremno za porudžbine",
+        "NOTEPAD_TABLE": "Sto:",
+        "DAY_COMPLETE": "⭐ DAN ZAVRŠEN! ⭐",
+        "DAY_FAILED": "💀 DAN NEUSPJEŠAN 💀",
+        "DAY_FAILED_DESC": "Izgubio si sve živote zbog ljutih gostiju!",
+        "SAVINGS_LEFT": "💰 Preostala ušteđevina:",
+        "DAYS_WORKED": "📅 Radnih dana:",
+        "FURNITURE_BOUGHT": "🛋️ Kupljeni namještaj:",
+        "AUDIO_SETTINGS": "🔊 Zvuk igre",
+        "ACTIVE": "AKTIVNO",
+        "DISABLED": "ISKLJUČENO",
+        "DIFFICULTY_LEVEL": "📊 Nivo težine",
+        "EASY": "LAKO",
+        "NORMAL": "NORMALNO",
+        "HARD": "TEŠKO",
+        "CONTROL_SYSTEM": "🎮 Sistem kontrola",
+        "KEYBOARD": "TASTATURA:",
+        "LANGUAGE_SELECT": "🌐 Jezik / Language",
+        "CREDITS_TITLE": "ℹ KREDITI RAZVOJA",
+        "CREDITS_IDEATION": "🎮 IDEJA & ORIGINALNI KOD",
+        "CREDITS_SUPPORT": "🏠 UZ PODRŠKU",
+        "CREDITS_GRAPHICS": "🎨 GRAFIKA & ANIMACIJE",
+        "CREDITS_TECH": "🛠️ INTEGRISANE TEHNOLOGIJE",
+        "CREDITS_LICENSE": "📝 LICENCA",
+        "ERR_CLOSE_TABLE": "🚫 Priđi stolu!",
+        "ERR_ALREADY_ORDER": "❌ Već imaš porudžbinu!",
+        "ERR_SINK_FULL": "🚨 Sudoper pun! Operi posuđe!",
+        "ERR_CLOSE_COUNTER": "🚫 Priđi pultu!",
+        "ERR_NO_FOOD_SERVED": "❌ Ne služimo ovo jelo!",
+        "ERR_TRAY_FULL": "❌ Poslužavnik pun!",
+        "ERR_NO_READY_FOOD": "📦 Nema spremnog jela!",
+        "ERR_CLOSE_SINK": "🚫 Priđi sudoperu!",
+        "MSG_ORDER_TAKEN": "📝 Porudžbina zapisana!",
+        "MSG_ORDER_REC": "📝 Porudžbina primljena!",
+        "MSG_SERVED": "🍽️ Posluženo!",
+        "MSG_TABLE_CLEARED": "🧹 Sto očišćen!",
+        "MSG_TABLE_FREE": "🪑 Sto slobodan",
+        "FOOD_READY": "spremno!",
+        "FOOD_TAKEN": "uzeto!",
+        "TRICK_CLICKS": "🔑 Trik:",
+        "CLICKS_LEFT": "klikova...",
+        "WASHING": "🧼 Pranje...",
+        "WASH_CLEAN": "✨ Posuđe čisto!",
+        "WASH_NONE": "🧼 Nema posuđa",
+        "LEAVING_ANGRY": "😡 Odlazi!",
+        "TABLE_SHORT": "Sto."
+    },
     "ku": {
-    "GIOCA": "▶ LÎSTIN",
-    "IMPOSTAZIONI": "⚙ MÎHENG",
-    "CREDITI": "ℹ KREDÎT",
-    "TORNA": "↩ VEGERE MENU",
-    "VAI A CASA": "🏠 HER MALÊ",
-    "GIORNO": "⭐ Roj",
-    "INCASSO": "💰 Hatin:",
-    "SERVITI": "👥 Xizmetkirî:",
-    "VASSOIO": "📋 Sînî:",
-    "PIATTI": "🍽️ Qedeh",
-    "LAVELLO": "🚿 LAVABO",
-    "PRONTO": "Amade! 👨‍🍳",
-    "OCCUPATO": "Cih tije ye!",
-    "LOADING": "Tê barkirin...",
-    "MENU_TITLE": "🍽️ WAITRESS SIMULATOR",
-    "MENU_SUBTITLE": "SIMULATORA XIZMETKARÊ & JIYANA MALÊ",
-    "NOTEPAD_TITLE": "📝 FERMAN",
-    "NOTEPAD_EMPTY": "Defter vala ye",
-    "NOTEPAD_READY": "Amade ji bo fermanan",
-    "NOTEPAD_TABLE": "Masê:",
-    "DAY_COMPLETE": "⭐ ROJ QEDÎ HAT! ⭐",
-    "DAY_FAILED": "💀 ROJ TÊK ÇÛ 💀",
-    "DAY_FAILED_DESC": "Hemû jiyan ji ber mêşterên birîndar wenda kirî!",
-    "SAVINGS_LEFT": "💰 Perê mayî:",
-    "DAYS_WORKED": "📅 Rojên kar kirî:",
-    "FURNITURE_BOUGHT": "🛋️ Amûrên kirî:",
-    "AUDIO_SETTINGS": "🔊 Dengê lîstikê",
-    "ACTIVE": "ÇALAK",
-    "DISABLED": "NEÇALAK",
-    "DIFFICULTY_LEVEL": "📊 Asta Sûrî",
-    "EASY": "HESAN",
-    "NORMAL": "NORMAL",
-    "HARD": "ZEHÊ",
-    "CONTROL_SYSTEM": "🎮 Pergala kontrolê",
-    "KEYBOARD": "KLAVYE:",
-    "LANGUAGE_SELECT": "🌐 Ziman / Language",
-    "CREDITS_TITLE": "ℹ KREDÎTÊ PÊŞDEÇÛNÊ",
-    "CREDITS_IDEATION": "🎮 RAGIHANDIN & KODA ORJÎNAL",
-    "CREDITS_SUPPORT": "🏠 BI PIŞTGIRIYA",
-    "CREDITS_GRAPHICS": "🎨 GRAFÎK & ANÎMASYON",
-    "CREDITS_TECH": "🛠️ TEKNOLOJÎYÊ TÊKILDAR",
-    "CREDITS_LICENSE": "📝 LÎSANS",
-    "ERR_CLOSE_TABLE": "🚫 Nêzîkî masê bibe!",
-    "ERR_ALREADY_ORDER": "❌ Tu jixwe fermanek heye!",
-    "ERR_SINK_FULL": "🚨 Lavabo tije ye! Qedehê paqij bike!",
-    "ERR_CLOSE_COUNTER": "🚫 Nêzîkî kontwarê bibe!",
-    "ERR_NO_FOOD_SERVED": "❌ Em vê xwarinê naxizmin!",
-    "ERR_TRAY_FULL": "❌ Sînî tije ye!",
-    "ERR_NO_READY_FOOD": "📦 Xwarinê amade tune!",
-    "ERR_CLOSE_SINK": "🚫 Nêzîkî lavabo bibe!",
-    "MSG_ORDER_TAKEN": "📝 Ferman hat nivîsîn!",
-    "MSG_ORDER_REC": "📝 Ferman hat stendin!",
-    "MSG_SERVED": "🍽️ Xizmet kirî!",
-    "MSG_TABLE_CLEARED": "🧹 Masê paqij kirî!",
-    "MSG_TABLE_FREE": "🪑 Masê vala ye",
-    "FOOD_READY": "amade!",
-    "FOOD_TAKEN": "hate stendin!",
-    "TRICK_CLICKS": "🔑 Hîle:",
-    "CLICKS_LEFT": "klik...",
-    "WASHING": "🧼 Tê paqijkirin...",
-    "WASH_CLEAN": "✨ Qedeh paqij!",
-    "WASH_NONE": "🧼 Qedeh tune",
-    "LEAVING_ANGRY": "😡 Dikeve derve!",
-    "TABLE_SHORT": "Mas."
-},
-
+        "GIOCA": "▶ LÎSTIN",
+        "IMPOSTAZIONI": "⚙ MÎHENG",
+        "CREDITI": "ℹ KREDÎT",
+        "TORNA": "↩ VEGERE MENU",
+        "VAI A CASA": "🏠 HER MALÊ",
+        "GIORNO": "⭐ Roj",
+        "INCASSO": "💰 Hatin:",
+        "SERVITI": "👥 Xizmetkirî:",
+        "VASSOIO": "📋 Sînî:",
+        "PIATTI": "🍽️ Qedeh",
+        "LAVELLO": "🚿 LAVABO",
+        "PRONTO": "Amade! 👨‍🍳",
+        "OCCUPATO": "Cih tije ye!",
+        "LOADING": "Tê barkirin...",
+        "MENU_TITLE": "🍽️ WAITRESS SIMULATOR",
+        "MENU_SUBTITLE": "SIMULATORA XIZMETKARÊ & JIYANA MALÊ",
+        "NOTEPAD_TITLE": "📝 FERMAN",
+        "NOTEPAD_EMPTY": "Defter vala ye",
+        "NOTEPAD_READY": "Amade ji bo fermanan",
+        "NOTEPAD_TABLE": "Masê:",
+        "DAY_COMPLETE": "⭐ ROJ QEDÎ HAT! ⭐",
+        "DAY_FAILED": "💀 ROJ TÊK ÇÛ 💀",
+        "DAY_FAILED_DESC": "Hemû jiyan ji ber mêşterên birîndar wenda kirî!",
+        "SAVINGS_LEFT": "💰 Perê mayî:",
+        "DAYS_WORKED": "📅 Rojên kar kirî:",
+        "FURNITURE_BOUGHT": "🛋️ Amûrên kirî:",
+        "AUDIO_SETTINGS": "🔊 Dengê lîstikê",
+        "ACTIVE": "ÇALAK",
+        "DISABLED": "NEÇALAK",
+        "DIFFICULTY_LEVEL": "📊 Asta Sûrî",
+        "EASY": "HESAN",
+        "NORMAL": "NORMAL",
+        "HARD": "ZEHÊ",
+        "CONTROL_SYSTEM": "🎮 Pergala kontrolê",
+        "KEYBOARD": "KLAVYE:",
+        "LANGUAGE_SELECT": "🌐 Ziman / Language",
+        "CREDITS_TITLE": "ℹ KREDÎTÊ PÊŞDEÇÛNÊ",
+        "CREDITS_IDEATION": "🎮 RAGIHANDIN & KODA ORJÎNAL",
+        "CREDITS_SUPPORT": "🏠 BI PIŞTGIRIYA",
+        "CREDITS_GRAPHICS": "🎨 GRAFÎK & ANÎMASYON",
+        "CREDITS_TECH": "🛠️ TEKNOLOJÎYÊ TÊKILDAR",
+        "CREDITS_LICENSE": "📝 LÎSANS",
+        "ERR_CLOSE_TABLE": "🚫 Nêzîkî masê bibe!",
+        "ERR_ALREADY_ORDER": "❌ Tu jixwe fermanek heye!",
+        "ERR_SINK_FULL": "🚨 Lavabo tije ye! Qedehê paqij bike!",
+        "ERR_CLOSE_COUNTER": "🚫 Nêzîkî kontwarê bibe!",
+        "ERR_NO_FOOD_SERVED": "❌ Em vê xwarinê naxizmin!",
+        "ERR_TRAY_FULL": "❌ Sînî tije ye!",
+        "ERR_NO_READY_FOOD": "📦 Xwarinê amade tune!",
+        "ERR_CLOSE_SINK": "🚫 Nêzîkî lavabo bibe!",
+        "MSG_ORDER_TAKEN": "📝 Ferman hat nivîsîn!",
+        "MSG_ORDER_REC": "📝 Ferman hat stendin!",
+        "MSG_SERVED": "🍽️ Xizmet kirî!",
+        "MSG_TABLE_CLEARED": "🧹 Masê paqij kirî!",
+        "MSG_TABLE_FREE": "🪑 Masê vala ye",
+        "FOOD_READY": "amade!",
+        "FOOD_TAKEN": "hate stendin!",
+        "TRICK_CLICKS": "🔑 Hîle:",
+        "CLICKS_LEFT": "klik...",
+        "WASHING": "🧼 Tê paqijkirin...",
+        "WASH_CLEAN": "✨ Qedeh paqij!",
+        "WASH_NONE": "🧼 Qedeh tune",
+        "LEAVING_ANGRY": "😡 Dikeve derve!",
+        "TABLE_SHORT": "Mas."
+    },
     "es": {
         "GIOCA": "▶ JUGAR",
         "IMPOSTAZIONI": "⚙ AJUSTES",
@@ -1133,88 +1077,117 @@ const AUTO_TRANSLATIONS = {
         "TABLE_SHORT": "Pā."
     },
     "ar": {
-    "GIOCA": "▶ ابدأ اللعب",
-    "IMPOSTAZIONI": "⚙ الإعدادات",
-    "CREDITI": "ℹ فريق التطوير",
-    "TORNA": "↩ العودة إلى القائمة",
-    "VAI A CASA": "🏠 اذهب إلى المنزل",
-    "GIORNO": "⭐ اليوم",
-    "INCASSO": "💰 الأرباح:",
-    "SERVITI": "👥 عدد الزبائن:",
-    "VASSOIO": "📋 الصينية:",
-    "PIATTI": "🍽️",
-    "LAVELLO": "🚿 المغسلة",
-    "PRONTO": "جاهز! 👨‍🍳",
-    "OCCUPATO": "المكان مشغول!",
-    "LOADING": "جارٍ التحميل...",
-    "MENU_TITLE": "🍽️ WAITRESS SIMULATOR",
-    "MENU_SUBTITLE": "محاكاة النادلة والحياة المنزلية",
-    "NOTEPAD_TITLE": "📝 الطلبات",
-    "NOTEPAD_EMPTY": "المفكرة فارغة",
-    "NOTEPAD_READY": "جاهز لتسجيل الطلب",
-    "NOTEPAD_TABLE": "الطاولة:",
-    "DAY_COMPLETE": "⭐ تم إنهاء اليوم! ⭐",
-    "DAY_FAILED": "💀 فشل اليوم 💀",
-    "DAY_FAILED_DESC": "لقد خسرت كل الأرواح بسبب غضب الزبائن!",
-    "SAVINGS_LEFT": "💰 المدخرات المتبقية:",
-    "DAYS_WORKED": "📅 أيام العمل:",
-    "FURNITURE_BOUGHT": "🛋️ الأثاث المُشترى:",
-    "AUDIO_SETTINGS": "🔊 صوت اللعبة",
-    "ACTIVE": "مفعل",
-    "DISABLED": "معطل",
-    "DIFFICULTY_LEVEL": "📊 مستوى الصعوبة",
-    "EASY": "سهل",
-    "NORMAL": "عادي",
-    "HARD": "صعب",
-    "CONTROL_SYSTEM": "🎮 نظام التحكم",
-    "KEYBOARD": "لوحة المفاتيح:",
-    "LANGUAGE_SELECT": "🌐 اللغة / Language",
-    "CREDITS_TITLE": "ℹ فريق التطوير",
-    "CREDITS_IDEATION": "🎮 الفكرة والبرمجة الأصلية",
-    "CREDITS_SUPPORT": "🏠 بدعم من",
-    "CREDITS_GRAPHICS": "🎨 الرسوميات والأنيميشن",
-    "CREDITS_TECH": "🛠️ التقنيات المستخدمة",
-    "CREDITS_LICENSE": "📝 الترخيص",
-    "ERR_CLOSE_TABLE": "🚫 اقترب من الطاولة!",
-    "ERR_ALREADY_ORDER": "❌ لديك طلب مسجل بالفعل!",
-    "ERR_SINK_FULL": "🚨 المغسلة ممتلئة! اغسل الأطباق!",
-    "ERR_CLOSE_COUNTER": "🚫 اقترب من الطاولة!",
-    "ERR_NO_FOOD_SERVED": "❌ لا نقدّم هذا الطبق!",
-    "ERR_TRAY_FULL": "❌ الصينية ممتلئة!",
-    "ERR_NO_READY_FOOD": "📦 لا يوجد طعام جاهز!",
-    "ERR_CLOSE_SINK": "🚫 اقترب من المغسلة!",
-    "MSG_ORDER_TAKEN": "📝 تم تسجيل الطلب!",
-    "MSG_ORDER_REC": "📝 تم استلام الطلب!",
-    "MSG_SERVED": "🍽️ تم التقديم!",
-    "MSG_TABLE_CLEARED": "🧹 تم تنظيف الطاولة!",
-    "MSG_TABLE_FREE": "🪑 الطاولة فارغة",
-    "FOOD_READY": "جاهز!",
-    "FOOD_TAKEN": "تم أخذه!",
-    "TRICK_CLICKS": "🔑 الخدعة:",
-    "CLICKS_LEFT": "نقرات...",
-    "WASHING": "🧼 جارٍ الغسل...",
-    "WASH_CLEAN": "✨ الأطباق نظيفة!",
-    "WASH_NONE": "🧼 لا توجد أطباق",
-    "LEAVING_ANGRY": "😡 يغادر غاضبًا!",
-    "TABLE_SHORT": "طاولة"
-}
-
+        "GIOCA": "▶ ابدأ اللعب",
+        "IMPOSTAZIONI": "⚙ الإعدادات",
+        "CREDITI": "ℹ فريق التطوير",
+        "TORNA": "↩ العودة إلى القائمة",
+        "VAI A CASA": "🏠 اذهب إلى المنزل",
+        "GIORNO": "⭐ اليوم",
+        "INCASSO": "💰 الأرباح:",
+        "SERVITI": "👥 عدد الزبائن:",
+        "VASSOIO": "📋 الصينية:",
+        "PIATTI": "🍽️",
+        "LAVELLO": "🚿 المغسلة",
+        "PRONTO": "جاهز! 👨‍🍳",
+        "OCCUPATO": "المكان مشغول!",
+        "LOADING": "جارٍ التحميل...",
+        "MENU_TITLE": "🍽️ WAITRESS SIMULATOR",
+        "MENU_SUBTITLE": "محاكاة النادلة والحياة المنزلية",
+        "NOTEPAD_TITLE": "📝 الطلبات",
+        "NOTEPAD_EMPTY": "المفكرة فارغة",
+        "NOTEPAD_READY": "جاهز لتسجيل الطلب",
+        "NOTEPAD_TABLE": "الطاولة:",
+        "DAY_COMPLETE": "⭐ تم إنهاء اليوم! ⭐",
+        "DAY_FAILED": "💀 فشل اليوم 💀",
+        "DAY_FAILED_DESC": "لقد خسرت كل الأرواح بسبب غضب الزبائن!",
+        "SAVINGS_LEFT": "💰 المدخرات المتبقية:",
+        "DAYS_WORKED": "📅 أيام العمل:",
+        "FURNITURE_BOUGHT": "🛋️ الأثاث المُشترى:",
+        "AUDIO_SETTINGS": "🔊 صوت اللعبة",
+        "ACTIVE": "مفعل",
+        "DISABLED": "معطل",
+        "DIFFICULTY_LEVEL": "📊 مستوى الصعوبة",
+        "EASY": "سهل",
+        "NORMAL": "عادي",
+        "HARD": "صعب",
+        "CONTROL_SYSTEM": "🎮 نظام التحكم",
+        "KEYBOARD": "لوحة المفاتيح:",
+        "LANGUAGE_SELECT": "🌐 اللغة / Language",
+        "CREDITS_TITLE": "ℹ فريق التطوير",
+        "CREDITS_IDEATION": "🎮 الفكرة والبرمجة الأصلية",
+        "CREDITS_SUPPORT": "🏠 بدعم من",
+        "CREDITS_GRAPHICS": "🎨 الرسوميات والأنيميشن",
+        "CREDITS_TECH": "🛠️ التقنيات المستخدمة",
+        "CREDITS_LICENSE": "📝 الترخيص",
+        "ERR_CLOSE_TABLE": "🚫 اقترب من الطاولة!",
+        "ERR_ALREADY_ORDER": "❌ لديك طلب مسجل بالفعل!",
+        "ERR_SINK_FULL": "🚨 المغسلة ممتلئة! اغسل الأطباق!",
+        "ERR_CLOSE_COUNTER": "🚫 اقترب من الطاولة!",
+        "ERR_NO_FOOD_SERVED": "❌ لا نقدّم هذا الطبق!",
+        "ERR_TRAY_FULL": "❌ الصينية ممتلئة!",
+        "ERR_NO_READY_FOOD": "📦 لا يوجد طعام جاهز!",
+        "ERR_CLOSE_SINK": "🚫 اقترب من المغسلة!",
+        "MSG_ORDER_TAKEN": "📝 تم تسجيل الطلب!",
+        "MSG_ORDER_REC": "📝 تم استلام الطلب!",
+        "MSG_SERVED": "🍽️ تم التقديم!",
+        "MSG_TABLE_CLEARED": "🧹 تم تنظيف الطاولة!",
+        "MSG_TABLE_FREE": "🪑 الطاولة فارغة",
+        "FOOD_READY": "جاهز!",
+        "FOOD_TAKEN": "تم أخذه!",
+        "TRICK_CLICKS": "🔑 الخدعة:",
+        "CLICKS_LEFT": "نقرات...",
+        "WASHING": "🧼 جارٍ الغسل...",
+        "WASH_CLEAN": "✨ الأطباق نظيفة!",
+        "WASH_NONE": "🧼 لا توجد أطباق",
+        "LEAVING_ANGRY": "😡 يغادر غاضبًا!",
+        "TABLE_SHORT": "طاولة"
+    }
 };
 
+// Funzioni di utilità
+function getLanguages() {
+    return LOCAL_LANGUAGES;
+}
+
+function getCurrentLang() {
+    return window.CURRENT_LANG || localStorage.getItem('waitress_game_lang') || 'it';
+}
+
 function t(key) {
-    const lang = window.CURRENT_LANG || CURRENT_LANG || localStorage.getItem('waitress_game_lang') || 'it';
-    if (AUTO_TRANSLATIONS[lang] && AUTO_TRANSLATIONS[lang][key]) {
-        return AUTO_TRANSLATIONS[lang][key];
+    // Se esiste una funzione window.t definita altrove, usala
+    if (typeof window.t === 'function' && window.t !== t) {
+        const res = window.t(key);
+        if (res !== key) return res;
     }
-    if (AUTO_TRANSLATIONS['it'] && AUTO_TRANSLATIONS['it'][key]) {
-        return AUTO_TRANSLATIONS['it'][key];
+
+    const lang = getCurrentLang();
+    const dicts = LOCAL_AUTO_TRANSLATIONS;
+    
+    if (dicts && dicts[lang] && dicts[lang][key]) {
+        return dicts[lang][key];
+    }
+    if (dicts && dicts['it'] && dicts['it'][key]) {
+        return dicts['it'][key];
     }
     return key;
 }
 
+function switchLanguage(langCode) {
+    if (typeof window.setLanguage === 'function') {
+        window.setLanguage(langCode);
+    } else {
+        window.CURRENT_LANG = langCode;
+        localStorage.setItem('waitress_game_lang', langCode);
+        if (window.game && window.game.scene) {
+            window.game.scene.getScenes(true).forEach(scene => {
+                scene.scene.restart();
+            });
+        }
+    }
+}
+
 function setLanguage(langCode) {
-    if (!LANGUAGES[langCode]) return;
-    CURRENT_LANG = langCode;
+    if (!LOCAL_LANGUAGES[langCode]) return;
     window.CURRENT_LANG = langCode;
     localStorage.setItem('waitress_game_lang', langCode);
     
@@ -1227,9 +1200,14 @@ function setLanguage(langCode) {
     }
 }
 
+// Imposta la lingua corrente all'avvio
+window.CURRENT_LANG = localStorage.getItem('waitress_game_lang') || 'it';
 
-window.LANGUAGES = LANGUAGES;
-window.CURRENT_LANG = CURRENT_LANG;
-window.AUTO_TRANSLATIONS = AUTO_TRANSLATIONS;
+// Esponi tutto al window object
+window.LANGUAGES = LOCAL_LANGUAGES;
+window.AUTO_TRANSLATIONS = LOCAL_AUTO_TRANSLATIONS;
 window.t = t;
 window.setLanguage = setLanguage;
+window.switchLanguage = switchLanguage;
+window.getLanguages = getLanguages;
+window.getCurrentLang = getCurrentLang;

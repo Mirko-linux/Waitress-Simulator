@@ -10,6 +10,7 @@
         SUPER: { key: 'medaglia_super', file: 'assets/Punteggio/MedagliaSUPER.png', title: 'SUPER!', color: '#9b59b6', minScoreRatio: 1.4 }
     };
 
+    // Funzione per calcolare la medaglia in base al punteggio
     function calculateMedal(score, targetScore) {
         const target = targetScore || 100;
         const ratio = score / target;
@@ -20,7 +21,9 @@
     }
 
     class LevelSummaryScene extends Phaser.Scene {
-        constructor() { super({ key: 'LevelSummary' }); }
+        constructor() { 
+            super({ key: 'LevelSummary' }); 
+        }
 
         init(data) {
             this.levelData = {
@@ -34,7 +37,9 @@
 
         preload() {
             Object.values(MEDAL_TYPES).forEach(medal => {
-                if (!this.textures.exists(medal.key)) this.load.image(medal.key, medal.file);
+                if (!this.textures.exists(medal.key)) {
+                    this.load.image(medal.key, medal.file);
+                }
             });
         }
 
@@ -70,6 +75,11 @@
                 const maxDimension = 110;
                 const scale = Math.min(maxDimension / medalImg.width, maxDimension / medalImg.height);
                 medalImg.setScale(scale);
+            } else {
+                // Fallback se l'immagine della medaglia non c'è
+                this.add.text(width / 2, medalY, '🏅', {
+                    fontSize: '80px', align: 'center'
+                }).setOrigin(0.5);
             }
 
             this.add.text(width / 2, panelY + 190, medal.title, {
@@ -92,14 +102,37 @@
 
             const btnY = panelY + panelHeight - 50;
 
-            // PULSANTE VAI A CASA (Collegato al tuo window.GAME)
+            // --- FIX: PULSANTE PROSSIMO LIVELLO ---
             this.createButton(width / 2 - 80, btnY, 'PROSSIMO LIVELLO', '#2ecc71', () => {
                 if (window.GAME) {
+                    // 1. Incrementa il livello
                     window.GAME.level++;
-                    window.GAME.customersTarget += 2;
+                    
+                    // 2. Resetta i contatori per il nuovo livello
+                    window.GAME.customersServed = 0;
+                    window.GAME.lives = 3;
+                    window.GAME.dirtyPlates = 0;
+                    window.GAME.carriedOrder = null;
+                    window.GAME.customersTarget = 6 + (window.GAME.level * 4);
+
+                    // 3. Salva i dati nel localStorage (così non si perde se si ricarica la pagina)
+                    const saveData = {
+                        score: window.GAME.score,
+                        level: window.GAME.level,
+                        customersServed: 0,
+                        lives: 3,
+                        dirtyPlates: 0,
+                        settings: window.GAME.settings,
+                        housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
+                    };
+                    localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
+                    
+                    console.log(`📈 Avanzamento al Livello ${window.GAME.level}`);
                 }
+                // RIAVVIA IL GIOCO CON I NUOVI DATI!
                 this.scene.start('Game');
             });
+            // --- FINE FIX ---
 
             this.createButton(width / 2 + 80, btnY, 'MENU', '#e74c3c', () => {
                 this.scene.start('Menu');

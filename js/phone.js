@@ -1,5 +1,5 @@
 // ============================================
-// PHONE SYSTEM - Telefono finalmente visibile
+// PHONE SYSTEM - FIX: Posizione visibile e attivazione dal Livello 2
 // ============================================
 class PhoneSystem {
     constructor(scene) {
@@ -15,9 +15,10 @@ class PhoneSystem {
         this.boyfriendAffection = 100;
         this.boyfriendName = 'Marco';
 
-        // POSIZIONE: Sopra il muro, a fianco del cartello "PASS PIATTI"
-        this.phoneX = 585;
-        this.phoneY = 320;
+        // --- CORREZIONE POSIZIONE ---
+        // Spostato a destra sopra le macchinette della cucina (dove NON c'è il muro)
+        this.phoneX = 610;
+        this.phoneY = 120;
 
         this.createPhoneGraphics();
         this.setupAudio();
@@ -26,7 +27,7 @@ class PhoneSystem {
     createPhoneGraphics() {
         const scene = this.scene;
 
-        // 1. BASE DEL TELEFONO
+        // 1. BASE DEL TELEFONO (ombra/sfondo)
         const bg = scene.add.circle(this.phoneX, this.phoneY, 22, 0x000000, 0.8).setDepth(20);
         bg.setStrokeStyle(2, 0xd27d2d);
 
@@ -35,6 +36,7 @@ class PhoneSystem {
             this.phoneSprite = scene.add.image(this.phoneX, this.phoneY, 'phone').setDepth(21);
             this.phoneSprite.setDisplaySize(36, 36); 
         } else {
+            // Fallback emoji se l'immagine non viene caricata
             this.phoneSprite = scene.add.text(this.phoneX, this.phoneY, '📞', {
                 fontSize: '32px'
             }).setOrigin(0.5).setDepth(21);
@@ -46,7 +48,7 @@ class PhoneSystem {
             this.onPhoneClick();
         });
 
-        // Effetto bagliore
+        // Effetto bagliore (visibile quando è inattivo)
         this.idleGlow = scene.add.graphics().setDepth(19);
         this.idleGlow.fillStyle(0xd27d2d, 0.2);
         this.idleGlow.fillCircle(this.phoneX, this.phoneY, 26);
@@ -59,7 +61,7 @@ class PhoneSystem {
             repeat: -1
         });
 
-        // Indicatore di chiamata
+        // Indicatore di chiamata (pallino rosso lampeggiante)
         this.ringIndicator = scene.add.circle(this.phoneX + 20, this.phoneY - 20, 10, 0xe74c3c, 1).setDepth(22);
         this.ringIndicator.setVisible(false);
 
@@ -75,19 +77,20 @@ class PhoneSystem {
     }
 
     setupAudio() {
-        if (!this.scene.cache.audio.exists('vibrazione')) {
-            this.scene.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
-            this.scene.load.once('complete', () => {
-                this.vibrationSound = this.scene.sound.add('vibrazione');
-            });
-            this.scene.load.start();
-        } else {
+        if (this.scene.cache.audio.exists('vibrazione')) {
             this.vibrationSound = this.scene.sound.add('vibrazione');
+        } else {
+            console.warn("Audio 'vibrazione' non trovato nel preload. Il telefono suonerà in silenzio.");
+            this.vibrationSound = null;
         }
     }
 
     update(time, delta) {
-        // --- CORREZIONE QUI: usa this.scene.gameActive ---
+        // --- CORREZIONE: NON SUONA AL LIVELLO 1 ---
+        if (window.GAME && window.GAME.level <= 1) {
+            return; // Il telefono è visibile ma non fa nulla
+        }
+
         if (!this.scene.gameActive || this.isActive) return;
 
         if (this.callCooldown > 0) {
@@ -95,6 +98,7 @@ class PhoneSystem {
             return;
         }
 
+        // 0.5% di probabilità per frame di ricevere una chiamata
         if (Phaser.Math.Between(0, 200) === 0) {
             this.triggerCall();
         }
@@ -130,12 +134,19 @@ class PhoneSystem {
 
         this.currentCallData = {
             type: selectedType,
-            timer: this.scene.time.delayedCall(8000, () => {
+            timer: this.scene.time.delayedCall(6000, () => {
                 this.missedCall();
             })
         };
         
-        this.scene.showFloatingText(this.phoneX, this.phoneY - 45, '📱 CHIAMATA!', '#e74c3c');
+        this.scene.showFloatingText(this.phoneX, this.phoneY - 45, '📱 CHIAMATA IN ARRIVO!', '#e74c3c');
+        
+        // Penalità per i clienti
+        this.scene.customers.forEach(c => {
+            if (!c.isDead && c.patience > 0) {
+                c.patience = Math.max(0, c.patience - 3);
+            }
+        });
     }
 
     onPhoneClick() {
@@ -150,6 +161,7 @@ class PhoneSystem {
         }
         this.ringIndicator.setVisible(false);
         this.idleGlow.setVisible(true);
+        
         if (this.vibrationSound) {
             this.vibrationSound.stop();
         }
@@ -165,12 +177,16 @@ class PhoneSystem {
         this.ringIndicator.setVisible(false);
         this.idleGlow.setVisible(true);
         
+        if (this.vibrationSound) {
+            this.vibrationSound.stop();
+        }
+
         if (this.currentCallData.type === 'boyfriend') {
             this.boyfriendAffection -= 15;
             this.scene.showFloatingText(this.phoneX, this.phoneY - 45, `💔 ${this.boyfriendName} è deluso!`, '#ff4444');
             if (this.boyfriendAffection <= 0) this.boyfriendBreakup();
         } else if (this.currentCallData.type === 'machine_break') {
-            this.scene.showFloatingText(this.phoneX, this.phoneY - 45, '🔧 Macchinario rotto!', '#f39c12');
+            this.scene.showFloatingText(this.phoneX, this.phoneY - 45, '🔧 Macchinario rotto per non aver risposto!', '#f39c12');
             this.scene.gameActive = false;
             this.scene.time.delayedCall(3000, () => { this.scene.gameActive = true; });
         }

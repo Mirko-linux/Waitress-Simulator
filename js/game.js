@@ -1,4 +1,4 @@
-{
+(function() {
     const LOCAL_LANGUAGES = {
         'it': { name: 'Italiano', flag: '🇮🇹' },
         'es': { name: 'Español', flag: '🇪🇸' },
@@ -18,75 +18,6 @@
         'haw': { name: 'Ōlelo Hawaiʻi', flag: '🌺' },
         'me': { name: 'Crnogorski', flag: '🇲🇪' },
         'ku': { name: 'Kurdî (Kurmancî)', flag: '🌞' }
-    };
-
-    const LOCAL_AUTO_TRANSLATIONS = {
-        'it': {
-            'GIOCA': '▶ GIOCA',
-            'IMPOSTAZIONI': '⚙ IMPOSTAZIONI',
-            'CREDITI': 'ℹ CREDITI',
-            'TORNA': '↩ TORNA AL MENU',
-            'VAI A CASA': '🏠 VAI A CASA',
-            'GIORNO': '⭐ Giorno',
-            'INCASSO': '💰 Incasso:',
-            'SERVITI': '👥 Serviti:',
-            'VASSOIO': '📋 Vassoio:',
-            'PIATTI': '🍽️',
-            'LAVELLO': '🚿 LAVELLO',
-            'PRONTO': 'Pronto! 👨‍🍳',
-            'OCCUPATO': 'Postazione occupata!',
-            'LOADING': 'Caricamento...',
-            'MENU_TITLE': '🍽️ WAITRESS SIMULATOR',
-            'MENU_SUBTITLE': 'SIMULATORE DI CAMERIERA & VITA DA CASALINGA',
-            'NOTEPAD_TITLE': '📝 COMANDA',
-            'NOTEPAD_EMPTY': 'Taccuino Vuoto',
-            'NOTEPAD_READY': 'Pronto per ordini',
-            'NOTEPAD_TABLE': 'Tavolo:',
-            'DAY_COMPLETE': '⭐ GIORNATA COMPLETATA! ⭐',
-            'DAY_FAILED': '💀 GIORNATA FALLITA 💀',
-            'DAY_FAILED_DESC': 'Hai perso tutte le vite a causa dei clienti arrabbiati!',
-            'SAVINGS_LEFT': '💰 Risparmi rimasti:',
-            'DAYS_WORKED': '📅 Giorni lavorati:',
-            'FURNITURE_BOUGHT': '🛋️ Mobili acquistati:',
-            'AUDIO_SETTINGS': '🔊 Audio di gioco',
-            'ACTIVE': 'ATTIVO',
-            'DISABLED': 'DISATTIVATO',
-            'DIFFICULTY_LEVEL': '📊 Livello di Difficoltà',
-            'EASY': 'FACILE',
-            'NORMAL': 'NORMALE',
-            'HARD': 'DIFFICILE',
-            'CONTROL_SYSTEM': '🎮 Sistema di Controlli',
-            'KEYBOARD': 'TASTIERA:',
-            'LANGUAGE_SELECT': '🌐 Lingua / Language',
-            'CREDITS_TITLE': 'ℹ CREDITI DI SVILUPPO',
-            'CREDITS_IDEATION': '🎮 IDEAZIONE & CODICE ORIGINALE',
-            'CREDITS_SUPPORT': '🏠 CON IL SUPPORTO DI',
-            'CREDITS_GRAPHICS': '🎨 GRAFICA & ANIMAZIONI',
-            'CREDITS_TECH': '🛠️ TECNOLOGIE INTEGRATE',
-            'CREDITS_LICENSE': '📝 LICENZA',
-            'ERR_CLOSE_TABLE': '🚫 Avvicinati al tavolo!',
-            'ERR_ALREADY_ORDER': '❌ Hai già una comanda!',
-            'ERR_SINK_FULL': '🚨 Lavello sovraccarico! Lava i piatti!',
-            'ERR_CLOSE_COUNTER': '🚫 Avvicinati al bancone!',
-            'ERR_NO_FOOD_SERVED': '❌ Non serviamo questo cibo!',
-            'ERR_TRAY_FULL': '❌ Vassoio stracolmo!',
-            'ERR_NO_READY_FOOD': '📦 Nessun cibo pronto!',
-            'ERR_CLOSE_SINK': '🚫 Avvicinati al lavello!',
-            'MSG_ORDER_TAKEN': '📝 Comanda Scritta!',
-            'MSG_ORDER_REC': '📝 Ordine preso!',
-            'MSG_SERVED': '🍽️ Servito!',
-            'MSG_TABLE_CLEARED': '🧹 Tavolo Sbarazzato!',
-            'MSG_TABLE_FREE': '🪑 Tavolo libero',
-            'FOOD_READY': 'pronto!',
-            'FOOD_TAKEN': 'prelevato!',
-            'TRICK_CLICKS': '🔑 Trucco:',
-            'CLICKS_LEFT': 'clic...',
-            'WASHING': '🧼 Lavando...',
-            'WASH_CLEAN': '✨ Piatti puliti!',
-            'WASH_NONE': '🧼 Nessun piatto',
-            'LEAVING_ANGRY': '😡 Se ne va!',
-            'TABLE_SHORT': 'Tav.'
-        }
     };
 
     function getLanguages() {
@@ -160,7 +91,10 @@
                 acqua: 1000,
                 birra: 1500,
                 cola: 1200,
-                caffe: 1500
+                caffe: 1500,
+                arancina: 3500,
+                cassata: 4000,
+                chinotto: 1200
             }
         }
     };
@@ -174,7 +108,10 @@
         'Caffè': 'Caffè',
         'Cola': 'Cola',
         'Acqua': 'Acqua',
-        'Birra': 'Birra'
+        'Birra': 'Birra',
+        'Arancina': 'Arancina',
+        'Cassata': 'Cassata',
+        'Chinotto': 'Chinotto'
     };
 
     const NPC_REGISTRY = {
@@ -417,6 +354,8 @@
             this.load.image('st_cuoco', 'assets/cucina/cuoco_cucina.png');
             this.load.image('st_bancone', 'assets/cucina/bancone_sala.png');
             this.load.image('phone', 'assets/cucina/phone.png'); 
+            this.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
+            this.load.image('Piatto Sporco', 'assets/Cibo/Piatto Sporco.png');
 
             Object.keys(FOOD_TEXTURES).forEach(foodName => {
                 const fileName = FOOD_TEXTURES[foodName];
@@ -483,14 +422,43 @@
         
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
-            
-            GAME.customersServed = 0;
-            GAME.dirtyPlates = 0;
-            GAME.lives = 3;
-            GAME.customersTarget = 0;
-            GAME.level = 0;
-            GAME.carriedOrder = null;
-            
+
+            // --- CORREZIONE CARICAMENTO DATI ---
+            // Prova a caricare il salvataggio dal localStorage
+            let savedData = null;
+            try {
+                const raw = localStorage.getItem('waitress_save_data');
+                if (raw) savedData = JSON.parse(raw);
+            } catch(e) {}
+
+            if (savedData && savedData.level > 0) {
+                // Riprende dal salvataggio (Livello 2, 3, ecc.)
+                GAME.score = savedData.score || 0;
+                GAME.level = savedData.level || 1;
+                GAME.customersServed = savedData.customersServed || 0;
+                GAME.lives = savedData.lives || 3;
+                GAME.dirtyPlates = savedData.dirtyPlates || 0;
+                GAME.customersTarget = 6 + (GAME.level * 4);
+                GAME.carriedOrder = null;
+
+                // Ripristina anche gli acquisti della casa
+                if (savedData.housePurchased && window.HOUSE_STATE) {
+                    window.HOUSE_STATE.purchased = savedData.housePurchased;
+                }
+                // Aggiorna i setting
+                if (savedData.settings) GAME.settings = savedData.settings;
+            } else {
+                // Partenza completamente nuova (Livello 1 da zero)
+                GAME.customersServed = 0;
+                GAME.dirtyPlates = 0;
+                GAME.lives = 3;
+                GAME.customersTarget = 10; // Livello 1 target
+                GAME.level = 1;
+                GAME.carriedOrder = null;
+                GAME.score = 0;
+            }
+            // --- FINE CORREZIONE ---
+
             this.gameActive = true;
             this.cheatClicks = 0;
             this.tutorialActive = false;
@@ -519,10 +487,6 @@
             if (typeof window.BathroomSystem === 'function') {
                 this.bathroom = new window.BathroomSystem(this);
             }
-
-            if (typeof window.PhoneSystem === 'function') {
-                this.phone = new window.PhoneSystem(this);
-            }
             
             if (typeof window.AIDialogueManager === 'function') {
                 this.aiManager = new window.AIDialogueManager(this);
@@ -533,40 +497,77 @@
 
             this.time.removeAllEvents();
 
+            // --- CORREZIONE TUTORIAL ---
             const tutorialSkipped = localStorage.getItem('waitress_tutorial_done') === 'true';
 
-            if (!tutorialSkipped && typeof window.TutorialSystem === 'function') {
-                this.tutorialActive = true;
-                this.tutorial = new TutorialSystem(this);
+            // Se il tutorial NON è mai stato fatto, forziamo la variabile GAME per farlo partire
+            if (!tutorialSkipped) {
+                window.FORCE_TUTORIAL = true;
             } else {
-                GAME.level = 1;
-                GAME.customersTarget = 6 + GAME.level * 4;
-                if (GAME.score === 0) {
-                    GAME.customersServed = 0;
-                    GAME.lives = 3;
-                    GAME.dirtyPlates = 0;
-                    GAME.carriedOrder = null;
+                window.FORCE_TUTORIAL = false;
+            }
+
+            if (window.FORCE_TUTORIAL && typeof window.TutorialSystem === 'function') {
+                this.tutorialActive = true;
+                this.tutorial = new window.TutorialSystem(this);
+                // Per sicurezza, se il tutorial viene caricato, resettiamo il livello di gioco
+                GAME.level = 0; 
+            } else {
+                // PARTE DEL GIOCO NORMALE (Livello 1 o superiore)
+                // ORA GAME.level HA GIA' IL VALORE CORRETTO (1 o 2 o 3)
+                if (GAME.customersTarget === 0) {
+                    GAME.customersTarget = 6 + GAME.level * 4;
                 }
                 this.startSpawning();
             }
+            // --- FINE CORREZIONE TUTORIAL ---
 
             this.createBanconeZone();
             this.createHUD();
             this.createNotepadUI();
+
+            if (typeof window.PhoneSystem === 'function') {
+                this.phone = new window.PhoneSystem(this);
+            }
+
             this.setupKeyboard();
-            
+
+            // Forza il caricamento del telefono sopra i muri
+            if (this.phone) {
+                if (this.phone.phoneSprite) this.phone.phoneSprite.setDepth(30);
+                if (this.phone.idleGlow) this.phone.idleGlow.setDepth(29);
+                if (this.phone.ringIndicator) this.phone.ringIndicator.setDepth(31);
+            }
+
             this.input.on('pointerdown', (pointer, currentlyOver) => {
                 if (!this.gameActive || pointer.y < 50) return;
-                
+
                 if (!currentlyOver || currentlyOver.length === 0) {
                     this.waitressState.targetX = pointer.x;
                     this.waitressState.targetY = pointer.y;
                     this.pendingAction = null;
                 }
             });
+
+            // FIX BIRRA ENORME
+            this.time.delayedCall(100, () => {
+                this.children.list.forEach(child => {
+                    if (child.texture && child.texture.key) {
+                        const key = child.texture.key.toLowerCase();
+                        if (key === 'birra') {
+                            if (typeof child.setDisplaySize === 'function') {
+                                child.setDisplaySize(28, 40);
+                            }
+                        }
+                    }
+                });
+            });
         }
 
         startSpawning() {
+            // SE IL TUTORIAL È ATTIVO, NON FAR SPAWNARE I CLIENTI
+            if (this.tutorialActive) return;
+
             if (GAME.customersTarget === 0) {
                 GAME.customersServed = 0;
                 GAME.dirtyPlates = 0;
@@ -619,11 +620,15 @@
                     key = child.textureKey.toLowerCase();
                 }
                 
-                if (key.includes('spillatore') || key.includes('birra')) {
+                if (key.includes('spillatore') || (key.includes('birra') && key.includes('st_'))) {
                     if (typeof child.setDisplaySize === 'function') {
                         child.setDisplaySize(90, 85);
                     }
-                } else if (key.includes('caffe')) {
+                } else if (key === 'birra') {
+                    if (typeof child.setDisplaySize === 'function') {
+                        child.setDisplaySize(28, 40);
+                    }
+                } else if (key.includes('caffe') && key.includes('st_')) {
                     if (typeof child.setDisplaySize === 'function') {
                         child.setDisplaySize(65, 65);
                     }
@@ -639,14 +644,14 @@
                     const st = this.kitchen.stations[stKey];
                     if (!st) return;
                     const lowerKey = stKey.toLowerCase();
-                    if (lowerKey.includes('spillatore') || lowerKey.includes('birra')) {
+                    if (lowerKey.includes('spillatore') || lowerKey.includes('st_birra')) {
                         ['sprite', 'graphic', 'image', 'icon', 'container'].forEach(prop => {
                             if (st[prop] && typeof st[prop].setDisplaySize === 'function') {
                                 st[prop].setDisplaySize(90, 85);
                             }
                         });
                     }
-                    if (lowerKey.includes('caffe')) {
+                    if (lowerKey.includes('caffe') && lowerKey.includes('st_')) {
                         ['sprite', 'graphic', 'image', 'icon', 'container'].forEach(prop => {
                             if (st[prop] && typeof st[prop].setDisplaySize === 'function') {
                                 st[prop].setDisplaySize(65, 65);
@@ -674,7 +679,10 @@
                 'Caffè': '☕',
                 'Cola': '🥤',
                 'Acqua': '💧',
-                'Birra': '🍺'
+                'Birra': '🍺',
+                'Arancina': '🧆',
+                'Cassata': '🍰',
+                'Chinotto': '🥤'
             };
             return map[foodName] || '🍽️';
         }
@@ -755,7 +763,8 @@
                     customer: null,
                     status: 'libero',
                     graphic: table,
-                    dirtyLabel: null
+                    dirtyLabel: null,
+                    dirtySprite: null
                 };
                 
                 table.setInteractive({ useHandCursor: true });
@@ -787,10 +796,14 @@
                 fontSize: '36px'
             }).setOrigin(0.5).setDepth(10);
 
-            if (this.tilemap && this.tilemap.wallGroup) {
-                this.physics.add.existing(this.waitress, false);
+            this.physics.add.existing(this.waitress, false);
+            if (this.waitress.body) {
                 this.waitress.body.setSize(24, 24);
                 this.waitress.body.setOffset(6, 12);
+                this.waitress.body.setCollideWorldBounds(true);
+            }
+
+            if (this.tilemap && this.tilemap.wallGroup) {
                 this.physics.add.collider(this.waitress, this.tilemap.wallGroup);
             }
         }
@@ -1028,10 +1041,18 @@
         }
         
         spawnCustomer() {
-            const freeTable = this.tables.find(t => !t.occupied);
+            // CERCA: o un tavolo libero, O UN TAVOLO SPORCO (se non ci sono liberi)
+            let freeTable = this.tables.find(t => !t.occupied && t.status === 'libero');
+            
+            // Se non ci sono tavoli liberi, cerca un tavolo sporco
+            if (!freeTable) {
+                freeTable = this.tables.find(t => !t.occupied && t.status === 'piatto_sporco');
+            }
+
+            // Se non ci sono tavoli liberi O sporchi disponibili, esci
             if (!freeTable) return;
             
-            const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra'];
+            const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto'];
             const selectedFood = foods[Phaser.Math.Between(0, foods.length - 1)];
             
             const names = Object.keys(NPC_REGISTRY);
@@ -1041,11 +1062,17 @@
 
             let gender = npcConfig.gender || 'male';
             let bringsChild = false;
+
+            // CALCOLO PENALITÀ PER TAVOLO SPORCO
+            let initialPatience = 100;
+            if (freeTable.status === 'piatto_sporco') {
+                initialPatience = 60; // Parte con meno pazienza!
+            }
             
             const customer = {
                 name: name,
                 order: selectedFood,
-                patience: 100,
+                patience: initialPatience, // Usa la pazienza calcolata
                 bladder: 0,
                 gender: gender,
                 isInBathroom: false,
@@ -1079,6 +1106,16 @@
             freeTable.occupied = true;
             freeTable.customer = customer;
             freeTable.status = 'ordinazione_pronta';
+
+            // Se il tavolo era sporco, nascondiamo l'immagine del piatto sporco ora che arriva il cliente
+            if (freeTable.dirtySprite) {
+                freeTable.dirtySprite.destroy();
+                freeTable.dirtySprite = null;
+            }
+            if (freeTable.dirtyLabel) {
+                freeTable.dirtyLabel.destroy();
+                freeTable.dirtyLabel = null;
+            }
             
             this.createCustomerGraphics(customer);
             this.customers.push(customer);
@@ -1209,12 +1246,21 @@
             triggerSfx('coin');
             
             customer.table.status = 'piatto_sporco';
-            customer.table.dirtyLabel = this.add.text(customer.table.x, customer.table.y + 15, '🍽️ SPORCO', {
-                fontSize: '8px',
-                color: '#e67e22',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
+            
+            // --- SOSTITUZIONE: CREA L'IMMAGINE DEL PIATTO SPORCO ---
+            if (this.textures.exists('Piatto Sporco')) {
+                customer.table.dirtySprite = this.add.image(customer.table.x, customer.table.y + 15, 'Piatto Sporco')
+                    .setDisplaySize(32, 32)
+                    .setDepth(6);
+            } else {
+                // Fallback al vecchio testo se l'immagine non viene caricata
+                customer.table.dirtyLabel = this.add.text(customer.table.x, customer.table.y + 15, '🍽️ SPORCO', {
+                    fontSize: '8px',
+                    color: '#e67e22',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }).setOrigin(0.5);
+            }
             
             this.removeCustomer(customer);
             
@@ -1228,7 +1274,7 @@
             customer.table.occupied = false;
             customer.table.customer = null;
             if (customer.table.status !== 'piatto_sporco') {
-                customer.table.status = 'libero';
+                customer.table.status = 'piatto_sporco';
             }
             
             if (customer.timerEvent) customer.timerEvent.remove();
@@ -1334,6 +1380,11 @@
                 GAME.dirtyPlates++;
                 this.updateHUD();
                 
+                // Pulisce l'immagine del piatto
+                if (table.dirtySprite) {
+                    table.dirtySprite.destroy();
+                    table.dirtySprite = null;
+                }
                 if (table.dirtyLabel) {
                     table.dirtyLabel.destroy();
                     table.dirtyLabel = null;
@@ -1373,6 +1424,9 @@
                     'panino': 'fornelli',
                     'risotto': 'fornelli',
                     'caponata': 'fornelli',
+                    'arancina': 'friggitrice',
+                    'cassata': 'forno',
+                    'chinotto': 'bevande',
                     'caffè': 'caffe', 'caffe': 'caffe',
                     'birra': 'spillatore', 'cola': 'bevande',
                     'acqua': 'frigo'
@@ -1429,6 +1483,25 @@
                 
                 const textureKey = this.getFoodTexture(food);
                 if (textureKey) {
+                    const tempImg = this.add.image(this.waitress.x, this.waitress.y - 20, food);
+                    
+                    if (food.toLowerCase() === 'birra') {
+                        tempImg.setDisplaySize(28, 40);
+                    } else {
+                        tempImg.setDisplaySize(32, 32);
+                    }
+                    
+                    tempImg.setDepth(200);
+
+                    this.tweens.add({
+                        targets: tempImg,
+                        y: this.waitress.y - 70,
+                        alpha: 0,
+                        duration: 1000,
+                        ease: 'Cubic.easeOut',
+                        onComplete: () => tempImg.destroy()
+                    });
+
                     this.showFloatingText(this.waitress.x, this.waitress.y - 40, `📦 ${food} ${t('FOOD_READY')}`, '#2ecc71');
                 } else {
                     const emoji = this.getFoodEmoji(food);
@@ -1510,21 +1583,13 @@
             if (!this.gameActive) return;
 
             if (!this.tutorialActive) {
-                if (this.kitchen) {
-                    this.kitchen.update();
-                }
-
-                if (this.bathroom) {
-                    this.bathroom.update(time, delta);
-                }
-
-                if (this.phone) {
-                    this.phone.update(time, delta);
-                }
-
+                if (this.kitchen) this.kitchen.update();
+                if (this.bathroom) this.bathroom.update(time, delta);
+                if (this.phone) this.phone.update(time, delta);
                 this.fixKitchenScales();
             }
-            
+
+            // Cheat code
             if (Phaser.Input.Keyboard.JustDown(this.keys.k) && this.keys.shift.isDown) {
                 GAME.customersServed = GAME.customersTarget;
                 GAME.score += 100;
@@ -1538,9 +1603,10 @@
                 return;
             }
 
+            // --- MOVIMENTO (FISSO GLI SPASMI) ---
             let moveX = 0, moveY = 0;
             const controls = GAME.settings.controls || 'wasd';
-            
+
             if (controls === 'wasd') {
                 if (this.keys.w?.isDown) moveY = -1;
                 if (this.keys.s?.isDown) moveY = 1;
@@ -1552,48 +1618,75 @@
                 if (this.keys.left?.isDown) moveX = -1;
                 if (this.keys.right?.isDown) moveX = 1;
             }
-            
+
             if (moveX !== 0 && moveY !== 0) {
                 moveX *= 0.7071;
                 moveY *= 0.7071;
             }
-            
+
+            const targetX = this.pendingAction ? (this.pendingAction.table?.x ?? this.waitressState.targetX) : this.waitressState.targetX;
+            const targetY = this.pendingAction ? (this.pendingAction.table?.y ? (this.pendingAction.table.y + 32) : this.waitressState.targetY) : this.waitressState.targetY;
+
+            // GESTIONE DELLA VELOCITÀ
             if (moveX !== 0 || moveY !== 0) {
-                this.waitress.x += moveX * CONFIG.waitress.speed * (delta / 1000);
-                this.waitress.y += moveY * CONFIG.waitress.speed * (delta / 1000);
+                // Movimento tramite tastiera
+                if (this.waitress.body) {
+                    this.waitress.body.setVelocity(moveX * CONFIG.waitress.speed, moveY * CONFIG.waitress.speed);
+                }
+                // Reimposta il target su se stessa per evitare conflitti col click
                 this.waitressState.targetX = this.waitress.x;
                 this.waitressState.targetY = this.waitress.y;
             } else {
+                // Movimento tramite click o auto-pilot
                 const dist = Phaser.Math.Distance.Between(
                     this.waitress.x, this.waitress.y,
-                    this.waitressState.targetX, this.waitressState.targetY
+                    targetX, targetY
                 );
-                
-                if (dist > 5) {
+
+                if (dist > 12) { // Aumentata leggermente la soglia per evitare micro-oscillazioni
                     const angle = Phaser.Math.Angle.Between(
                         this.waitress.x, this.waitress.y,
-                        this.waitressState.targetX, this.waitressState.targetY
+                        targetX, targetY
                     );
-                    
-                    this.waitress.x += Math.cos(angle) * CONFIG.waitress.speed * (delta / 1000);
-                    this.waitress.y += Math.sin(angle) * CONFIG.waitress.speed * (delta / 1000);
+
+                    if (this.waitress.body) {
+                        this.waitress.body.setVelocity(
+                            Math.cos(angle) * CONFIG.waitress.speed,
+                            Math.sin(angle) * CONFIG.waitress.speed
+                        );
+                    }
+                } else {
+                    // Arrivati a destinazione, blocca la fisica e allinea tutto
+                    if (this.waitress.body) {
+                        this.waitress.body.setVelocity(0, 0);
+                    }
+                    this.waitress.x = targetX;
+                    this.waitress.y = targetY;
+                    this.waitressState.targetX = this.waitress.x;
+                    this.waitressState.targetY = this.waitress.y;
                 }
             }
-            
-            this.waitress.x = Phaser.Math.Clamp(this.waitress.x, 30, 540);
-            this.waitress.y = Phaser.Math.Clamp(this.waitress.y, 70, 560);
-            
+
+            // Limiti di movimento e ombra
+            if (this.waitress.body) {
+                this.waitress.x = Phaser.Math.Clamp(this.waitress.x, 30, 540);
+                this.waitress.y = Phaser.Math.Clamp(this.waitress.y, 70, 560);
+            }
+
             if (this.waitressShadow) {
                 this.waitressShadow.x = this.waitress.x;
                 this.waitressShadow.y = this.waitress.y + 16;
             }
-            
+
+            // --- INTERAZIONI (Senza spam) ---
             if (this.pendingAction) {
-                const targetX = this.pendingAction.table?.x || this.waitressState.targetX;
-                const targetY = this.pendingAction.table?.y || this.waitressState.targetY;
-                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, targetX, targetY);
-                
+                // Calcola la distanza dal bersaglio
+                const actionTargetX = this.pendingAction.table?.x ?? this.waitressState.targetX;
+                const actionTargetY = this.pendingAction.table?.y ? (this.pendingAction.table.y + 32) : this.waitressState.targetY;
+                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, actionTargetX, actionTargetY);
+
                 if (dist <= CONFIG.waitress.interactRange) {
+                    // Variabile per evitare di ripetere la stessa azione più volte di fila mentre ci si avvicina
                     if (this.pendingAction.type === 'table') {
                         this.interactWithTable(this.pendingAction.table);
                     } else if (this.pendingAction.type === 'bancone_interact') {
@@ -1601,10 +1694,10 @@
                     } else if (this.pendingAction.type === 'wash') {
                         this.washDishes();
                     }
-                    this.pendingAction = null;
+                    this.pendingAction = null; // Resetta l'azione solo dopo averla eseguita
                 }
             }
-            
+
             if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
                 this.interactWithClosest();
             }
@@ -1642,6 +1735,7 @@
             this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
             triggerSfx('coin');
             
+            // Salva i dati SENZA usare un SaveManager esterno (usa localStorage diretto)
             const saveData = {
                 score: GAME.score,
                 level: GAME.level + 1,
@@ -1652,13 +1746,8 @@
                 housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
             };
             
-            if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
-                window.SaveManager.saveGame(saveData).then(() => {
-                    console.log("💾 Gioco salvato correttamente!");
-                }).catch(err => {
-                    console.error("Errore salvataggio:", err);
-                });
-            }
+            // Salva in localStorage manualmente
+            localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
             
             this.time.delayedCall(1200, () => {
                 if (window.LevelSummaryScene && !this.scene.get('LevelSummary')) {
@@ -1666,6 +1755,7 @@
                 }
                 
                 if (this.scene.get('LevelSummary')) {
+                    // PASSIAMO I DATI CORRETTI AL RIASSUNTO
                     this.scene.start('LevelSummary', {
                         score: GAME.score,
                         served: GAME.customersServed,
@@ -1674,6 +1764,7 @@
                         level: GAME.level
                     });
                 } else {
+                    // Fallback se manca la scena
                     GAME.level++;
                     GAME.customersServed = 0;
                     GAME.lives = 3;
@@ -2103,7 +2194,7 @@
         scene: scenesList,
         physics: CONFIG.physics,
         scale: {
-            model: Phaser.Scale.FIT,
+            mode: Phaser.Scale.FIT,
             autoCenter: Phaser.Scale.CENTER_BOTH
         },
         render: {
@@ -2125,4 +2216,4 @@
         const game = new Phaser.Game(config);
         window.game = game;
     });
-}
+})();
