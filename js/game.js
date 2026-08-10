@@ -423,7 +423,6 @@
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
 
-            // --- CORREZIONE CARICAMENTO DATI ---
             // Prova a caricare il salvataggio dal localStorage
             let savedData = null;
             try {
@@ -441,23 +440,20 @@
                 GAME.customersTarget = 6 + (GAME.level * 4);
                 GAME.carriedOrder = null;
 
-                // Ripristina anche gli acquisti della casa
                 if (savedData.housePurchased && window.HOUSE_STATE) {
                     window.HOUSE_STATE.purchased = savedData.housePurchased;
                 }
-                // Aggiorna i setting
                 if (savedData.settings) GAME.settings = savedData.settings;
             } else {
                 // Partenza completamente nuova (Livello 1 da zero)
                 GAME.customersServed = 0;
                 GAME.dirtyPlates = 0;
                 GAME.lives = 3;
-                GAME.customersTarget = 10; // Livello 1 target
+                GAME.customersTarget = 10;
                 GAME.level = 1;
                 GAME.carriedOrder = null;
                 GAME.score = 0;
             }
-            // --- FINE CORREZIONE ---
 
             this.gameActive = true;
             this.cheatClicks = 0;
@@ -497,10 +493,8 @@
 
             this.time.removeAllEvents();
 
-            // --- CORREZIONE TUTORIAL ---
             const tutorialSkipped = localStorage.getItem('waitress_tutorial_done') === 'true';
 
-            // Se il tutorial NON è mai stato fatto, forziamo la variabile GAME per farlo partire
             if (!tutorialSkipped) {
                 window.FORCE_TUTORIAL = true;
             } else {
@@ -510,17 +504,13 @@
             if (window.FORCE_TUTORIAL && typeof window.TutorialSystem === 'function') {
                 this.tutorialActive = true;
                 this.tutorial = new window.TutorialSystem(this);
-                // Per sicurezza, se il tutorial viene caricato, resettiamo il livello di gioco
                 GAME.level = 0; 
             } else {
-                // PARTE DEL GIOCO NORMALE (Livello 1 o superiore)
-                // ORA GAME.level HA GIA' IL VALORE CORRETTO (1 o 2 o 3)
                 if (GAME.customersTarget === 0) {
                     GAME.customersTarget = 6 + GAME.level * 4;
                 }
                 this.startSpawning();
             }
-            // --- FINE CORREZIONE TUTORIAL ---
 
             this.createBanconeZone();
             this.createHUD();
@@ -532,22 +522,11 @@
 
             this.setupKeyboard();
 
-            // Forza il caricamento del telefono sopra i muri
             if (this.phone) {
                 if (this.phone.phoneSprite) this.phone.phoneSprite.setDepth(30);
                 if (this.phone.idleGlow) this.phone.idleGlow.setDepth(29);
                 if (this.phone.ringIndicator) this.phone.ringIndicator.setDepth(31);
             }
-
-            this.input.on('pointerdown', (pointer, currentlyOver) => {
-                if (!this.gameActive || pointer.y < 50) return;
-
-                if (!currentlyOver || currentlyOver.length === 0) {
-                    this.waitressState.targetX = pointer.x;
-                    this.waitressState.targetY = pointer.y;
-                    this.pendingAction = null;
-                }
-            });
 
             // FIX BIRRA ENORME
             this.time.delayedCall(100, () => {
@@ -565,7 +544,6 @@
         }
 
         startSpawning() {
-            // SE IL TUTORIAL È ATTIVO, NON FAR SPAWNARE I CLIENTI
             if (this.tutorialActive) return;
 
             if (GAME.customersTarget === 0) {
@@ -769,9 +747,12 @@
                 
                 table.setInteractive({ useHandCursor: true });
                 table.on('pointerdown', () => {
-                    this.waitressState.targetX = pos.x;
-                    this.waitressState.targetY = pos.y + 32;
-                    this.pendingAction = { type: 'table', table: tableData };
+                    const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, pos.x, pos.y);
+                    if (dist <= CONFIG.waitress.interactRange) {
+                        this.interactWithTable(tableData);
+                    } else {
+                        this.showFloatingText(pos.x, pos.y - 40, "Avvicinati con WASD!", '#ffd700');
+                    }
                 });
                 
                 this.tables.push(tableData);
@@ -783,9 +764,12 @@
             passZone.setDepth(6);
             passZone.setInteractive({ useHandCursor: true });
             passZone.on('pointerdown', () => {
-                this.waitressState.targetX = 550;
-                this.waitressState.targetY = this.waitress.y;
-                this.pendingAction = { type: 'bancone_interact' };
+                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 550, this.waitress.y);
+                if (dist <= CONFIG.waitress.interactRange) {
+                    this.interactWithBancone();
+                } else {
+                    this.showFloatingText(560, this.waitress.y - 30, "Avvicinati con WASD!", '#ffd700');
+                }
             });
         }
         
@@ -878,9 +862,12 @@
             }).setOrigin(0.5).setDepth(3);
             
             sinkBg.on('pointerdown', () => {
-                this.waitressState.targetX = 135;
-                this.waitressState.targetY = 540;
-                this.pendingAction = { type: 'wash' };
+                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 100, 540);
+                if (dist <= CONFIG.waitress.interactRange) {
+                    this.washDishes();
+                } else {
+                    this.showFloatingText(75, 510, "Avvicinati con WASD!", '#ffd700');
+                }
             });
         }
         
@@ -1041,15 +1028,12 @@
         }
         
         spawnCustomer() {
-            // CERCA: o un tavolo libero, O UN TAVOLO SPORCO (se non ci sono liberi)
             let freeTable = this.tables.find(t => !t.occupied && t.status === 'libero');
             
-            // Se non ci sono tavoli liberi, cerca un tavolo sporco
             if (!freeTable) {
                 freeTable = this.tables.find(t => !t.occupied && t.status === 'piatto_sporco');
             }
 
-            // Se non ci sono tavoli liberi O sporchi disponibili, esci
             if (!freeTable) return;
             
             const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto'];
@@ -1063,16 +1047,15 @@
             let gender = npcConfig.gender || 'male';
             let bringsChild = false;
 
-            // CALCOLO PENALITÀ PER TAVOLO SPORCO
             let initialPatience = 100;
             if (freeTable.status === 'piatto_sporco') {
-                initialPatience = 60; // Parte con meno pazienza!
+                initialPatience = 60;
             }
             
             const customer = {
                 name: name,
                 order: selectedFood,
-                patience: initialPatience, // Usa la pazienza calcolata
+                patience: initialPatience,
                 bladder: 0,
                 gender: gender,
                 isInBathroom: false,
@@ -1107,7 +1090,6 @@
             freeTable.customer = customer;
             freeTable.status = 'ordinazione_pronta';
 
-            // Se il tavolo era sporco, nascondiamo l'immagine del piatto sporco ora che arriva il cliente
             if (freeTable.dirtySprite) {
                 freeTable.dirtySprite.destroy();
                 freeTable.dirtySprite = null;
@@ -1162,9 +1144,12 @@
             }).setOrigin(0.5).setDepth(5).setInteractive({ useHandCursor: true });
             
             const handleTableClick = () => {
-                this.waitressState.targetX = table.x;
-                this.waitressState.targetY = table.y + 32;
-                this.pendingAction = { type: 'table', table: table };
+                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, table.x, table.y);
+                if (dist <= CONFIG.waitress.interactRange) {
+                    this.interactWithTable(table);
+                } else {
+                    this.showFloatingText(table.x, table.y - 40, "Avvicinati con WASD!", '#ffd700');
+                }
             };
 
             const handleChatClick = (pointer, localX, localY, event) => {
@@ -1247,13 +1232,11 @@
             
             customer.table.status = 'piatto_sporco';
             
-            // --- SOSTITUZIONE: CREA L'IMMAGINE DEL PIATTO SPORCO ---
             if (this.textures.exists('Piatto Sporco')) {
                 customer.table.dirtySprite = this.add.image(customer.table.x, customer.table.y + 15, 'Piatto Sporco')
                     .setDisplaySize(32, 32)
                     .setDepth(6);
             } else {
-                // Fallback al vecchio testo se l'immagine non viene caricata
                 customer.table.dirtyLabel = this.add.text(customer.table.x, customer.table.y + 15, '🍽️ SPORCO', {
                     fontSize: '8px',
                     color: '#e67e22',
@@ -1369,6 +1352,12 @@
             }
             
             if (table.status === 'piatto_sporco') {
+                // CONTROLLO SPAZIO VASSOIO: Serve almeno 1 slot libero!
+                if (this.waitressState.tray.length >= CONFIG.tray.maxTotal) {
+                    this.showFloatingText(this.waitress.x, this.waitress.y - 40, 'Vassoio pieno!', '#ff4444');
+                    triggerSfx('alert');
+                    return;
+                }
                 if (GAME.dirtyPlates >= CONFIG.dishes.maxDirty) {
                     this.showFloatingText(this.waitress.x, this.waitress.y - 40, t('ERR_SINK_FULL'), '#ff4444');
                     triggerSfx('alert');
@@ -1377,10 +1366,14 @@
                 
                 triggerSfx('pickup');
                 table.status = 'libero';
-                GAME.dirtyPlates++;
+                
+                // Invece di aumentare subito dirtyPlates, aggiungiamo un piatto al vassoio
+                this.waitressState.tray.push({ food: 'piatto_sporco' });
+                
+                this.updateTrayGraphics();
                 this.updateHUD();
                 
-                // Pulisce l'immagine del piatto
+                // Pulisce l'immagine del piatto dal tavolo
                 if (table.dirtySprite) {
                     table.dirtySprite.destroy();
                     table.dirtySprite = null;
@@ -1471,6 +1464,15 @@
                 triggerSfx('alert');
                 return;
             }
+
+            // --- NUOVO CONTROLLO: Non puoi prendere cibo se hai un piatto sporco ---
+            const hasDirtyPlate = this.waitressState.tray.some(item => item.food === 'piatto_sporco');
+            if (hasDirtyPlate) {
+                this.showFloatingText(this.waitress.x, this.waitress.y - 30, 'Svuota prima il piatto sporco!', '#ff4444');
+                triggerSfx('alert');
+                return;
+            }
+            // ----------------------------------------------------------------
             
             if (!this.kitchen) return;
 
@@ -1530,7 +1532,27 @@
                 triggerSfx('click');
                 return;
             }
-            
+
+            // Controlla quanti piatti sporci ci sono nel vassoio
+            const dirtyInTray = this.waitressState.tray.filter(item => item.food === 'piatto_sporco').length;
+            if (dirtyInTray > 0) {
+                // 1. SCARICA I PIATTI SPORCI NEL LAVELLO (Non li lava, li deposita)
+                for (let i = this.waitressState.tray.length - 1; i >= 0; i--) {
+                    if (this.waitressState.tray[i].food === 'piatto_sporco') {
+                        this.waitressState.tray.splice(i, 1);
+                        GAME.dirtyPlates++;
+                        break; // Rimuove solo 1 piatto alla volta
+                    }
+                }
+                
+                this.updateTrayGraphics();
+                this.updateHUD();
+                this.showFloatingText(75, 510, '🧹 Piatto depositato!', '#3498db');
+                triggerSfx('pickup');
+                return;
+            }
+
+            // 2. LAVA I PIATTI (Se il giocatore clicca di nuovo e non ha piatti nel vassoio)
             if (GAME.dirtyPlates > 0) {
                 this.gameActive = false;
                 this.showFloatingText(75, 510, t('WASHING'), '#3498db');
@@ -1551,10 +1573,25 @@
         
         updateTrayGraphics() {
             const count = this.waitressState.tray.length;
+            // Conta quanti piatti sporci ci sono nel vassoio
+            const dirtyCount = this.waitressState.tray.filter(item => item.food === 'piatto_sporco').length;
+            const foodCount = count - dirtyCount;
             let emoji = '👩‍🍳';
-            if (count === 1) emoji = '👩‍🍳🍽️';
-            else if (count === 2) emoji = '👩‍🍳🥘🍽️';
-            else if (count >= 3) emoji = '👩‍🍳🍕🍔🥤';
+            
+            if (dirtyCount > 0) {
+                // Se ci sono piatti sporchi, mostra i piatti sporchi
+                if (dirtyCount === 1) emoji = '👩‍🍳🍽️';
+                else if (dirtyCount === 2) emoji = '👩‍🍳🍽️🍽️';
+                else if (dirtyCount >= 3) emoji = '👩‍🍳🍽️🍽️🍽️';
+                
+                // Se ci sono anche cibi, aggiungi un'indicazione visiva
+                if (foodCount > 0) emoji = '👩‍🍳🍕🍽️';
+            } else {
+                // Se non ci sono piatti sporchi, mostra il cibo normale
+                if (count === 1) emoji = '👩‍🍳🍽️';
+                else if (count === 2) emoji = '👩‍🍳🥘🍽️';
+                else if (count >= 3) emoji = '👩‍🍳🍕🍔🥤';
+            }
             
             this.waitress.setText(emoji);
         }
@@ -1603,7 +1640,7 @@
                 return;
             }
 
-            // --- MOVIMENTO (FISSO GLI SPASMI) ---
+            // --- MOVIMENTO SOLO TASTIERA (WASD) ---
             let moveX = 0, moveY = 0;
             const controls = GAME.settings.controls || 'wasd';
 
@@ -1624,50 +1661,20 @@
                 moveY *= 0.7071;
             }
 
-            const targetX = this.pendingAction ? (this.pendingAction.table?.x ?? this.waitressState.targetX) : this.waitressState.targetX;
-            const targetY = this.pendingAction ? (this.pendingAction.table?.y ? (this.pendingAction.table.y + 32) : this.waitressState.targetY) : this.waitressState.targetY;
-
-            // GESTIONE DELLA VELOCITÀ
+            // GESTIONE DELLA VELOCITÀ (SOLO SE SI PREMONO I TASTI)
             if (moveX !== 0 || moveY !== 0) {
                 // Movimento tramite tastiera
                 if (this.waitress.body) {
                     this.waitress.body.setVelocity(moveX * CONFIG.waitress.speed, moveY * CONFIG.waitress.speed);
                 }
-                // Reimposta il target su se stessa per evitare conflitti col click
-                this.waitressState.targetX = this.waitress.x;
-                this.waitressState.targetY = this.waitress.y;
             } else {
-                // Movimento tramite click o auto-pilot
-                const dist = Phaser.Math.Distance.Between(
-                    this.waitress.x, this.waitress.y,
-                    targetX, targetY
-                );
-
-                if (dist > 12) { // Aumentata leggermente la soglia per evitare micro-oscillazioni
-                    const angle = Phaser.Math.Angle.Between(
-                        this.waitress.x, this.waitress.y,
-                        targetX, targetY
-                    );
-
-                    if (this.waitress.body) {
-                        this.waitress.body.setVelocity(
-                            Math.cos(angle) * CONFIG.waitress.speed,
-                            Math.sin(angle) * CONFIG.waitress.speed
-                        );
-                    }
-                } else {
-                    // Arrivati a destinazione, blocca la fisica e allinea tutto
-                    if (this.waitress.body) {
-                        this.waitress.body.setVelocity(0, 0);
-                    }
-                    this.waitress.x = targetX;
-                    this.waitress.y = targetY;
-                    this.waitressState.targetX = this.waitress.x;
-                    this.waitressState.targetY = this.waitress.y;
+                // Se non premi nulla, fermati completamente
+                if (this.waitress.body) {
+                    this.waitress.body.setVelocity(0, 0);
                 }
             }
 
-            // Limiti di movimento e ombra
+            // Limiti di movimento (non uscire dalla mappa) e ombra
             if (this.waitress.body) {
                 this.waitress.x = Phaser.Math.Clamp(this.waitress.x, 30, 540);
                 this.waitress.y = Phaser.Math.Clamp(this.waitress.y, 70, 560);
@@ -1676,26 +1683,6 @@
             if (this.waitressShadow) {
                 this.waitressShadow.x = this.waitress.x;
                 this.waitressShadow.y = this.waitress.y + 16;
-            }
-
-            // --- INTERAZIONI (Senza spam) ---
-            if (this.pendingAction) {
-                // Calcola la distanza dal bersaglio
-                const actionTargetX = this.pendingAction.table?.x ?? this.waitressState.targetX;
-                const actionTargetY = this.pendingAction.table?.y ? (this.pendingAction.table.y + 32) : this.waitressState.targetY;
-                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, actionTargetX, actionTargetY);
-
-                if (dist <= CONFIG.waitress.interactRange) {
-                    // Variabile per evitare di ripetere la stessa azione più volte di fila mentre ci si avvicina
-                    if (this.pendingAction.type === 'table') {
-                        this.interactWithTable(this.pendingAction.table);
-                    } else if (this.pendingAction.type === 'bancone_interact') {
-                        this.interactWithBancone();
-                    } else if (this.pendingAction.type === 'wash') {
-                        this.washDishes();
-                    }
-                    this.pendingAction = null; // Resetta l'azione solo dopo averla eseguita
-                }
             }
 
             if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
