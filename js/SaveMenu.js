@@ -13,11 +13,14 @@ class SaveMenu {
         this.buttons.forEach(b => b.destroy());
         this.buttons = [];
 
-        
-        const data = await window.SaveManager.loadGame();
-        const hasSave = data !== null;
+        // --- FIX: Legge direttamente da localStorage (che è sempre popolato) ---
+        let hasSave = false;
+        try {
+            const raw = localStorage.getItem('waitress_save_data');
+            if (raw) hasSave = true;
+        } catch(e) {}
+        // ----------------------------------------------------------------
 
-        
         this.overlay = this.scene.add.rectangle(400, 300, 620, 380, 0x110906, 0.9);
         this.overlay.setStrokeStyle(2, 0xd27d2d);
         this.overlay.setDepth(200);
@@ -42,22 +45,27 @@ class SaveMenu {
             btn.on('pointerdown', () => {
                 triggerSfx('click');
                 callback();
-                
             });
 
             btn.on('pointerover', () => btn.setFillStyle(0xe59866));
             btn.on('pointerout', () => btn.setFillStyle(color));
         };
 
-        
+        // --- SE IL SALVATAGGIO ESISTE, CREA IL PULSANTE CONTINUA ---
         if (hasSave) {
             createBtn(200, "▶ CONTINUA PARTITA", 0x27ae60, async () => {
-                const loadedData = await window.SaveManager.loadGame();
-                if (loadedData) {
-                    Object.assign(GAME, loadedData);
-                    localStorage.setItem('waitress_tutorial_done', 'true');
-                    this.closeMenu();
-                    this.scene.scene.start('Game');
+                // Carica i dati e ripristina la variabile GAME
+                try {
+                    const raw = localStorage.getItem('waitress_save_data');
+                    if (raw) {
+                        const loadedData = JSON.parse(raw);
+                        Object.assign(GAME, loadedData);
+                        localStorage.setItem('waitress_tutorial_done', 'true');
+                        this.closeMenu();
+                        this.scene.scene.start('Game');
+                    }
+                } catch (e) {
+                    console.error("Errore nel caricamento del salvataggio", e);
                 }
             });
             createBtn(270, "🔄 NUOVA PARTITA", 0xe74c3c, () => {
@@ -71,7 +79,6 @@ class SaveMenu {
             });
         }
 
-        
         createBtn(340, "⬇️ ESPORTA BACKUP (Salva su PC)", 0x2980b9, async () => {
             await window.SaveManager.exportBackup();
         });
@@ -108,6 +115,9 @@ class SaveMenu {
         GAME.level = 1;
         GAME.customersServed = 0;
         if (window.HOUSE_STATE) window.HOUSE_STATE.purchased = [];
+
+        // Pulisce anche il localStorage per evitare conflitti
+        localStorage.removeItem('waitress_save_data');
 
         const overlay = this.scene.add.rectangle(400, 300, 500, 200, 0x221111, 0.95);
         overlay.setStrokeStyle(2, 0xd27d2d);

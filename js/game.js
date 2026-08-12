@@ -75,7 +75,7 @@
         },
         customers: {
             patienceDuration: 40000,
-            eatingDuration: 3500
+            eatingDuration: 5500
         },
         dishes: {
             maxDirty: 8,
@@ -357,6 +357,11 @@
             this.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
             this.load.image('Piatto Sporco', 'assets/Cibo/Piatto Sporco.png');
 
+            // --- IMMAGINI DINAMICHE PER IL LAVELLO ---
+            this.load.image('Lavello_vuoto', 'assets/Lavello/Lavello_vuoto.png');
+            this.load.image('Lavello_mezzopieno', 'assets/Lavello/Lavello_mezzopieno.png');
+            this.load.image('Lavello_pieno', 'assets/Lavello/Lavello_pieno.png');
+
             Object.keys(FOOD_TEXTURES).forEach(foodName => {
                 const fileName = FOOD_TEXTURES[foodName];
                 this.load.image(foodName, `assets/Cibo/${fileName}.png`);
@@ -418,6 +423,7 @@
             this.cheatClicks = 0;
             this.bathroom = null;
             this.phone = null;
+            this.isPaused = false;
         }
         
         create() {
@@ -848,20 +854,15 @@
         }
         
         createSink() {
-            const sinkBg = this.add.rectangle(75, 540, 95, 45, 0x7f8c8d);
-            sinkBg.setStrokeStyle(2.5, 0x95a5a6);
-            sinkBg.setDepth(2);
-            sinkBg.setInteractive({ useHandCursor: true });
+            // --- CREAZIONE DELL'IMMAGINE DINAMICA DEL LAVELLO ---
+            // Posizioniamo l'immagine al centro del lavello (x: 75 + 47.5 = 122.5, y: 540)
+            this.sinkSprite = this.add.image(122.5, 540, 'Lavello_vuoto').setDepth(2);
+            this.sinkSprite.setDisplaySize(95, 45); // Stessa dimensione del vecchio rettangolo
             
-            this.sinkText = this.add.text(75, 535, `${t('LAVELLO')}\n0`, {
-                fontSize: '10px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka',
-                align: 'center'
-            }).setOrigin(0.5).setDepth(3);
+            // Rendi il lavello interattivo (l'interazione avviene tramite il corpo dell'immagine)
+            this.sinkSprite.setInteractive({ useHandCursor: true });
             
-            sinkBg.on('pointerdown', () => {
+            this.sinkSprite.on('pointerdown', () => {
                 const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 100, 540);
                 if (dist <= CONFIG.waitress.interactRange) {
                     this.washDishes();
@@ -869,6 +870,27 @@
                     this.showFloatingText(75, 510, "Avvicinati con WASD!", '#ffd700');
                 }
             });
+
+            // Chiamiamo subito l'aggiornamento per impostare l'immagine corretta (0 piatti)
+            this.updateSinkSprite();
+        }
+
+        updateSinkSprite() {
+            if (!this.sinkSprite) return;
+            let textureKey = 'Lavello_vuoto';
+            const plates = GAME.dirtyPlates;
+            if (plates >= 8) {
+                textureKey = 'Lavello_pieno';
+            } else if (plates >= 2) {
+                textureKey = 'Lavello_mezzopieno';
+            } else {
+                textureKey = 'Lavello_vuoto';
+            }
+            // Cambia l'immagine solo se è diversa da quella attuale
+            if (this.sinkSprite.texture && this.sinkSprite.texture.key !== textureKey) {
+                this.sinkSprite.setTexture(textureKey);
+                this.sinkSprite.setDisplaySize(95, 45); // Reimposta la dimensione
+            }
         }
         
         createNotepadUI() {
@@ -998,8 +1020,70 @@
                 down: Phaser.Input.Keyboard.KeyCodes.DOWN,
                 left: Phaser.Input.Keyboard.KeyCodes.LEFT,
                 right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
-                space: Phaser.Input.Keyboard.KeyCodes.SPACE
+                space: Phaser.Input.Keyboard.KeyCodes.SPACE,
+                esc: Phaser.Input.Keyboard.KeyCodes.ESC,
+                p: Phaser.Input.Keyboard.KeyCodes.P
             });
+        }
+
+        togglePause() {
+            this.isPaused = !this.isPaused;
+
+            if (this.isPaused) {
+                this.gameActive = false;
+                this.physics.pause();
+                this.time.paused = true;
+
+                this.pauseBg = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.7).setDepth(200);
+                this.pauseBg.setInteractive();
+
+                this.pauseTitle = this.add.text(400, 220, '⏸️ PAUSA', {
+                    fontSize: '48px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+                }).setOrigin(0.5).setDepth(201);
+
+                this.createPauseButton(400, 300, 'RIPRENDI', '#2ecc71', () => {
+                    this.togglePause();
+                });
+
+                this.createPauseButton(400, 360, 'RICOMINCIA LIVELLO', '#e67e22', () => {
+                    this.togglePause();
+                    this.scene.restart();
+                });
+
+                this.createPauseButton(400, 420, 'TORNA AL MENU', '#e74c3c', () => {
+                    this.togglePause();
+                    this.scene.start('Menu');
+                });
+            } else {
+                this.gameActive = true;
+                this.physics.resume();
+                this.time.paused = false;
+
+                if (this.pauseBg) this.pauseBg.destroy();
+                if (this.pauseTitle) this.pauseTitle.destroy();
+                if (this.pauseButtonContainer) {
+                    this.pauseButtonContainer.destroy();
+                    this.pauseButtonContainer = null;
+                }
+            }
+        }
+
+        createPauseButton(x, y, text, color, callback) {
+            if (!this.pauseButtonContainer) {
+                this.pauseButtonContainer = this.add.container(0, 0).setDepth(201);
+            }
+            
+            const bg = this.add.rectangle(x, y, 280, 40, 0x000000).setStrokeStyle(2, color);
+            const txt = this.add.text(x, y, text, {
+                fontSize: '16px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+            
+            bg.setInteractive({ useHandCursor: true });
+            bg.on('pointerover', () => { bg.setFillStyle(color, 0.3); });
+            bg.on('pointerout', () => { bg.setFillStyle(0x000000, 1); });
+            bg.on('pointerdown', callback);
+            
+            this.pauseButtonContainer.add([bg, txt]);
         }
         
         updateHUD() {
@@ -1022,9 +1106,8 @@
             if (this.platesText && this.platesText.active) {
                 this.platesText.setText(`${t('PIATTI')} ${GAME.dirtyPlates}`);
             }
-            if (this.sinkText && this.sinkText.active) {
-                this.sinkText.setText(`${t('LAVELLO')}\n${GAME.dirtyPlates}`);
-            }
+
+            this.updateSinkSprite(); // Aggiorna l'immagine del lavello
         }
         
         spawnCustomer() {
@@ -1202,7 +1285,8 @@
                         this.angryLeave(customer);
                     }
                 },
-                loop: true
+                loop: true,
+                paused: false
             });
         }
         
@@ -1464,15 +1548,6 @@
                 triggerSfx('alert');
                 return;
             }
-
-            // --- NUOVO CONTROLLO: Non puoi prendere cibo se hai un piatto sporco ---
-            const hasDirtyPlate = this.waitressState.tray.some(item => item.food === 'piatto_sporco');
-            if (hasDirtyPlate) {
-                this.showFloatingText(this.waitress.x, this.waitress.y - 30, 'Svuota prima il piatto sporco!', '#ff4444');
-                triggerSfx('alert');
-                return;
-            }
-            // ----------------------------------------------------------------
             
             if (!this.kitchen) return;
 
@@ -1617,7 +1692,9 @@
         }
         
         update(time, delta) {
-            if (!this.gameActive) return;
+            if (!this.gameActive && !this.isPaused) return;
+
+            if (this.isPaused) return;
 
             if (!this.tutorialActive) {
                 if (this.kitchen) this.kitchen.update();
@@ -1637,6 +1714,12 @@
 
             if (Phaser.Input.Keyboard.JustDown(this.keys.h)) {
                 this.goToHouse();
+                return;
+            }
+
+            // Controllo tasto PAUSA (ESC o P)
+            if (Phaser.Input.Keyboard.JustDown(this.keys.esc) || Phaser.Input.Keyboard.JustDown(this.keys.p)) {
+                this.togglePause();
                 return;
             }
 
@@ -1722,7 +1805,7 @@
             this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
             triggerSfx('coin');
             
-            // Salva i dati SENZA usare un SaveManager esterno (usa localStorage diretto)
+            // --- DATI DI SALVATAGGIO ---
             const saveData = {
                 score: GAME.score,
                 level: GAME.level + 1,
@@ -1733,8 +1816,18 @@
                 housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
             };
             
-            // Salva in localStorage manualmente
+            // --- SALVATAGGIO SU LOCALSTORAGE (PER IL MENU DI RIPRESA) ---
             localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
+            
+            // --- SALVATAGGIO SU INDEXEDDB (PER IL BACKUP SU PC) ---
+            if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
+                window.SaveManager.saveGame(saveData).then(() => {
+                    console.log("💾 Backup IndexedDB aggiornato!");
+                }).catch(err => {
+                    console.error("Errore backup IndexedDB:", err);
+                });
+            }
+            // ---------------------------------------------------------
             
             this.time.delayedCall(1200, () => {
                 if (window.LevelSummaryScene && !this.scene.get('LevelSummary')) {
@@ -1742,7 +1835,6 @@
                 }
                 
                 if (this.scene.get('LevelSummary')) {
-                    // PASSIAMO I DATI CORRETTI AL RIASSUNTO
                     this.scene.start('LevelSummary', {
                         score: GAME.score,
                         served: GAME.customersServed,
@@ -1751,7 +1843,6 @@
                         level: GAME.level
                     });
                 } else {
-                    // Fallback se manca la scena
                     GAME.level++;
                     GAME.customersServed = 0;
                     GAME.lives = 3;

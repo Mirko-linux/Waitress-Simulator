@@ -37,11 +37,11 @@ class SaveManager {
     async saveGame(gameData) {
         if (!this.isReady) await this.init();
 
+        // --- SALVATAGGIO SU INDEXEDDB ---
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.storeName], 'readwrite');
             const store = transaction.objectStore(this.storeName);
 
-            
             const savePacket = {
                 id: 'main_save',
                 timestamp: Date.now(),
@@ -51,6 +51,15 @@ class SaveManager {
             const request = store.put(savePacket);
 
             request.onsuccess = () => {
+                // --- AGGIUNTA QUI: SALVA ANCHE IN LOCALSTORAGE ---
+                try {
+                    localStorage.setItem('waitress_save_data', JSON.stringify(gameData));
+                    console.log('💾 Salvataggio sincronizzato anche su localStorage!');
+                } catch(e) {
+                    console.warn('⚠️ Errore nel salvataggio su localStorage', e);
+                }
+                // --------------------------------------------------
+
                 console.log('💾 Gioco salvato automaticamente su IndexedDB!');
                 resolve(true);
             };
@@ -61,7 +70,6 @@ class SaveManager {
             };
         });
     }
-
     
     async loadGame() {
         if (!this.isReady) await this.init();

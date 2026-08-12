@@ -201,10 +201,10 @@ class PhoneSystem {
     showBoyfriendUI() {
         const text = `📱 ${this.boyfriendName} sta chiamando! Cosa gli dici?`;
         const options = [
-            { text: '❤️ "Amore, ti penso sempre!" (+10)', value: 10 },
-            { text: '😅 "Scusa amore, sono al lavoro!" (+5)', value: 5 },
-            { text: '😒 "Ora non posso, ti richiamo." (-5)', value: -5 },
-            { text: '🤬 "Smettila di chiamare!" (-20)', value: -20 }
+            { text: '❤️ "Amore, ti penso sempre!"', value: 10 },
+            { text: '😅 "Scusa amore, sono al lavoro!"', value: 5 },
+            { text: '😒 "Ora non posso, ti richiamo."', value: -5 },
+            { text: '🤬 "Smettila di chiamare!"', value: -20 }
         ];
         this.showChoiceUI(text, options, (affectionChange) => {
             this.boyfriendAffection += affectionChange;
