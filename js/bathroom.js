@@ -260,5 +260,4 @@ class BathroomSystem {
         }
     }
 }
-window.BathroomSystem = BathroomSystem;
-console.log('🚻 BathroomSystem: Versione infallibile caricata!');
+window.BathroomSystem = BathroomSystem
