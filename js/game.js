@@ -94,7 +94,9 @@
                 caffe: 1500,
                 arancina: 3500,
                 cassata: 4000,
-                chinotto: 1200
+                chinotto: 1200,
+                cannolo: 3500,
+                ginseng: 1500
             }
         }
     };
@@ -111,7 +113,9 @@
         'Birra': 'Birra',
         'Arancina': 'Arancina',
         'Cassata': 'Cassata',
-        'Chinotto': 'Chinotto'
+        'Chinotto': 'Chinotto',
+        'Cannolo': 'Cannolo',
+        'Ginseng': 'Ginseng'
     };
 
     const NPC_REGISTRY = {
@@ -666,7 +670,9 @@
                 'Birra': '🍺',
                 'Arancina': '🧆',
                 'Cassata': '🍰',
-                'Chinotto': '🥤'
+                'Chinotto': '🥤',
+                'Cannolo': '🥐',
+                'Ginseng': '☕'
             };
             return map[foodName] || '🍽️';
         }
@@ -855,11 +861,9 @@
         
         createSink() {
             // --- CREAZIONE DELL'IMMAGINE DINAMICA DEL LAVELLO ---
-            // Posizioniamo l'immagine al centro del lavello (x: 75 + 47.5 = 122.5, y: 540)
             this.sinkSprite = this.add.image(122.5, 540, 'Lavello_vuoto').setDepth(2);
-            this.sinkSprite.setDisplaySize(95, 45); // Stessa dimensione del vecchio rettangolo
+            this.sinkSprite.setDisplaySize(95, 45);
             
-            // Rendi il lavello interattivo (l'interazione avviene tramite il corpo dell'immagine)
             this.sinkSprite.setInteractive({ useHandCursor: true });
             
             this.sinkSprite.on('pointerdown', () => {
@@ -871,7 +875,6 @@
                 }
             });
 
-            // Chiamiamo subito l'aggiornamento per impostare l'immagine corretta (0 piatti)
             this.updateSinkSprite();
         }
 
@@ -886,10 +889,9 @@
             } else {
                 textureKey = 'Lavello_vuoto';
             }
-            // Cambia l'immagine solo se è diversa da quella attuale
             if (this.sinkSprite.texture && this.sinkSprite.texture.key !== textureKey) {
                 this.sinkSprite.setTexture(textureKey);
-                this.sinkSprite.setDisplaySize(95, 45); // Reimposta la dimensione
+                this.sinkSprite.setDisplaySize(95, 45);
             }
         }
         
@@ -1107,7 +1109,7 @@
                 this.platesText.setText(`${t('PIATTI')} ${GAME.dirtyPlates}`);
             }
 
-            this.updateSinkSprite(); // Aggiorna l'immagine del lavello
+            this.updateSinkSprite();
         }
         
         spawnCustomer() {
@@ -1119,7 +1121,7 @@
 
             if (!freeTable) return;
             
-            const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto'];
+            const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto', 'Cannolo', 'Ginseng'];
             const selectedFood = foods[Phaser.Math.Between(0, foods.length - 1)];
             
             const names = Object.keys(NPC_REGISTRY);
@@ -1436,7 +1438,6 @@
             }
             
             if (table.status === 'piatto_sporco') {
-                // CONTROLLO SPAZIO VASSOIO: Serve almeno 1 slot libero!
                 if (this.waitressState.tray.length >= CONFIG.tray.maxTotal) {
                     this.showFloatingText(this.waitress.x, this.waitress.y - 40, 'Vassoio pieno!', '#ff4444');
                     triggerSfx('alert');
@@ -1451,13 +1452,11 @@
                 triggerSfx('pickup');
                 table.status = 'libero';
                 
-                // Invece di aumentare subito dirtyPlates, aggiungiamo un piatto al vassoio
                 this.waitressState.tray.push({ food: 'piatto_sporco' });
                 
                 this.updateTrayGraphics();
                 this.updateHUD();
                 
-                // Pulisce l'immagine del piatto dal tavolo
                 if (table.dirtySprite) {
                     table.dirtySprite.destroy();
                     table.dirtySprite = null;
@@ -1503,8 +1502,10 @@
                     'caponata': 'fornelli',
                     'arancina': 'friggitrice',
                     'cassata': 'forno',
+                    'cannolo': 'forno',
                     'chinotto': 'bevande',
                     'caffè': 'caffe', 'caffe': 'caffe',
+                    'ginseng': 'caffe',
                     'birra': 'spillatore', 'cola': 'bevande',
                     'acqua': 'frigo'
                 };
@@ -1608,15 +1609,13 @@
                 return;
             }
 
-            // Controlla quanti piatti sporci ci sono nel vassoio
             const dirtyInTray = this.waitressState.tray.filter(item => item.food === 'piatto_sporco').length;
             if (dirtyInTray > 0) {
-                // 1. SCARICA I PIATTI SPORCI NEL LAVELLO (Non li lava, li deposita)
                 for (let i = this.waitressState.tray.length - 1; i >= 0; i--) {
                     if (this.waitressState.tray[i].food === 'piatto_sporco') {
                         this.waitressState.tray.splice(i, 1);
                         GAME.dirtyPlates++;
-                        break; // Rimuove solo 1 piatto alla volta
+                        break;
                     }
                 }
                 
@@ -1627,7 +1626,6 @@
                 return;
             }
 
-            // 2. LAVA I PIATTI (Se il giocatore clicca di nuovo e non ha piatti nel vassoio)
             if (GAME.dirtyPlates > 0) {
                 this.gameActive = false;
                 this.showFloatingText(75, 510, t('WASHING'), '#3498db');
@@ -1648,21 +1646,17 @@
         
         updateTrayGraphics() {
             const count = this.waitressState.tray.length;
-            // Conta quanti piatti sporci ci sono nel vassoio
             const dirtyCount = this.waitressState.tray.filter(item => item.food === 'piatto_sporco').length;
             const foodCount = count - dirtyCount;
             let emoji = '👩‍🍳';
             
             if (dirtyCount > 0) {
-                // Se ci sono piatti sporchi, mostra i piatti sporchi
                 if (dirtyCount === 1) emoji = '👩‍🍳🍽️';
                 else if (dirtyCount === 2) emoji = '👩‍🍳🍽️🍽️';
                 else if (dirtyCount >= 3) emoji = '👩‍🍳🍽️🍽️🍽️';
                 
-                // Se ci sono anche cibi, aggiungi un'indicazione visiva
                 if (foodCount > 0) emoji = '👩‍🍳🍕🍽️';
             } else {
-                // Se non ci sono piatti sporchi, mostra il cibo normale
                 if (count === 1) emoji = '👩‍🍳🍽️';
                 else if (count === 2) emoji = '👩‍🍳🥘🍽️';
                 else if (count >= 3) emoji = '👩‍🍳🍕🍔🥤';
@@ -1744,20 +1738,16 @@
                 moveY *= 0.7071;
             }
 
-            // GESTIONE DELLA VELOCITÀ (SOLO SE SI PREMONO I TASTI)
             if (moveX !== 0 || moveY !== 0) {
-                // Movimento tramite tastiera
                 if (this.waitress.body) {
                     this.waitress.body.setVelocity(moveX * CONFIG.waitress.speed, moveY * CONFIG.waitress.speed);
                 }
             } else {
-                // Se non premi nulla, fermati completamente
                 if (this.waitress.body) {
                     this.waitress.body.setVelocity(0, 0);
                 }
             }
 
-            // Limiti di movimento (non uscire dalla mappa) e ombra
             if (this.waitress.body) {
                 this.waitress.x = Phaser.Math.Clamp(this.waitress.x, 30, 540);
                 this.waitress.y = Phaser.Math.Clamp(this.waitress.y, 70, 560);
@@ -1868,10 +1858,12 @@
     class MenuScene extends Phaser.Scene {
         constructor() {
             super('Menu');
+            this.menuButtons = [];
         }
         
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
+            this.menuButtons = [];
             
             const bg = this.add.graphics();
             bg.fillStyle(0x2c1a11, 0.35);
@@ -1908,8 +1900,18 @@
             this.createButton(400, 240, t('GIOCA'), () => {
                 triggerSfx('click');
                 
+                // --- CORREZIONE DOPPIO TUTORIAL ---
+                // Se l'utente clicca su GIOCA, resettiamo il flag di avvio tutorial a false
+                // così se c'è un salvataggio, non riparte da capo.
+                if (localStorage.getItem('waitress_tutorial_done') === 'true') {
+                    window.FORCE_TUTORIAL = false;
+                } else {
+                    window.FORCE_TUTORIAL = true;
+                }
+                // -----------------------------------
+                
                 if (typeof window.SaveMenu === 'function') {
-                    new window.SaveMenu(this).showMenu();
+                    this.openSaveMenu();
                 } else {
                     this.scene.start('Game');
                 }
@@ -1931,6 +1933,59 @@
                 fontStyle: 'italic',
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
+        }
+
+        openSaveMenu() {
+            if (this.menuButtons) {
+                this.menuButtons.forEach(btn => btn.disableInteractive());
+            }
+
+            const blocker = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.75)
+                .setDepth(150)
+                .setInteractive();
+
+            const backBtnBg = this.add.rectangle(400, 520, 220, 38, 0xe74c3c)
+                .setStrokeStyle(1.5, 0xffffff)
+                .setDepth(300)
+                .setInteractive({ useHandCursor: true });
+
+            const backBtnTxt = this.add.text(400, 520, '⬅️ TORNA AL MENU', {
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5).setDepth(301);
+
+            let saveMenuInstance = null;
+            if (typeof window.SaveMenu === 'function') {
+                saveMenuInstance = new window.SaveMenu(this);
+                if (typeof saveMenuInstance.showMenu === 'function') {
+                    saveMenuInstance.showMenu();
+                }
+            }
+
+            const closeSaveMenu = () => {
+                triggerSfx('click');
+
+                if (saveMenuInstance) {
+                    if (typeof saveMenuInstance.hide === 'function') saveMenuInstance.hide();
+                    if (typeof saveMenuInstance.hideMenu === 'function') saveMenuInstance.hideMenu();
+                    if (typeof saveMenuInstance.close === 'function') saveMenuInstance.close();
+                    if (typeof saveMenuInstance.destroy === 'function') saveMenuInstance.destroy();
+                    if (saveMenuInstance.container && typeof saveMenuInstance.container.destroy === 'function') {
+                        saveMenuInstance.container.destroy();
+                    }
+                }
+
+                const domOverlays = document.querySelectorAll('.save-menu-overlay, .save-menu-modal, #saveMenuOverlay, .save-modal');
+                domOverlays.forEach(el => el.remove());
+
+                this.scene.restart();
+            };
+
+            backBtnBg.on('pointerdown', closeSaveMenu);
+            backBtnBg.on('pointerover', () => backBtnBg.setFillStyle(0xc0392b));
+            backBtnBg.on('pointerout', () => backBtnBg.setFillStyle(0xe74c3c));
         }
         
         createButton(x, y, text, callback) {
@@ -1956,6 +2011,9 @@
             });
             
             bg.on('pointerdown', callback);
+
+            if (!this.menuButtons) this.menuButtons = [];
+            this.menuButtons.push(bg);
         }
     }
 

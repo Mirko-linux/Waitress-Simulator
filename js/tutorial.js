@@ -1,5 +1,5 @@
 // ============================================
-// TUTORIAL SYSTEM (DESIGN ORIGINALE + FIX CRASH)
+// TUTORIAL SYSTEM (VERSIONE COMPLETA FIXATA)
 // ============================================
 
 class TutorialSystem {
@@ -8,9 +8,19 @@ class TutorialSystem {
         this.isActive = true;
         this.fakeCustomer = null;
         this.tutorialStep = 0;
-        this.uiContainer = null; // Per il pannello di benvenuto
-        this.tutorialPanel = null; // Per i passaggi successivi
+        this.welcomeContainer = null; 
+        this.tutorialPanel = null;
+        this.arrowGraphic = null;
+        this.finishTimer = null; // Timer per la chiusura automatica
         
+        // Controllo per evitare che si apra due volte
+        if (window._tutorialStarting) {
+            console.warn("⚠️ Tutorial già in avvio, salto la creazione");
+            this.skipTutorial();
+            return;
+        }
+        window._tutorialStarting = true;
+
         this.createWelcomeScreen();
     }
 
@@ -18,11 +28,11 @@ class TutorialSystem {
     createWelcomeScreen() {
         const scene = this.scene;
 
-        // Sfondo nero semitrasparente
-        scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.7).setDepth(998);
+        // Sfondo nero semitrasparente (Depth altissima per coprire tutto)
+        this.welcomeBg = scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.8).setDepth(998);
 
         // Pannello Principale
-        this.uiContainer = scene.add.container(400, 300).setDepth(999);
+        this.welcomeContainer = scene.add.container(400, 300).setDepth(999);
         
         const bg = scene.add.rectangle(0, 0, 520, 320, 0x110906, 0.95);
         bg.setStrokeStyle(2, 0xd27d2d);
@@ -54,7 +64,7 @@ class TutorialSystem {
         
         btnYesBg.on('pointerdown', () => {
             triggerSfx('click');
-            this.uiContainer.destroy();
+            this.destroyWelcomeScreen();
             this.startTutorialGameplay();
         });
         btnYesBg.on('pointerover', () => btnYesBg.setFillStyle(0x27ae60));
@@ -72,23 +82,33 @@ class TutorialSystem {
 
         btnNoBg.on('pointerdown', () => {
             triggerSfx('click');
-            this.uiContainer.destroy();
+            this.destroyWelcomeScreen();
             this.skipTutorial();
         });
         btnNoBg.on('pointerover', () => btnNoBg.setFillStyle(0xc0392b));
         btnNoBg.on('pointerout', () => btnNoBg.setFillStyle(0xe74c3c));
 
-        this.uiContainer.add([bg, title, desc, btnYesBg, btnYesTxt, btnNoBg, btnNoTxt]);
+        this.welcomeContainer.add([bg, title, desc, btnYesBg, btnYesTxt, btnNoBg, btnNoTxt]);
     }
 
-    // --- 2. SE PREMI "NO" (SALTA IL TUTORIAL) ---
+    destroyWelcomeScreen() {
+        if (this.welcomeBg) this.welcomeBg.destroy();
+        if (this.welcomeContainer) this.welcomeContainer.destroy();
+        this.welcomeBg = null;
+        this.welcomeContainer = null;
+        window._tutorialStarting = false;
+    }
+
+    // --- 2. SE PREMI "NO" ---
     skipTutorial() {
         localStorage.setItem('waitress_tutorial_done', 'true');
         this.scene.tutorialActive = false;
         this.scene.tutorial = null;
+        window._tutorialStarting = false;
         
-        // Rimuovi eventuali UI rimanenti
         if (this.tutorialPanel) this.tutorialPanel.destroy();
+        if (this.arrowGraphic) this.arrowGraphic.destroy();
+        if (this.finishTimer) this.finishTimer.remove();
         
         window.GAME.level = 1;
         window.GAME.customersTarget = 6 + window.GAME.level * 4;
@@ -96,11 +116,15 @@ class TutorialSystem {
         this.scene.startSpawning();
     }
 
-    // --- 3. SE PREMI "SÌ" (INIZIA IL TUTORIAL VERO) ---
+    // --- 3. SE PREMI "SÌ" ---
     startTutorialGameplay() {
-        this.createFakeCustomer();
         this.tutorialStep = 1;
+        this.scene.tutorialStepTarget = null;
+        
+        this.createFakeCustomer();
         this.updateTutorialPanel();
+        
+        this.scene.gameActive = true;
     }
 
     createFakeCustomer() {
@@ -108,7 +132,7 @@ class TutorialSystem {
         if (!firstTable) return;
 
         this.fakeCustomer = {
-            name: 'Marco (Tutorial)',
+            name: 'Marco',
             order: 'Pizza',
             patience: 100,
             isDead: false,
@@ -118,7 +142,7 @@ class TutorialSystem {
             y: firstTable.y,
             relationScore: 50,
             timerEvent: { remove: () => {} },
-            serve: () => { /* Logica placeholder */ }
+            serve: () => {}
         };
 
         firstTable.occupied = true;
@@ -142,24 +166,54 @@ class TutorialSystem {
     }
 
     updateTutorialPanel() {
-        // Rimuovi il pannello precedente se esiste
+        // Pulisci elementi precedenti
         if (this.tutorialPanel) this.tutorialPanel.destroy();
+        if (this.arrowGraphic) this.arrowGraphic.destroy();
+        if (this.finishTimer) {
+            this.finishTimer.remove();
+            this.finishTimer = null;
+        }
 
         const scene = this.scene;
 
-        // Testi dei passaggi
+        // --- STEP DEL TUTORIAL (TUTTI FIXATI) ---
         const steps = [
-            {}, // Step 0 vuoto
-            { title: '📋 PRENDI L\'ORDINE', desc: 'Avvicinati al tavolo e clicca sul cliente per prendere il suo ordine.', target: 'take_order' },
-            { title: '🍕 VAI IN CUCINA', desc: 'Ora vai al bancone "PASS PIATTI" e clicca per dare l\'ordine allo chef.', target: 'counter' },
-            { title: '⏳ RITIRA IL CIBO', desc: 'Il cibo è pronto! Clicca sul bancone per prenderlo.', target: 'counter_pickup' },
-            { title: '🍽️ SERVI IL CLIENTE', desc: 'Torna al tavolo e clicca sul cliente per servirgli il pasto.', target: 'serve_food' },
-            { title: '🧹 PULISCI IL TAVOLO', desc: 'Bene! Ora clicca sul tavolo per pulire il piatto sporco.', target: 'clear_table' },
-            { title: '🎉 FINE TUTORIAL!', desc: 'Hai imparato tutto! Inizia la tua avventura!', target: 'finish' }
+            {}, 
+            { 
+                title: '📋 PRENDI L\'ORDINE', 
+                desc: 'Avvicinati al tavolo e clicca sul cliente per prendere il suo ordine.', 
+                target: 'take_order' 
+            },
+            { 
+                title: '📝 PORTA LA COMANDATA', 
+                desc: 'Vai al **PASS PIATTI** e clicca per consegnare la comanda allo chef.', 
+                target: 'counter' 
+            },
+            { 
+                title: '🍕 RITIRA IL CIBO', 
+                desc: 'Il cibo è pronto! Clicca sul **PASS PIATTI** per prenderlo.', 
+                target: 'counter' 
+            },
+            { 
+                title: '🍽️ SERVI IL CLIENTE', 
+                desc: 'Torna al tavolo e clicca sul cliente per servirgli il pasto.', 
+                target: 'serve_food' 
+            },
+            { 
+                title: '🧹 PULISCI IL TAVOLO', 
+                desc: 'Bene! Ora clicca sul tavolo per pulire il piatto sporco.', 
+                target: 'clear_table' 
+            },
+            { 
+                title: '🎉 FINE TUTORIAL!', 
+                desc: 'Hai imparato tutto! Il gioco inizierà tra 2 secondi...', 
+                target: 'finish' 
+            }
         ];
 
         const current = steps[this.tutorialStep];
 
+        // --- CREA IL PANNELLO ---
         this.tutorialPanel = scene.add.container(400, 450).setDepth(999);
         
         const bg = scene.add.rectangle(0, 0, 600, 120, 0x110906, 0.95);
@@ -182,33 +236,57 @@ class TutorialSystem {
 
         this.tutorialPanel.add([bg, title, desc]);
 
-        // Aggiorna il target di interazione per la scena di gioco
-        if (this.tutorialStep <= 6) {
+        // --- AGGIORNA TARGET PER GAME.JS ---
+        if (current.target) {
             this.scene.tutorialStepTarget = current.target;
         }
 
-        // Disegna una freccia guida verso il target
+        // --- DISEGNA FRECCIA (SE NON È L'ULTIMO STEP) ---
         if (current.target && this.tutorialStep < 6) {
             let targetX = 0, targetY = 0;
-            if (current.target === 'take_order' || current.target === 'serve_food' || current.target === 'clear_table') {
+            
+            // Gestione target per il tavolo
+            if (current.target === 'take_order' || 
+                current.target === 'serve_food' || 
+                current.target === 'clear_table') {
                 targetX = this.fakeCustomer.table.x;
-                targetY = this.fakeCustomer.table.y;
-            } else {
-                targetX = 560;
-                targetY = this.scene.waitress.y;
+                targetY = this.fakeCustomer.table.y + 32;
+            } 
+            // Gestione target per il PASS PIATTI (posizione fissa corretta)
+            else if (current.target === 'counter') {
+                targetX = 560;  // Posizione fissa del Pass Piatti
+                targetY = 460;  // La punta della freccia arriverà a Y=420 (460-40)
             }
+            
             this.drawArrow(targetX, targetY);
+            
+            // Rendi la freccia NON cliccabile
+            if (this.arrowGraphic) {
+                this.arrowGraphic.setInteractive(false);
+                this.arrowGraphic.disableInteractive();
+            }
+        }
+
+        // --- SE È L'ULTIMO STEP, AVVIA IL TIMER PER LA CHIUSURA AUTOMATICA ---
+        if (this.tutorialStep === 6) {
+            this.finishTimer = this.scene.time.delayedCall(2000, () => {
+                this.finishTutorial();
+            });
         }
     }
 
+    // METODO drawArrow() AGGIORNATO
     drawArrow(x, y) {
         if (this.arrowGraphic) this.arrowGraphic.destroy();
-        this.arrowGraphic = this.scene.add.graphics().setDepth(900);
+        
+        // Profondità 15: SOPRA il cliente (depth 5), SOTTO il pannello (depth 999)
+        this.arrowGraphic = this.scene.add.graphics().setDepth(15);
         
         this.arrowGraphic.fillStyle(0xffd700, 1);
         this.arrowGraphic.fillTriangle(x - 12, y - 70, x + 12, y - 70, x, y - 40);
         this.arrowGraphic.fillRect(x - 2, y - 90, 4, 30);
         
+        // Animazione di sfarfallio
         this.scene.tweens.add({
             targets: this.arrowGraphic,
             alpha: 0.6,
@@ -218,10 +296,10 @@ class TutorialSystem {
         });
     }
 
-    // --- 4. INTERAZIONI DEL GIOCO VERO ---
-    // (Questa funzione viene chiamata dal tuo game.js quando il giocatore interagisce)
+    // --- AVANZA AL PROSSIMO STEP ---
     progressStep() {
         if (this.tutorialStep >= 6) {
+            // Se per qualche motivo siamo già allo step 6, chiudi direttamente
             this.finishTutorial();
             return;
         }
@@ -229,18 +307,26 @@ class TutorialSystem {
         this.updateTutorialPanel();
     }
 
+    // --- COMPLETA IL TUTORIAL E AVVIA IL GIOCO ---
     finishTutorial() {
+        // Pulisci timer
+        if (this.finishTimer) {
+            this.finishTimer.remove();
+            this.finishTimer = null;
+        }
+
         this.scene.tutorialActive = false;
         this.scene.tutorial = null;
         this.scene.tutorialStepTarget = null;
+        window._tutorialStarting = false;
         
         localStorage.setItem('waitress_tutorial_done', 'true');
         
-        // Rimuovi UI e frecce
+        // Distruggi pannello e freccia
         if (this.tutorialPanel) this.tutorialPanel.destroy();
         if (this.arrowGraphic) this.arrowGraphic.destroy();
         
-        // Rimuovi il cliente finto
+        // Rimuovi il cliente fittizio
         if (this.fakeCustomer) {
             if (this.fakeCustomer.emoji) this.fakeCustomer.emoji.destroy();
             if (this.fakeCustomer.shadow) this.fakeCustomer.shadow.destroy();
@@ -250,10 +336,10 @@ class TutorialSystem {
             this.fakeCustomer.table.occupied = false;
             this.fakeCustomer.table.customer = null;
             this.fakeCustomer.table.status = 'libero';
+            this.fakeCustomer = null;
         }
 
-        // --- CORREZIONE CRASH QUI ---
-        // Usiamo window.GAME, NON this.scene.GAME
+        // Avvia il gioco
         window.GAME.level = 1;
         window.GAME.customersTarget = 6 + window.GAME.level * 4;
         
