@@ -692,23 +692,33 @@
         }
 
         createFallbackTilemap() {
+            const tileSize = 32;
+            const mapWidth = 25;  // 800 / 32
+            const mapHeight = 18; // 576 / 32
+
             if (this.textures.exists('floor_sala')) {
-                for (let x = 0; x < 600; x += 100) {
-                    for (let y = 0; y < 600; y += 100) {
-                        this.add.image(x + 50, y + 50, 'floor_sala').setDepth(0);
+                for (let x = 0; x < 576; x += tileSize) {
+                    for (let y = 0; y < mapHeight * tileSize; y += tileSize) {
+                        this.add.image(x + tileSize/2, y + tileSize/2, 'floor_sala')
+                            .setDisplaySize(tileSize, tileSize)
+                            .setDepth(0);
                     }
                 }
             }
             if (this.textures.exists('floor_cucina')) {
-                for (let x = 600; x < 800; x += 100) {
-                    for (let y = 0; y < 600; y += 100) {
-                        this.add.image(x + 50, y + 50, 'floor_cucina').setDepth(0);
+                for (let x = 608; x < mapWidth * tileSize; x += tileSize) {
+                    for (let y = 0; y < mapHeight * tileSize; y += tileSize) {
+                        this.add.image(x + tileSize/2, y + tileSize/2, 'floor_cucina')
+                            .setDisplaySize(tileSize, tileSize)
+                            .setDepth(0);
                     }
                 }
             }
             if (this.textures.exists('wall')) {
-                for (let y = 0; y < 600; y += 100) {
-                    this.add.image(595, y + 50, 'wall').setDepth(2);
+                for (let y = 0; y < mapHeight * tileSize; y += tileSize) {
+                    const wall = this.add.image(592, y + tileSize/2, 'wall');
+                    wall.setDisplaySize(tileSize, tileSize);
+                    wall.setDepth(2);
                 }
             }
         }
@@ -1113,14 +1123,19 @@
         }
         
         spawnCustomer() {
+            // 1. Cerca un tavolo veramente libero (non occupato)
             let freeTable = this.tables.find(t => !t.occupied && t.status === 'libero');
             
+            // 2. Se non c'è nessun tavolo pulito, cerca un tavolo sporco ma libero
             if (!freeTable) {
                 freeTable = this.tables.find(t => !t.occupied && t.status === 'piatto_sporco');
             }
 
-            if (!freeTable) return;
-            
+            // 3. Se non c'è nessun tavolo disponibile, esci senza creare clienti
+            if (!freeTable) {
+                return; // <-- IMPORTANTE: fermati qui, non spawnare
+            }
+
             const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto', 'Cannolo', 'Ginseng'];
             const selectedFood = foods[Phaser.Math.Between(0, foods.length - 1)];
             
@@ -1171,6 +1186,7 @@
                 }
             };
             
+            // 4. Ora segna il tavolo come occupato
             freeTable.occupied = true;
             freeTable.customer = customer;
             freeTable.status = 'ordinazione_pronta';
@@ -1691,9 +1707,9 @@
             if (this.isPaused) return;
 
             if (!this.tutorialActive) {
-                if (this.kitchen) this.kitchen.update();
-                if (this.bathroom) this.bathroom.update(time, delta);
-                if (this.phone) this.phone.update(time, delta);
+                if (this.kitchen && typeof this.kitchen.update === 'function') this.kitchen.update();
+                if (this.bathroom && typeof this.bathroom.update === 'function') this.bathroom.update(time, delta);
+                if (this.phone && typeof this.phone.update === 'function') this.phone.update(time, delta);
                 this.fixKitchenScales();
             }
 
@@ -1901,8 +1917,6 @@
                 triggerSfx('click');
                 
                 // --- CORREZIONE DOPPIO TUTORIAL ---
-                // Se l'utente clicca su GIOCA, resettiamo il flag di avvio tutorial a false
-                // così se c'è un salvataggio, non riparte da capo.
                 if (localStorage.getItem('waitress_tutorial_done') === 'true') {
                     window.FORCE_TUTORIAL = false;
                 } else {
@@ -2214,9 +2228,9 @@
 
             const currentLangData = langs[currentLangCode] || langs['it'];
 
-            const langBtn = this.add.rectangle(400, 395, 260, 34, 0x2c1a11);
-            langBtn.setStrokeStyle(1, 0xd27d2d);
-            langBtn.setInteractive({ useHandCursor: true });
+            // Box centrale lingua
+            const langBox = this.add.rectangle(400, 395, 200, 34, 0x2c1a11);
+            langBox.setStrokeStyle(1, 0xd27d2d);
 
             const langTxt = this.add.text(400, 395, `${currentLangData.flag} ${currentLangData.name}`, {
                 fontSize: '13px',
@@ -2225,12 +2239,45 @@
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
 
-            langBtn.on('pointerdown', () => {
-                langIndex = (langIndex + 1) % langKeys.length;
-                const newLang = langKeys[langIndex];
-                
+            // Tasto Freccia Sinistra
+            const prevBtn = this.add.rectangle(270, 395, 40, 34, 0xd27d2d);
+            prevBtn.setStrokeStyle(1, 0xffd700);
+            prevBtn.setInteractive({ useHandCursor: true });
+            
+            const prevTxt = this.add.text(270, 395, '◀', {
+                fontSize: '16px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            prevBtn.on('pointerover', () => prevBtn.setFillStyle(0xe59866));
+            prevBtn.on('pointerout', () => prevBtn.setFillStyle(0xd27d2d));
+            prevBtn.on('pointerdown', () => {
+                langIndex = (langIndex - 1 + langKeys.length) % langKeys.length;
                 triggerSfx('click');
-                switchLanguage(newLang);
+                switchLanguage(langKeys[langIndex]);
+                this.scene.restart();
+            });
+
+            // Tasto Freccia Destra
+            const nextBtn = this.add.rectangle(530, 395, 40, 34, 0xd27d2d);
+            nextBtn.setStrokeStyle(1, 0xffd700);
+            nextBtn.setInteractive({ useHandCursor: true });
+
+            const nextTxt = this.add.text(530, 395, '▶', {
+                fontSize: '16px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            nextBtn.on('pointerover', () => nextBtn.setFillStyle(0xe59866));
+            nextBtn.on('pointerout', () => nextBtn.setFillStyle(0xd27d2d));
+            nextBtn.on('pointerdown', () => {
+                langIndex = (langIndex + 1) % langKeys.length;
+                triggerSfx('click');
+                switchLanguage(langKeys[langIndex]);
                 this.scene.restart();
             });
             
@@ -2314,11 +2361,11 @@
 
     const scenesList = [PreloadScene, MenuScene, SettingsScene, CreditsScene, GameScene, GameOverScene];
     
-    if (window.LevelSummaryScene) {
-        scenesList.push(window.LevelSummaryScene);
-    }
     if (window.HouseScene) {
         scenesList.push(window.HouseScene);
+    }
+    if (window.LevelSummaryScene) {
+        scenesList.push(window.LevelSummaryScene);
     }
 
     const config = {
