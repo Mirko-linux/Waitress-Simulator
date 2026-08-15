@@ -187,7 +187,8 @@
         settings: {
             soundEnabled: true,
             difficulty: 'normale',
-            controls: 'wasd'
+            controls: 'wasd',
+            aiEnabled: true
         }
     };
 
@@ -433,7 +434,7 @@
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
 
-            // Prova a caricare il salvataggio dal localStorage
+            // 1. Carica il salvataggio PRIMA di tutto (incluso aiManager)
             let savedData = null;
             try {
                 const raw = localStorage.getItem('waitress_save_data');
@@ -441,7 +442,7 @@
             } catch(e) {}
 
             if (savedData && savedData.level > 0) {
-                // Riprende dal salvataggio (Livello 2, 3, ecc.)
+                // Riprende dal salvataggio
                 GAME.score = savedData.score || 0;
                 GAME.level = savedData.level || 1;
                 GAME.customersServed = savedData.customersServed || 0;
@@ -453,9 +454,13 @@
                 if (savedData.housePurchased && window.HOUSE_STATE) {
                     window.HOUSE_STATE.purchased = savedData.housePurchased;
                 }
-                if (savedData.settings) GAME.settings = savedData.settings;
+                
+                // --- FIX: CARICA LE IMPOSTAZIONI QUI (PRIMA DI AI) ---
+                if (savedData.settings) {
+                    GAME.settings = { ...GAME.settings, ...savedData.settings };
+                }
             } else {
-                // Partenza completamente nuova (Livello 1 da zero)
+                // Partenza completamente nuova
                 GAME.customersServed = 0;
                 GAME.dirtyPlates = 0;
                 GAME.lives = 3;
@@ -463,6 +468,12 @@
                 GAME.level = 1;
                 GAME.carriedOrder = null;
                 GAME.score = 0;
+                GAME.settings = {
+                    soundEnabled: true,
+                    difficulty: 'normale',
+                    controls: 'wasd',
+                    aiEnabled: true
+                };
             }
 
             this.gameActive = true;
@@ -494,8 +505,13 @@
                 this.bathroom = new window.BathroomSystem(this);
             }
             
+            // --- 2. ORA CREA L' AI MANAGER (che userà il GAME.settings appena caricato) ---
             if (typeof window.AIDialogueManager === 'function') {
-                this.aiManager = new window.AIDialogueManager(this);
+                this.aiManager = new window.AIDialogueManager(this, GAME.settings.aiEnabled);
+                if (GAME.settings.aiEnabled === false) {
+                    this.aiManager.useFallback = true;
+                    this.aiManager.isModelReady = true;
+                }
             }
 
             this.createWaitress();
@@ -2126,27 +2142,27 @@
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
             
-            const card = this.add.rectangle(400, 300, 520, 480, 0x110906, 0.85);
+            const card = this.add.rectangle(400, 300, 520, 500, 0x110906, 0.85);
             card.setStrokeStyle(2, 0xd27d2d);
             
-            this.add.text(400, 70, t('IMPOSTAZIONI'), {
+            this.add.text(400, 65, t('IMPOSTAZIONI'), {
                 fontSize: '28px',
                 color: '#ffd700',
                 fontStyle: 'bold',
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
             
-            this.add.text(400, 125, t('AUDIO_SETTINGS'), {
-                fontSize: '15px',
+            this.add.text(400, 115, t('AUDIO_SETTINGS'), {
+                fontSize: '14px',
                 color: '#ffffff',
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
             
-            const audioBtn = this.add.rectangle(400, 155, 180, 32, GAME.settings.soundEnabled ? 0x27ae60 : 0xe74c3c);
+            const audioBtn = this.add.rectangle(400, 145, 180, 30, GAME.settings.soundEnabled ? 0x27ae60 : 0xe74c3c);
             audioBtn.setInteractive({ useHandCursor: true });
             audioBtn.setStrokeStyle(1, 0xffffff);
             
-            const audioTxt = this.add.text(400, 155, GAME.settings.soundEnabled ? t('ACTIVE') : t('DISABLED'), {
+            const audioTxt = this.add.text(400, 145, GAME.settings.soundEnabled ? t('ACTIVE') : t('DISABLED'), {
                 fontSize: '13px',
                 color: '#ffffff',
                 fontStyle: 'bold',
@@ -2160,8 +2176,8 @@
                 audioTxt.setText(GAME.settings.soundEnabled ? t('ACTIVE') : t('DISABLED'));
             });
             
-            this.add.text(400, 205, t('DIFFICULTY_LEVEL'), {
-                fontSize: '15px',
+            this.add.text(400, 190, t('DIFFICULTY_LEVEL'), {
+                fontSize: '14px',
                 color: '#ffffff',
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
@@ -2171,13 +2187,13 @@
             
             diffs.forEach((diff, i) => {
                 const x = 230 + i * 170;
-                const btn = this.add.rectangle(x, 235, 120, 30, 
+                const btn = this.add.rectangle(x, 220, 120, 28, 
                     GAME.settings.difficulty === diff ? 0x27ae60 : 0x2c1a11
                 );
                 btn.setStrokeStyle(1, 0xd27d2d);
                 btn.setInteractive({ useHandCursor: true });
                 
-                this.add.text(x, 235, diffKeys[diff].toUpperCase(), {
+                this.add.text(x, 220, diffKeys[diff].toUpperCase(), {
                     fontSize: '12px',
                     color: '#ffffff',
                     fontStyle: 'bold',
@@ -2191,17 +2207,17 @@
                 });
             });
             
-            this.add.text(400, 285, t('CONTROL_SYSTEM'), {
-                fontSize: '15px',
+            this.add.text(400, 265, t('CONTROL_SYSTEM'), {
+                fontSize: '14px',
                 color: '#ffffff',
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
             
-            const ctrlBtn = this.add.rectangle(400, 315, 230, 32, 0x2c1a11);
+            const ctrlBtn = this.add.rectangle(400, 295, 230, 30, 0x2c1a11);
             ctrlBtn.setStrokeStyle(1, 0xd27d2d);
             ctrlBtn.setInteractive({ useHandCursor: true });
             
-            const ctrlTxt = this.add.text(400, 315, `${t('KEYBOARD')} ${GAME.settings.controls.toUpperCase()}`, {
+            const ctrlTxt = this.add.text(400, 295, `${t('KEYBOARD')} ${GAME.settings.controls.toUpperCase()}`, {
                 fontSize: '13px',
                 color: '#ffffff',
                 fontStyle: 'bold',
@@ -2214,8 +2230,8 @@
                 ctrlTxt.setText(`${t('KEYBOARD')} ${GAME.settings.controls.toUpperCase()}`);
             });
 
-            this.add.text(400, 365, t('LANGUAGE_SELECT'), {
-                fontSize: '15px',
+            this.add.text(400, 340, t('LANGUAGE_SELECT'), {
+                fontSize: '14px',
                 color: '#ffffff',
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
@@ -2229,10 +2245,10 @@
             const currentLangData = langs[currentLangCode] || langs['it'];
 
             // Box centrale lingua
-            const langBox = this.add.rectangle(400, 395, 200, 34, 0x2c1a11);
+            const langBox = this.add.rectangle(400, 370, 200, 30, 0x2c1a11);
             langBox.setStrokeStyle(1, 0xd27d2d);
 
-            const langTxt = this.add.text(400, 395, `${currentLangData.flag} ${currentLangData.name}`, {
+            const langTxt = this.add.text(400, 370, `${currentLangData.flag} ${currentLangData.name}`, {
                 fontSize: '13px',
                 color: '#ffffff',
                 fontStyle: 'bold',
@@ -2240,11 +2256,11 @@
             }).setOrigin(0.5);
 
             // Tasto Freccia Sinistra
-            const prevBtn = this.add.rectangle(270, 395, 40, 34, 0xd27d2d);
+            const prevBtn = this.add.rectangle(270, 370, 40, 30, 0xd27d2d);
             prevBtn.setStrokeStyle(1, 0xffd700);
             prevBtn.setInteractive({ useHandCursor: true });
             
-            const prevTxt = this.add.text(270, 395, '◀', {
+            this.add.text(270, 370, '◀', {
                 fontSize: '16px',
                 color: '#ffffff',
                 fontStyle: 'bold',
@@ -2261,11 +2277,11 @@
             });
 
             // Tasto Freccia Destra
-            const nextBtn = this.add.rectangle(530, 395, 40, 34, 0xd27d2d);
+            const nextBtn = this.add.rectangle(530, 370, 40, 30, 0xd27d2d);
             nextBtn.setStrokeStyle(1, 0xffd700);
             nextBtn.setInteractive({ useHandCursor: true });
 
-            const nextTxt = this.add.text(530, 395, '▶', {
+            this.add.text(530, 370, '▶', {
                 fontSize: '16px',
                 color: '#ffffff',
                 fontStyle: 'bold',
@@ -2280,12 +2296,46 @@
                 switchLanguage(langKeys[langIndex]);
                 this.scene.restart();
             });
-            
-            const backBtn = this.add.rectangle(400, 465, 260, 38, 0xd27d2d);
+
+            // --- INTERRUTTORE AI ---
+            this.add.text(400, 415, t('INTELLIGENZA ARTIFICIALE'), {
+                fontSize: '14px',
+                color: '#ffffff',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            const aiBtn = this.add.rectangle(400, 445, 240, 30, GAME.settings.aiEnabled ? 0x27ae60 : 0xe74c3c);
+            aiBtn.setStrokeStyle(1, 0xffffff);
+            aiBtn.setInteractive({ useHandCursor: true });
+
+            const aiTxt = this.add.text(400, 445, GAME.settings.aiEnabled ? 'INTELLIGENZA ARTIFICIALE: ON' : 'INTELLIGENZA ARTIFICIALE: OFF', {
+                fontSize: '12px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            aiBtn.on('pointerdown', () => {
+                GAME.settings.aiEnabled = !GAME.settings.aiEnabled;
+                triggerSfx('click');
+                aiBtn.setFillStyle(GAME.settings.aiEnabled ? 0x27ae60 : 0xe74c3c);
+                aiTxt.setText(GAME.settings.aiEnabled ? 'INTELLIGENZA ARTIFICIALE: ON' : 'INTELLIGENZA ARTIFICIALE: OFF');
+                
+                // Salva le opzioni nel localStorage
+                try {
+                    const raw = localStorage.getItem('waitress_save_data');
+                    let data = raw ? JSON.parse(raw) : {};
+                    data.settings = GAME.settings;
+                    localStorage.setItem('waitress_save_data', JSON.stringify(data));
+                } catch(e) {}
+            });
+
+            // --- PULSANTE TORNA ---
+            const backBtn = this.add.rectangle(400, 500, 260, 36, 0xd27d2d);
             backBtn.setStrokeStyle(2, 0xffd700);
             backBtn.setInteractive({ useHandCursor: true });
             
-            this.add.text(400, 465, t('TORNA'), {
+            this.add.text(400, 500, t('TORNA'), {
                 fontSize: '14px',
                 color: '#ffffff',
                 fontStyle: 'bold',

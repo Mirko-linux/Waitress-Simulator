@@ -1,6 +1,6 @@
 // ============================================================================
-// THE WAITRESS - SISTEMA DI DIALOGO AI (WEBLLM - LATO BROWSER)
-// File: ai.js
+// THE WAITRESS - SISTEMA DI DIALOGO AI (WEBLLM - LATO BROWSER CON TOGGLE)
+// File: ai.js - VERSIONE DIALOGO NATURALE
 // ============================================================================
 
 class AIDialogueManager {
@@ -11,57 +11,84 @@ class AIDialogueManager {
         this.engine = null;
         this.isLoading = false;
         this.isModelReady = false;
-        this.useFallback = false; // Attivato se WebGPU non è supportata
+        this.useFallback = false;
+        this.isChatOpen = false;
         
         this.injectChatStyles();
         this.createChatDOM();
+        this.setupKeyboardFix();
         
-        // Avvia il caricamento del modello in background
-        this.initializeWebLLM();
+        this.checkAISetting();
+    }
+
+    checkAISetting() {
+        let savedSetting = true;
+        try {
+            const raw = localStorage.getItem('waitress_save_data');
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (data.settings && typeof data.settings.aiEnabled === 'boolean') {
+                    savedSetting = data.settings.aiEnabled;
+                }
+            }
+        } catch(e) {}
+
+        const isAIEnabled = (window.GAME && window.GAME.settings && typeof window.GAME.settings.aiEnabled === 'boolean') 
+                            ? window.GAME.settings.aiEnabled 
+                            : savedSetting;
+
+        if (!isAIEnabled) {
+            console.log("🔇 AI disattivata. Uso modalità classica.");
+            this.useFallback = true;
+            this.isModelReady = true;
+            this.appendMessage("system", "💬 Modalità dialogo classico attiva.");
+        } else {
+            console.log("🧠 AI attivata. Avvio caricamento modello...");
+            this.initializeWebLLM();
+        }
     }
 
     async initializeWebLLM() {
-        if (this.isLoading || this.isModelReady) return;
-        
-        this.isLoading = true;
-        this.appendMessage("system", "⏳ Inizializzazione AI in corso... (Potrebbe richiedere WebGPU)");
-        
         try {
-            // Importazione corretta dell'ultima release stabile di WebLLM
+            this.isLoading = true;
+            this.appendMessage("system", "⏳ Caricando il modello di Intelligenza Artificiale (1-2 minuti)...");
+
             const webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/+esm');
 
-            // Verifica presenza di WebGPU nel browser
-            if (!navigator.gpu) {
-                throw new Error("WebGPU non supportata dal browser.");
-            }
-
-            // Inizializzazione corretta tramite CreateMLCEngine
-            const selectedModel = "Phi-3-mini-4k-instruct-q4f16_1-MLC";
+            // --- MODELLO SPECIALIZZATO PER DIALOGHI ---
+            // Llama-3.2-1B-Instruct è ottimo per risposte brevi e naturali
+            const selectedModel = "Llama-3-8B-Instruct-q4f16_1-MLC";
             
-            this.engine = await webllm.CreateMLCEngine(
-                selectedModel,
-                {
-                    initProgressCallback: (progress) => {
-                        // Mostra lo stato di avanzamento del download
-                        if (progress.text) {
-                            console.log("WebLLM Progress:", progress.text);
-                        }
-                    }
+            this.engine = await webllm.CreateMLCEngine(selectedModel, {
+                initProgressCallback: (report) => {
+                    this.updateLoadingStatus(report.text);
                 }
-            );
-            
+            });
+
             this.isModelReady = true;
             this.isLoading = false;
-            this.appendMessage("system", "✅ AI pronta! Puoi chattare in tempo reale con i clienti.");
-            
+            this.appendMessage("system", "✅ AI pronta! Puoi parlare con i clienti.");
         } catch (error) {
-            console.warn("WebLLM non disponibile, attivazione modalità Fallback:", error);
-            this.isLoading = false;
+            console.error("❌ Errore caricamento WebLLM:", error);
             this.useFallback = true;
-            this.isModelReady = true; // Permette di chattare usando la simulazione integrata
-            
-            this.appendMessage("system", "⚠️ AI locale non disponibile (WebGPU disattivata o non supportata). Attivata modalità simulata!");
+            this.isModelReady = true;
+            this.appendMessage("system", "⚠️ Impossibile caricare il modello AI. Attivata modalità classica.");
         }
+    }
+
+    updateLoadingStatus(text) {
+        const log = document.getElementById("ai-chat-log");
+        if (!log) return;
+        let lastMsg = log.lastElementChild;
+        if (lastMsg && lastMsg.classList.contains("system-loading")) {
+            lastMsg.textContent = `[Sistema]: ${text}`;
+        } else {
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "ai-msg system system-loading";
+            msgDiv.textContent = `[Sistema]: ${text}`;
+            log.appendChild(msgDiv);
+        }
+        log.scrollTop = log.scrollHeight;
     }
 
     injectChatStyles() {
@@ -69,183 +96,275 @@ class AIDialogueManager {
         const style = document.createElement("style");
         style.id = "ai-chat-styles";
         style.textContent = `
-            #ai-chat-modal {
-                position: absolute; top: 50%; left: 50%;
-                transform: translate(-50%, -50%) scale(0.9);
-                width: 440px; height: 500px;
-                background: linear-gradient(135deg, rgba(35, 21, 19, 0.98) 0%, rgba(17, 9, 7, 0.99) 100%);
-                border: 2px solid rgba(255, 112, 67, 0.4); border-radius: 20px;
-                z-index: 10000; display: none; flex-direction: column;
-                font-family: 'Poppins', sans-serif; color: #f5efe6;
-                transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
-                opacity: 0;
+            #ai-chat-container {
+                position: absolute;
+                bottom: 20px;
+                right: 20px;
+                width: 320px;
+                height: 400px;
+                background: rgba(20, 10, 5, 0.92);
+                border: 3px solid #eccc68;
+                border-radius: 12px;
+                display: none;
+                flex-direction: column;
+                font-family: 'Fredoka', 'Segoe UI', sans-serif;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+                z-index: 1000;
+                overflow: hidden;
             }
-            #ai-chat-modal.active { display: flex; transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            .ai-chat-header { padding: 16px 20px; border-bottom: 1px solid rgba(255, 112, 67, 0.2); display: flex; justify-content: space-between; background: rgba(17, 9, 7, 0.85); border-radius: 20px 20px 0 0; }
-            .ai-profile-info { display: flex; align-items: center; gap: 12px; }
-            .ai-avatar { font-size: 24px; background: rgba(255, 112, 67, 0.15); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
-            .ai-name-box h3 { margin: 0; font-size: 16px; font-weight: 600; color: #ffb74d; }
-            .ai-relation-badge { font-size: 11px; color: #ff7043; font-weight: bold; }
-            .ai-chat-log { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-            .ai-msg { max-width: 82%; padding: 12px 16px; border-radius: 16px; font-size: 13.5px; line-height: 1.45; word-wrap: break-word; }
-            .ai-msg.customer { background: rgba(255, 255, 255, 0.05); color: #f5efe6; align-self: flex-start; border: 1px solid rgba(255, 255, 255, 0.1); border-bottom-left-radius: 4px; }
-            .ai-msg.waitress { background: linear-gradient(135deg, #ff7043 0%, #ffb74d 100%); color: #110907; align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 500; }
-            .ai-msg.system { background: rgba(255, 183, 77, 0.05); color: #ffb74d; align-self: center; font-size: 11px; border-radius: 20px; padding: 6px 16px; border: 1px dashed rgba(255, 183, 77, 0.3); text-align: center; }
-            .ai-chat-input-area { padding: 16px; background: rgba(17, 9, 7, 0.95); border-top: 1px solid rgba(255, 112, 67, 0.2); display: flex; gap: 10px; border-radius: 0 0 20px 20px; }
-            #ai-input-field { flex: 1; background: rgba(255, 255, 255, 0.03); border: 1.5px solid rgba(255, 112, 67, 0.3); border-radius: 12px; padding: 10px 16px; color: #ffffff; outline: none; }
-            .ai-btn-send { background: linear-gradient(135deg, #ff7043 0%, #ff5722 100%); border: none; color: white; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; }
-            .ai-close-btn { background: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.3); color: #e74c3c; font-size: 12px; padding: 6px 14px; border-radius: 8px; cursor: pointer; }
+            #ai-chat-header {
+                background: #2ed573;
+                color: #fff;
+                padding: 10px;
+                font-weight: bold;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 2px solid #eccc68;
+            }
+            #ai-chat-log {
+                flex: 1;
+                padding: 10px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .ai-msg {
+                padding: 8px 12px;
+                border-radius: 8px;
+                max-width: 85%;
+                font-size: 14px;
+                line-height: 1.3;
+                word-wrap: break-word;
+            }
+            .ai-msg.customer {
+                background: #ffa502;
+                color: #2f3542;
+                align-self: flex-start;
+            }
+            .ai-msg.player {
+                background: #70a1ff;
+                color: #fff;
+                align-self: flex-end;
+            }
+            .ai-msg.system {
+                background: rgba(255,255,255,0.1);
+                color: #eccc68;
+                align-self: center;
+                font-size: 12px;
+                text-align: center;
+            }
+            #ai-chat-input-area {
+                display: flex;
+                padding: 10px;
+                background: rgba(0,0,0,0.3);
+                gap: 6px;
+            }
+            #ai-chat-input {
+                flex: 1;
+                padding: 8px 12px;
+                border-radius: 6px;
+                border: 1px solid #eccc68;
+                background: #2f3542;
+                color: #fff;
+                outline: none;
+            }
+            #ai-chat-send {
+                padding: 8px 14px;
+                background: #2ed573;
+                color: #fff;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+            #ai-chat-send:hover {
+                background: #26af5f;
+            }
+            #ai-chat-close {
+                cursor: pointer;
+                font-weight: bold;
+            }
         `;
         document.head.appendChild(style);
     }
 
     createChatDOM() {
-        const existing = document.getElementById("ai-chat-modal");
-        if (existing) existing.remove();
+        if (document.getElementById("ai-chat-container")) return;
 
-        const modal = document.createElement("div");
-        modal.id = "ai-chat-modal";
-        modal.innerHTML = `
-            <div class="ai-chat-header">
-                <div class="ai-profile-info">
-                    <div class="ai-avatar" id="ai-chat-avatar">🧑</div>
-                    <div class="ai-name-box">
-                        <h3 id="ai-chat-name">Cliente</h3>
-                        <div class="ai-relation-badge">
-                            <span>❤️ Sintonia:</span>
-                            <span id="ai-chat-relation">50%</span>
-                        </div>
-                    </div>
-                </div>
-                <button class="ai-close-btn" id="ai-chat-close">Torna al Lavoro 🏃‍♀️</button>
+        const container = document.createElement("div");
+        container.id = "ai-chat-container";
+        container.innerHTML = `
+            <div id="ai-chat-header">
+                <span id="ai-chat-title">💬 Conversazione</span>
+                <span id="ai-chat-relation">50%</span>
+                <span id="ai-chat-close">✖</span>
             </div>
-            <div class="ai-chat-log" id="ai-chat-log"></div>
-            <div class="ai-chat-input-area">
-                <input type="text" id="ai-input-field" placeholder="Scrivi alla clientela..." autocomplete="off">
-                <button class="ai-btn-send" id="ai-send-btn">Invia</button>
+            <div id="ai-chat-log"></div>
+            <div id="ai-chat-input-area">
+                <input type="text" id="ai-chat-input" placeholder="Scrivi una risposta..." autocomplete="off" />
+                <button id="ai-chat-send">Invia</button>
             </div>
         `;
-        document.body.appendChild(modal);
+
+        document.body.appendChild(container);
 
         document.getElementById("ai-chat-close").addEventListener("click", () => this.closeChat());
-        document.getElementById("ai-send-btn").addEventListener("click", () => this.sendMessage());
-        document.getElementById("ai-input-field").addEventListener("keypress", (e) => {
-            if (e.key === "Enter") this.sendMessage();
+        document.getElementById("ai-chat-send").addEventListener("click", () => this.sendMessage());
+    }
+
+    setupKeyboardFix() {
+        const chatInput = document.getElementById("ai-chat-input");
+        if (!chatInput) return;
+
+        chatInput.addEventListener("keydown", (e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") {
+                this.sendMessage();
+            }
+        });
+
+        chatInput.addEventListener("focus", () => {
+            if (this.scene && this.scene.input && this.scene.input.keyboard) {
+                this.scene.input.keyboard.enabled = false;
+            }
+        });
+
+        chatInput.addEventListener("blur", () => {
+            if (this.scene && this.scene.input && this.scene.input.keyboard) {
+                this.scene.input.keyboard.enabled = true;
+            }
         });
     }
 
     openChat(customer) {
-        if (!this.scene.gameActive) return;
-        if (!this.isModelReady) {
-            this.appendMessage("system", "⏳ L'AI sta terminando la configurazione, attendi un istante...");
-            return;
-        }
-
         this.currentCustomer = customer;
         this.chatHistory = [];
 
-        this.scene.gameActive = false;
-        if (this.scene.input && this.scene.input.keyboard) this.scene.input.keyboard.enabled = false;
-
-        document.getElementById("ai-chat-avatar").textContent = customer.emojiChar || "🧑";
-        document.getElementById("ai-chat-name").textContent = customer.name || "Cliente";
-        document.getElementById("ai-chat-relation").textContent = `${Math.floor(customer.relationScore || 50)}%`;
-
+        const container = document.getElementById("ai-chat-container");
         const log = document.getElementById("ai-chat-log");
-        log.innerHTML = "";
+        const title = document.getElementById("ai-chat-title");
+        const relation = document.getElementById("ai-chat-relation");
 
-        const orderName = customer.order || "questo piatto";
-        const initialGreeting = `Ciao! Sono ${customer.name}. Grazie mille per il servizio e per ${orderName}!`;
+        log.innerHTML = "";
+        container.style.display = "flex";
+        title.textContent = `💬 ${customer.name || "Cliente"}`;
+        
+        const score = typeof customer.relationScore === "number" ? customer.relationScore : 50;
+        relation.textContent = `${Math.floor(score)}%`;
+
+        this.isChatOpen = true;
+        this.scene.gameActive = false;
+        if (this.scene.input && this.scene.input.keyboard) {
+            this.scene.input.keyboard.enabled = false;
+        }
+
+        this.appendMessage("system", `Inizio conversazione con ${customer.name || "il cliente"}.`);
+
+        // Messaggio iniziale personalizzato in base al piatto
+        const initialGreeting = `Ciao! Sono ${customer.name}. Ho sentito parlare molto del vostro ${customer.order || "cibo"}.`;
         this.appendMessage("customer", initialGreeting);
         this.chatHistory.push({ role: "assistant", content: initialGreeting });
 
-        document.getElementById("ai-chat-modal").classList.add("active");
-        setTimeout(() => document.getElementById("ai-input-field").focus(), 100);
+        setTimeout(() => {
+            const input = document.getElementById("ai-chat-input");
+            if (input) input.focus();
+        }, 100);
     }
 
     closeChat() {
-        document.getElementById("ai-chat-modal").classList.remove("active");
-        if (this.scene.input && this.scene.input.keyboard) this.scene.input.keyboard.enabled = true;
-        this.scene.gameActive = true;
+        const container = document.getElementById("ai-chat-container");
+        if (container) container.style.display = "none";
         this.currentCustomer = null;
+
+        this.isChatOpen = false;
+        this.scene.gameActive = true;
+        if (this.scene.input && this.scene.input.keyboard) {
+            this.scene.input.keyboard.enabled = true;
+        }
     }
 
     async sendMessage() {
-        const inputField = document.getElementById("ai-input-field");
-        const userText = inputField.value.trim();
-        if (!userText || !this.currentCustomer || !this.isModelReady) return;
+        const input = document.getElementById("ai-chat-input");
+        if (!input) return;
 
-        inputField.value = "";
-        this.appendMessage("waitress", userText);
-        this.chatHistory.push({ role: "user", content: userText });
+        const text = input.value.trim();
+        if (!text) return;
 
-        const typingIndicator = this.appendMessage("customer", "Sta digitando...");
+        input.value = "";
+        this.appendMessage("player", text);
+        this.chatHistory.push({ role: "user", content: text });
 
-        try {
-            let aiResponse = "";
-
-            if (this.useFallback) {
-                // Generazione risposte simulate dinamiche
-                await new Promise(res => setTimeout(res, 800)); // Simula tempo di risposta
-                aiResponse = this.generateFallbackResponse(userText);
-            } else {
-                // Generazione risposta tramite WebLLM
-                const systemPrompt = `Sei ${this.currentCustomer.name}, un cliente del ristorante. Rispondi sempre in italiano, in modo amichevole e breve (massimo 2-3 frasi). Non usare simboli strani o asterischi.`;
-
-                const reply = await this.engine.chat.completions.create({
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        ...this.chatHistory
-                    ],
-                    temperature: 0.7,
-                    max_tokens: 100
-                });
-
-                aiResponse = reply.choices[0].message.content.trim();
-            }
-
-            typingIndicator.remove();
-            this.appendMessage("customer", aiResponse);
-            this.chatHistory.push({ role: "assistant", content: aiResponse });
-
-            // Calcolo automatico incremento sintonia
-            const deltaScore = Phaser.Math.Between(3, 8);
-            this.updateRelationship(deltaScore, "Ottima conversazione!");
-
-        } catch (e) {
-            console.error("Errore nella generazione del messaggio:", e);
-            typingIndicator.remove();
-            
-            // Passa alla modalità fallback se la GPU va in crash durante la risposta
-            this.useFallback = true;
-            const fallbackReply = this.generateFallbackResponse(userText);
-            this.appendMessage("customer", fallbackReply);
+        if (this.useFallback || !this.engine) {
+            this.handleFallbackResponse(text);
+        } else {
+            await this.handleAIResponse(text);
         }
     }
 
-    generateFallbackResponse(text) {
-        const lower = text.toLowerCase();
-        const customerName = this.currentCustomer ? this.currentCustomer.name : "Cliente";
+    async handleAIResponse(userMessage) {
+        if (!this.currentCustomer) return;
 
-        if (lower.includes("ciao") || lower.includes("salve")) {
-            return `Ciao! È davvero un piacere parlare con te. Come sta andando il turno?`;
-        } else if (lower.includes("buono") || lower.includes("piatto") || lower.includes("cibo")) {
-            return `Sì, era davvero delizioso! Tornerò sicuramente in questo locale.`;
-        } else if (lower.includes("grazie")) {
-            return `Grazie a te per l'ottima accoglienza e il servizio impeccabile!`;
-        } else {
-            const generic = [
-                `Hai davvero un bell'atteggiamento con i clienti, si vede che ci tieni!`,
-                `Il servizio qui è sempre fantastico, ti ringrazio ancora.`,
-                `Spero di rivederci presto al mio prossimo pranzo qui!`
+        try {
+            // --- FIX: PROMPT DI SISTEMA MOLTO STRINGENTE ---
+            // Forziamo l'AI a parlare come un cliente, non come un professore.
+            const systemPrompt = `Sei ${this.currentCustomer.name}, un cliente di un ristorante. 
+Stai parlando con la cameriera.
+Regole ASSOLUTE:
+- Rispondi SEMPRE in italiano, in modo naturale e colloquiale.
+- Rispondi con MASSIMO 1 o 2 frasi brevi.
+- Non fare elenchi, non usare numeri, non usare asterischi.
+- Non spiegare cose, non fare da insegnante. Sii un semplice cliente che chiacchiera.
+- Se ti chiedono del cibo, rispondi che ti piace o che hai fame.
+- Non parlare di te in terza persona. Usa "io".`;
+
+            const messages = [
+                { role: "system", content: systemPrompt },
+                ...this.chatHistory
             ];
-            return generic[Math.floor(Math.random() * generic.length)];
+
+            const response = await this.engine.chat.completions.create({
+                messages,
+                temperature: 0.7,
+                max_tokens: 60 // Più basso = risposte più brevi e dirette
+            });
+
+            const reply = response.choices[0].message.content.trim();
+            
+            // Pulizia finale: rimuove eventuali doppi spazi o caratteri strani
+            const cleanReply = reply.replace(/\*/g, '').replace(/[0-9]+\./g, '').trim();
+            
+            this.chatHistory.push({ role: "assistant", content: cleanReply });
+            this.appendMessage("customer", cleanReply);
+            this.updateRelationship(5, "Ottima risposta!");
+        } catch (err) {
+            console.error("Errore generazione risposta AI:", err);
+            this.handleFallbackResponse(userMessage);
         }
+    }
+
+    handleFallbackResponse(userMessage) {
+        // Risposte di fallback molto più naturali
+        const responses = [
+            "Mmmh, mi piace molto come parli!",
+            "Sì, il cibo qui è davvero buono.",
+            "Che bello chiacchierare con te!",
+            "Hai ragione, sai sempre cosa dire.",
+            "Mi fai sentire a mio agio.",
+            "Spero di tornare presto qui."
+        ];
+        const randomReply = responses[Math.floor(Math.random() * responses.length)];
+
+        setTimeout(() => {
+            this.appendMessage("customer", randomReply);
+            this.updateRelationship(3, "Risposta ricevuta");
+        }, 500);
     }
 
     updateRelationship(delta, feedback) {
         if (!this.currentCustomer) return;
-        
+
         if (typeof this.currentCustomer.relationScore !== "number") {
             this.currentCustomer.relationScore = 50;
         }
@@ -269,12 +388,13 @@ class AIDialogueManager {
     appendMessage(sender, text) {
         const log = document.getElementById("ai-chat-log");
         if (!log) return;
+        
         const msgDiv = document.createElement("div");
         msgDiv.className = `ai-msg ${sender}`;
-        msgDiv.textContent = text;
+        msgDiv.textContent = sender === "system" ? `[Sistema]: ${text}` : text;
+        
         log.appendChild(msgDiv);
         log.scrollTop = log.scrollHeight;
-        return msgDiv;
     }
 }
 
