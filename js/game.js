@@ -507,11 +507,26 @@
             
             // --- 2. ORA CREA L' AI MANAGER (che userà il GAME.settings appena caricato) ---
             if (typeof window.AIDialogueManager === 'function') {
-                this.aiManager = new window.AIDialogueManager(this, GAME.settings.aiEnabled);
-                if (GAME.settings.aiEnabled === false) {
-                    this.aiManager.useFallback = true;
-                    this.aiManager.isModelReady = true;
+                if (GAME.settings.aiEnabled) {
+                    this.aiManager = new window.AIDialogueManager(this, true);
+                } else {
+                    // Modalità AI disattivata: oggetto leggero senza caricamento di modelli o processi background
+                    this.aiManager = {
+                        useFallback: true,
+                        isModelReady: true,
+                        openChat: (customer) => {
+                            if (window.AIDialogueManager) {
+                                const dummy = new window.AIDialogueManager(this, false);
+                                dummy.openChat(customer);
+                            }
+                        }
+                    };
                 }
+            }
+
+            // --- Aggiungi questo per attivare la Radio: ---
+            if (typeof window.RadioSystem === 'function') {
+                this.radio = new window.RadioSystem(this);
             }
 
             this.createWaitress();
@@ -1139,7 +1154,7 @@
         }
         
         spawnCustomer() {
-            // 1. Cerca un tavolo veramente libero (non occupato)
+            // 1. Cerca un tavolo veramente libero (non occupato e pulito)
             let freeTable = this.tables.find(t => !t.occupied && t.status === 'libero');
             
             // 2. Se non c'è nessun tavolo pulito, cerca un tavolo sporco ma libero
@@ -1151,6 +1166,9 @@
             if (!freeTable) {
                 return; // <-- IMPORTANTE: fermati qui, non spawnare
             }
+
+            // Marca IMMEDIATAMENTE il tavolo come occupato prima di qualsiasi operazione asincrona
+            freeTable.occupied = true;
 
             const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto', 'Cannolo', 'Ginseng'];
             const selectedFood = foods[Phaser.Math.Between(0, foods.length - 1)];
@@ -1726,7 +1744,7 @@
                 if (this.kitchen && typeof this.kitchen.update === 'function') this.kitchen.update();
                 if (this.bathroom && typeof this.bathroom.update === 'function') this.bathroom.update(time, delta);
                 if (this.phone && typeof this.phone.update === 'function') this.phone.update(time, delta);
-                this.fixKitchenScales();
+                // Rimossa la chiamata a fixKitchenScales() a 60 FPS che causava grave lag alla CPU
             }
 
             // Cheat code

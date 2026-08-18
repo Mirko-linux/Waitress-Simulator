@@ -1,160 +1,351 @@
-// tilemap.js - Versione corretta per 800x600 (25x19 tile da 32px)
-// CON PORTA DI INGRESSO E FISSA
+// ============================================
+// TUTORIAL SYSTEM (VERSIONE COMPLETA FIXATA)
+// ============================================
 
-class TilemapSystem {
+class TutorialSystem {
     constructor(scene) {
         this.scene = scene;
-        this.tileSize = 32;
-
-        // DIMENSIONI ESATTE PER 800x600
-        this.mapWidth = 25;  // 800 / 32 = 25
-        this.mapHeight = 19; // 608 / 32 = 19 (copre i 600px e un po' di bordo)
+        this.isActive = true;
+        this.fakeCustomer = null;
+        this.tutorialStep = 0;
+        this.welcomeContainer = null; 
+        this.tutorialPanel = null;
+        this.arrowGraphic = null;
+        this.finishTimer = null; // Timer per la chiusura automatica
         
-        this.mapData = [];
-        this.collisionLayer = [];
-        this.wallGroup = null;
+        // Controllo per evitare che si apra due volte
+        if (window._tutorialStarting) {
+            console.warn("⚠️ Tutorial già in avvio, salto la creazione");
+            this.skipTutorial();
+            return;
+        }
+        window._tutorialStarting = true;
 
-        this.initMap();
+        this.createWelcomeScreen();
     }
 
-    initMap() {
-        this.mapData = [];
-        this.collisionLayer = [];
+    // --- 1. SCHERMATA DI BENVENUTO (SÌ / NO) ---
+    createWelcomeScreen() {
+        const scene = this.scene;
 
-        for (let row = 0; row < this.mapHeight; row++) {
-            this.mapData[row] = [];
-            this.collisionLayer[row] = [];
+        // Sfondo nero semitrasparente (Depth altissima per coprire tutto)
+        this.welcomeBg = scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.8).setDepth(998);
 
-            for (let col = 0; col < this.mapWidth; col++) {
-                let floorType = 0; // 0 = sala, 1 = cucina, 2 = bagno
-                let isWall = false;
+        // Pannello Principale
+        this.welcomeContainer = scene.add.container(400, 300).setDepth(999);
+        
+        const bg = scene.add.rectangle(0, 0, 520, 320, 0x110906, 0.95);
+        bg.setStrokeStyle(2, 0xd27d2d);
+        
+        const title = scene.add.text(0, -110, '👋 NUOVA CAMERIERA!', {
+            fontSize: '28px',
+            color: '#ffd700',
+            fontStyle: 'bold',
+            fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
 
-                // --- 1. MURI ESTERNI (tutti i bordi) ---
-                if (row === 0 || row === this.mapHeight - 1 || col === 0 || col === this.mapWidth - 1) {
-                    isWall = true;
-                    floorType = 0; 
-                }
+        const desc = scene.add.text(0, -40, 'Prima di iniziare, vuoi seguire il tutorial per imparare il mestiere?', {
+            fontSize: '16px',
+            color: '#ffffff',
+            fontFamily: 'Fredoka',
+            align: 'center',
+            wordWrap: { width: 450 }
+        }).setOrigin(0.5);
 
-                // --- 2. PORTA DI INGRESSO (in basso a sinistra) ---
-                // Riga 18 (ultima riga), colonne da 6 a 8
-                if (row === this.mapHeight - 1 && col >= 6 && col <= 8) {
-                    isWall = false;
-                    floorType = 0; // Pavimento sala
-                }
+        // Bottone SÌ (Verde)
+        const btnYesBg = scene.add.rectangle(-90, 60, 160, 50, 0x2ecc71).setStrokeStyle(2, 0x27ae60);
+        btnYesBg.setInteractive({ useHandCursor: true });
+        const btnYesTxt = scene.add.text(-90, 60, '✅ SÌ', {
+            fontSize: '18px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+            fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
+        
+        btnYesBg.on('pointerdown', () => {
+            triggerSfx('click');
+            this.destroyWelcomeScreen();
+            this.startTutorialGameplay();
+        });
+        btnYesBg.on('pointerover', () => btnYesBg.setFillStyle(0x27ae60));
+        btnYesBg.on('pointerout', () => btnYesBg.setFillStyle(0x2ecc71));
 
-                // --- 3. ZONA CUCINA (a destra, da colonna 19 a 23) ---
-                if (col >= 19 && col <= 23 && !isWall) {
-                    floorType = 1; // Pavimento cucina
-                }
+        // Bottone NO (Rosso)
+        const btnNoBg = scene.add.rectangle(90, 60, 160, 50, 0xe74c3c).setStrokeStyle(2, 0xc0392b);
+        btnNoBg.setInteractive({ useHandCursor: true });
+        const btnNoTxt = scene.add.text(90, 60, '❌ NO', {
+            fontSize: '18px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+            fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
 
-                // --- 4. MURI INTERNI (Separazione Sala/Cucina) ---
-                // Muro verticale alla colonna 18 (tra sala e cucina)
-                if (col === 18 && !isWall) {
-                    isWall = true;
-                    // Creiamo un passaggio (porta) tra le righe 9, 10, 11 (centro)
-                    if (row >= 8 && row <= 10) {
-                        isWall = false;
-                        floorType = 0; // Passaggio sala
-                    }
-                }
+        btnNoBg.on('pointerdown', () => {
+            triggerSfx('click');
+            this.destroyWelcomeScreen();
+            this.skipTutorial();
+        });
+        btnNoBg.on('pointerover', () => btnNoBg.setFillStyle(0xc0392b));
+        btnNoBg.on('pointerout', () => btnNoBg.setFillStyle(0xe74c3c));
 
-                // --- 5. ZONA BAGNO (in basso a destra, colonne 19-21, righe 15-17) ---
-                if (col >= 19 && col <= 21 && row >= 15 && row <= 17 && !isWall) {
-                    floorType = 2; // Pavimento bagno
-                }
-                // Muro del bagno (in alto)
-                if (col >= 19 && col <= 21 && row === 14 && !isWall) {
-                    isWall = true;
-                    if (col === 20) {
-                        isWall = false; // Porta del bagno al centro
-                    }
-                }
-                // Muro del bagno (sinistra)
-                if (col === 18 && row >= 15 && row <= 17 && !isWall) {
-                    isWall = true;
-                }
+        this.welcomeContainer.add([bg, title, desc, btnYesBg, btnYesTxt, btnNoBg, btnNoTxt]);
+    }
 
-                // --- 6. ZONA LAVELLO PIATTI (in basso a sinistra) ---
-                // Lasciamo lo spazio libero per il lavello in basso a sinistra
+    destroyWelcomeScreen() {
+        if (this.welcomeBg) this.welcomeBg.destroy();
+        if (this.welcomeContainer) this.welcomeContainer.destroy();
+        this.welcomeBg = null;
+        this.welcomeContainer = null;
+        window._tutorialStarting = false;
+    }
 
-                this.mapData[row][col] = floorType;
-                this.collisionLayer[row][col] = isWall;
+    // --- 2. SE PREMI "NO" ---
+    skipTutorial() {
+        localStorage.setItem('waitress_tutorial_done', 'true');
+        this.scene.tutorialActive = false;
+        this.scene.tutorial = null;
+        window._tutorialStarting = false;
+        
+        if (this.tutorialPanel) this.tutorialPanel.destroy();
+        if (this.arrowGraphic) this.arrowGraphic.destroy();
+        if (this.finishTimer) this.finishTimer.remove();
+        
+        window.GAME.level = 1;
+        window.GAME.customersTarget = 6 + window.GAME.level * 4;
+        this.scene.gameActive = true;
+        this.scene.startSpawning();
+    }
+
+    // --- 3. SE PREMI "SÌ" ---
+    startTutorialGameplay() {
+        this.tutorialStep = 1;
+        this.scene.tutorialStepTarget = null;
+        
+        this.createFakeCustomer();
+        this.updateTutorialPanel();
+        
+        this.scene.gameActive = true;
+    }
+
+    createFakeCustomer() {
+        const firstTable = this.scene.tables[0];
+        if (!firstTable) return;
+
+        this.fakeCustomer = {
+            name: 'Marco',
+            order: 'Pizza',
+            patience: 100,
+            isDead: false,
+            table: firstTable,
+            emojiChar: '👨',
+            x: firstTable.x,
+            y: firstTable.y,
+            relationScore: 50,
+            timerEvent: { remove: () => {} },
+            serve: () => {}
+        };
+
+        firstTable.occupied = true;
+        firstTable.customer = this.fakeCustomer;
+        firstTable.status = 'ordinazione_pronta';
+
+        this.fakeCustomer.shadow = this.scene.add.ellipse(firstTable.x, firstTable.y + 35, 40, 10, 0x000000, 0.25);
+        this.fakeCustomer.emoji = this.scene.add.text(firstTable.x, firstTable.y + 10, '👨', {
+            fontSize: '36px'
+        }).setOrigin(0.5).setDepth(5);
+        this.fakeCustomer.orderBubble = this.scene.add.text(firstTable.x - 18, firstTable.y - 15, '📝 ?', {
+            fontSize: '11px',
+            color: '#ffffff',
+            backgroundColor: '#110906',
+            padding: { x: 4, y: 3 }
+        }).setOrigin(0.5).setDepth(5);
+        
+        this.fakeCustomer.patienceBg = this.scene.add.rectangle(firstTable.x, firstTable.y - 28, 50, 4, 0x333333).setDepth(4);
+        this.fakeCustomer.patienceBar = this.scene.add.rectangle(firstTable.x - 25, firstTable.y - 28, 50, 4, 0x2ecc71).setDepth(5);
+        this.fakeCustomer.patienceBar.setOrigin(0, 0.5);
+    }
+
+    updateTutorialPanel() {
+        // Pulisci elementi precedenti
+        if (this.tutorialPanel) this.tutorialPanel.destroy();
+        if (this.arrowGraphic) this.arrowGraphic.destroy();
+        if (this.finishTimer) {
+            this.finishTimer.remove();
+            this.finishTimer = null;
+        }
+
+        const scene = this.scene;
+
+        // --- STEP DEL TUTORIAL (TUTTI FIXATI) ---
+        const steps = [
+            {}, 
+            { 
+                title: '📋 PRENDI L\'ORDINE', 
+                desc: 'Avvicinati al tavolo e clicca sul cliente per prendere il suo ordine.', 
+                target: 'take_order' 
+            },
+            { 
+                title: '📝 PORTA LA COMANDATA', 
+                desc: 'Vai al **PASS PIATTI** e clicca per consegnare la comanda allo chef.', 
+                target: 'counter' 
+            },
+            { 
+                title: '🍕 RITIRA IL CIBO', 
+                desc: 'Il cibo è pronto! Clicca sul **PASS PIATTI** per prenderlo.', 
+                target: 'counter' 
+            },
+            { 
+                title: '🍽️ SERVI IL CLIENTE', 
+                desc: 'Torna al tavolo e clicca sul cliente per servirgli il pasto.', 
+                target: 'serve_food' 
+            },
+            { 
+                title: '🧹 PULISCI IL TAVOLO', 
+                desc: 'Bene! Ora clicca sul tavolo per pulire il piatto sporco.', 
+                target: 'clear_table' 
+            },
+            { 
+                title: '🎉 FINE TUTORIAL!', 
+                desc: 'Hai imparato tutto! Il gioco inizierà tra 2 secondi...', 
+                target: 'finish' 
+            }
+        ];
+
+        const current = steps[this.tutorialStep];
+
+        // --- CREA IL PANNELLO ---
+        this.tutorialPanel = scene.add.container(400, 450).setDepth(999);
+        
+        const bg = scene.add.rectangle(0, 0, 600, 120, 0x110906, 0.95);
+        bg.setStrokeStyle(2, 0xd27d2d);
+
+        const title = scene.add.text(0, -35, current.title || 'Tutorial', {
+            fontSize: '20px',
+            color: '#ffd700',
+            fontStyle: 'bold',
+            fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
+
+        const desc = scene.add.text(0, 10, current.desc || '', {
+            fontSize: '14px',
+            color: '#ffffff',
+            fontFamily: 'Fredoka',
+            align: 'center',
+            wordWrap: { width: 550 }
+        }).setOrigin(0.5);
+
+        this.tutorialPanel.add([bg, title, desc]);
+
+        // --- AGGIORNA TARGET PER GAME.JS ---
+        if (current.target) {
+            this.scene.tutorialStepTarget = current.target;
+        }
+
+        // --- DISEGNA FRECCIA (SE NON È L'ULTIMO STEP) ---
+        if (current.target && this.tutorialStep < 6) {
+            let targetX = 0, targetY = 0;
+            
+            // Gestione target per il tavolo
+            if (current.target === 'take_order' || 
+                current.target === 'serve_food' || 
+                current.target === 'clear_table') {
+                targetX = this.fakeCustomer.table.x;
+                targetY = this.fakeCustomer.table.y + 32;
+            } 
+            // Gestione target per il PASS PIATTI (posizione fissa corretta)
+            else if (current.target === 'counter') {
+                targetX = 560;  // Posizione fissa del Pass Piatti
+                targetY = 460;  // La punta della freccia arriverà a Y=420 (460-40)
+            }
+            
+            this.drawArrow(targetX, targetY);
+            
+            // Rendi la freccia NON cliccabile
+            if (this.arrowGraphic) {
+                this.arrowGraphic.setInteractive(false);
+                this.arrowGraphic.disableInteractive();
             }
         }
-    }
 
-    createTileMap() {
-        this.destroy();
-
-        if (this.scene.physics) {
-            this.wallGroup = this.scene.physics.add.staticGroup();
-        }
-
-        // Sfondo nero di base per evitare il vuoto
-        this.scene.add.rectangle(400, 300, 800, 600, 0x000000).setDepth(-10);
-
-        for (let row = 0; row < this.mapHeight; row++) {
-            for (let col = 0; col < this.mapWidth; col++) {
-                const x = col * this.tileSize + this.tileSize / 2;
-                const y = row * this.tileSize + this.tileSize / 2;
-                const floorType = this.mapData[row][col];
-                let floorKey = null;
-
-                if (floorType === 0) floorKey = 'floor_sala';
-                else if (floorType === 1) floorKey = 'floor_cucina';
-                else if (floorType === 2) floorKey = 'floor_bagno';
-
-                // Disegna il pavimento
-                if (floorKey && this.scene.textures.exists(floorKey)) {
-                    const floor = this.scene.add.image(x, y, floorKey);
-                    floor.setOrigin(0.5, 0.5);
-                    floor.setDisplaySize(this.tileSize, this.tileSize);
-                    floor.setDepth(0);
-                }
-
-                // Disegna il muro e la fisica
-                if (this.collisionLayer[row][col]) {
-                    if (this.scene.textures.exists('wall')) {
-                        const wall = this.wallGroup.create(x, y, 'wall');
-                        wall.setOrigin(0.5, 0.5);
-                        wall.setDisplaySize(this.tileSize, this.tileSize);
-                        wall.setDepth(1);
-                        if (wall.body) {
-                            wall.body.setSize(this.tileSize, this.tileSize);
-                            wall.body.setOffset(0, 0);
-                            wall.refreshBody();
-                        }
-                    } else {
-                        // Fallback: se manca l'immagine del muro, disegna un rettangolo nero
-                        const wallRect = this.scene.add.rectangle(x, y, this.tileSize, this.tileSize, 0x111111).setDepth(1);
-                        this.wallGroup.create(x, y, null).setSize(this.tileSize, this.tileSize).setVisible(false);
-                    }
-                }
-            }
+        // --- SE È L'ULTIMO STEP, AVVIA IL TIMER PER LA CHIUSURA AUTOMATICA ---
+        if (this.tutorialStep === 6) {
+            this.finishTimer = this.scene.time.delayedCall(2000, () => {
+                this.finishTutorial();
+            });
         }
     }
 
-    isWalkable(x, y) {
-        const col = Math.floor(x / this.tileSize);
-        const row = Math.floor(y / this.tileSize);
-        if (col < 0 || col >= this.mapWidth || row < 0 || row >= this.mapHeight) return false;
-        return !this.collisionLayer[row][col];
+    // METODO drawArrow() AGGIORNATO
+    drawArrow(x, y) {
+        if (this.arrowGraphic) this.arrowGraphic.destroy();
+        
+        // Profondità 15: SOPRA il cliente (depth 5), SOTTO il pannello (depth 999)
+        this.arrowGraphic = this.scene.add.graphics().setDepth(15);
+        
+        this.arrowGraphic.fillStyle(0xffd700, 1);
+        this.arrowGraphic.fillTriangle(x - 12, y - 70, x + 12, y - 70, x, y - 40);
+        this.arrowGraphic.fillRect(x - 2, y - 90, 4, 30);
+        
+        // Animazione di sfarfallio
+        this.scene.tweens.add({
+            targets: this.arrowGraphic,
+            alpha: 0.6,
+            duration: 500,
+            yoyo: true,
+            repeat: -1
+        });
     }
 
-    worldToTile(x, y) {
-        return { col: Math.floor(x / this.tileSize), row: Math.floor(y / this.tileSize) };
-    }
-
-    tileToWorld(col, row) {
-        return { x: col * this.tileSize + this.tileSize / 2, y: row * this.tileSize + this.tileSize / 2 };
-    }
-
-    destroy() {
-        if (this.wallGroup) {
-            this.wallGroup.clear(true, true);
-            this.wallGroup = null;
+    // --- AVANZA AL PROSSIMO STEP ---
+    progressStep() {
+        if (this.tutorialStep >= 6) {
+            // Se per qualche motivo siamo già allo step 6, chiudi direttamente
+            this.finishTutorial();
+            return;
         }
+        this.tutorialStep++;
+        this.updateTutorialPanel();
+    }
+
+    // --- COMPLETA IL TUTORIAL E AVVIA IL GIOCO ---
+    finishTutorial() {
+        // Pulisci timer
+        if (this.finishTimer) {
+            this.finishTimer.remove();
+            this.finishTimer = null;
+        }
+
+        this.scene.tutorialActive = false;
+        this.scene.tutorial = null;
+        this.scene.tutorialStepTarget = null;
+        window._tutorialStarting = false;
+        
+        localStorage.setItem('waitress_tutorial_done', 'true');
+        
+        // Distruggi pannello e freccia
+        if (this.tutorialPanel) this.tutorialPanel.destroy();
+        if (this.arrowGraphic) this.arrowGraphic.destroy();
+        
+        // Rimuovi il cliente fittizio
+        if (this.fakeCustomer) {
+            if (this.fakeCustomer.emoji) this.fakeCustomer.emoji.destroy();
+            if (this.fakeCustomer.shadow) this.fakeCustomer.shadow.destroy();
+            if (this.fakeCustomer.orderBubble) this.fakeCustomer.orderBubble.destroy();
+            if (this.fakeCustomer.patienceBg) this.fakeCustomer.patienceBg.destroy();
+            if (this.fakeCustomer.patienceBar) this.fakeCustomer.patienceBar.destroy();
+            this.fakeCustomer.table.occupied = false;
+            this.fakeCustomer.table.customer = null;
+            this.fakeCustomer.table.status = 'libero';
+            this.fakeCustomer = null;
+        }
+
+        // Avvia il gioco
+        window.GAME.level = 1;
+        window.GAME.customersTarget = 6 + window.GAME.level * 4;
+        
+        this.scene.gameActive = true;
+        this.scene.startSpawning();
     }
 }
 
-window.TilemapSystem = TilemapSystem;
+window.TutorialSystem = TutorialSystem;

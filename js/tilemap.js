@@ -149,4 +149,6 @@ class TilemapSystem {
     }
 }
 
-window.TilemapSystem = TilemapSystem;
+if (typeof window.TilemapSystem === 'undefined') {
+    window.TilemapSystem = TilemapSystem;
+}

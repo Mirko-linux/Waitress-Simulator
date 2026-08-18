@@ -1,77 +1,100 @@
-// ============================================================================
-// THE WAITRESS - SISTEMA DI DIALOGO AI (WEBLLM - LATO BROWSER CON TOGGLE)
-// File: ai.js - VERSIONE DIALOGO NATURALE
-// ============================================================================
-
 class AIDialogueManager {
-    constructor(scene) {
+    constructor(scene, enabled = true) {
         this.scene = scene;
         this.currentCustomer = null;
         this.chatHistory = [];
         this.engine = null;
         this.isLoading = false;
         this.isModelReady = false;
-        this.useFallback = false;
+        this.useFallback = true; // default a true per evitare blocchi
         this.isChatOpen = false;
+        this.isAIActive = enabled;
+        this.loadingStarted = false;
+        this.loadingComplete = false;
         
         this.injectChatStyles();
         this.createChatDOM();
         this.setupKeyboardFix();
         
-        this.checkAISetting();
-    }
-
-    checkAISetting() {
-        let savedSetting = true;
-        try {
-            const raw = localStorage.getItem('waitress_save_data');
-            if (raw) {
-                const data = JSON.parse(raw);
-                if (data.settings && typeof data.settings.aiEnabled === 'boolean') {
-                    savedSetting = data.settings.aiEnabled;
-                }
-            }
-        } catch(e) {}
-
-        const isAIEnabled = (window.GAME && window.GAME.settings && typeof window.GAME.settings.aiEnabled === 'boolean') 
-                            ? window.GAME.settings.aiEnabled 
-                            : savedSetting;
-
-        if (!isAIEnabled) {
-            console.log("🔇 AI disattivata. Uso modalità classica.");
+        // Solo se AI attiva, avvia il caricamento in modo asincrono non bloccante
+        if (this.isAIActive) {
+            console.log("AI attivata. Inizializzazione in corso...");
+            this.initializeWebLLM();
+        } else {
+            console.log("AI disattivata");
             this.useFallback = true;
             this.isModelReady = true;
             this.appendMessage("system", "💬 Modalità dialogo classico attiva.");
-        } else {
-            console.log("🧠 AI attivata. Avvio caricamento modello...");
-            this.initializeWebLLM();
         }
     }
 
     async initializeWebLLM() {
+        // Evita caricamenti multipli
+        if (this.loadingStarted) return;
+        this.loadingStarted = true;
+        
         try {
             this.isLoading = true;
-            this.appendMessage("system", "⏳ Caricando il modello di Intelligenza Artificiale (1-2 minuti)...");
+            this.useFallback = false;
+            this.appendMessage("system", "⏳ Caricamento modello AI in corso...");
 
-            const webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/+esm');
+            // CARICAMENTO ASINCRONO CON requestIdleCallback per non bloccare il game loop
+            await new Promise(resolve => {
+                if (window.requestIdleCallback) {
+                    requestIdleCallback(resolve);
+                } else {
+                    setTimeout(resolve, 100);
+                }
+            });
 
-            // --- MODELLO SPECIALIZZATO PER DIALOGHI ---
-            // Llama-3.2-1B-Instruct è ottimo per risposte brevi e naturali
-            const selectedModel = "Llama-3-8B-Instruct-q4f16_1-MLC";
+            // Import dinamico con fallback
+            let webllm;
+            try {
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/+esm');
+            } catch (importError) {
+                console.warn("⚠️ Import WebLLM fallito, uso fallback:", importError);
+                this.useFallback = true;
+                this.isModelReady = true;
+                this.isLoading = false;
+                this.appendMessage("system", "⚠️ Modalità classica attiva (import fallito).");
+                return;
+            }
+
+            // Modello più leggero per risposte veloci
+            const selectedModel = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
             
+            // Timeout per evitare blocchi infiniti
+            const loadTimeout = setTimeout(() => {
+                if (!this.engine) {
+                    console.warn("⏰ Timeout caricamento AI, attivo fallback");
+                    this.useFallback = true;
+                    this.isModelReady = true;
+                    this.isLoading = false;
+                    this.appendMessage("system", "⏰ Timeout caricamento. Modalità classica.");
+                }
+            }, 30000);
+
             this.engine = await webllm.CreateMLCEngine(selectedModel, {
                 initProgressCallback: (report) => {
                     this.updateLoadingStatus(report.text);
                 }
             });
 
+            clearTimeout(loadTimeout);
+
             this.isModelReady = true;
             this.isLoading = false;
+            this.loadingComplete = true;
+            this.useFallback = false;
             this.appendMessage("system", "✅ AI pronta! Puoi parlare con i clienti.");
+            console.log("✅ AI WebLLM caricata con successo!");
+            
         } catch (error) {
             console.error("❌ Errore caricamento WebLLM:", error);
             this.useFallback = true;
             this.isModelReady = true;
+            this.isLoading = false;
+            this.loadingStarted = false;
             this.appendMessage("system", "⚠️ Impossibile caricare il modello AI. Attivata modalità classica.");
         }
     }
@@ -79,15 +102,15 @@ class AIDialogueManager {
     updateLoadingStatus(text) {
         const log = document.getElementById("ai-chat-log");
         if (!log) return;
-        let lastMsg = log.lastElementChild;
-        if (lastMsg && lastMsg.classList.contains("system-loading")) {
-            lastMsg.textContent = `[Sistema]: ${text}`;
-        } else {
-            const msgDiv = document.createElement("div");
-            msgDiv.className = "ai-msg system system-loading";
-            msgDiv.textContent = `[Sistema]: ${text}`;
-            log.appendChild(msgDiv);
-        }
+        
+        // Rimuovi vecchi messaggi di caricamento
+        const loadingMessages = log.querySelectorAll('.system-loading');
+        loadingMessages.forEach(el => el.remove());
+        
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "ai-msg system system-loading";
+        msgDiv.textContent = `⏳ ${text}`;
+        log.appendChild(msgDiv);
         log.scrollTop = log.scrollHeight;
     }
 
@@ -121,6 +144,7 @@ class AIDialogueManager {
                 justify-content: space-between;
                 align-items: center;
                 border-bottom: 2px solid #eccc68;
+                flex-shrink: 0;
             }
             #ai-chat-log {
                 flex: 1;
@@ -129,6 +153,7 @@ class AIDialogueManager {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
+                min-height: 0;
             }
             .ai-msg {
                 padding: 8px 12px;
@@ -154,12 +179,23 @@ class AIDialogueManager {
                 align-self: center;
                 font-size: 12px;
                 text-align: center;
+                max-width: 95%;
+            }
+            .ai-msg.system.system-loading {
+                background: rgba(46, 204, 113, 0.15);
+                color: #2ed573;
+                animation: pulse 1.5s infinite;
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
             }
             #ai-chat-input-area {
                 display: flex;
                 padding: 10px;
                 background: rgba(0,0,0,0.3);
                 gap: 6px;
+                flex-shrink: 0;
             }
             #ai-chat-input {
                 flex: 1;
@@ -169,6 +205,10 @@ class AIDialogueManager {
                 background: #2f3542;
                 color: #fff;
                 outline: none;
+                font-family: 'Fredoka', sans-serif;
+            }
+            #ai-chat-input::placeholder {
+                color: #888;
             }
             #ai-chat-send {
                 padding: 8px 14px;
@@ -178,13 +218,29 @@ class AIDialogueManager {
                 border-radius: 6px;
                 cursor: pointer;
                 font-weight: bold;
+                font-family: 'Fredoka', sans-serif;
             }
             #ai-chat-send:hover {
                 background: #26af5f;
             }
+            #ai-chat-send:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
             #ai-chat-close {
                 cursor: pointer;
                 font-weight: bold;
+                padding: 0 8px;
+                font-size: 18px;
+            }
+            #ai-chat-close:hover {
+                color: #ff6b6b;
+            }
+            #ai-chat-relation {
+                background: rgba(0,0,0,0.3);
+                padding: 2px 10px;
+                border-radius: 12px;
+                font-size: 13px;
             }
         `;
         document.head.appendChild(style);
@@ -221,6 +277,7 @@ class AIDialogueManager {
         chatInput.addEventListener("keydown", (e) => {
             e.stopPropagation();
             if (e.key === "Enter") {
+                e.preventDefault();
                 this.sendMessage();
             }
         });
@@ -239,6 +296,8 @@ class AIDialogueManager {
     }
 
     openChat(customer) {
+        if (!customer) return;
+        
         this.currentCustomer = customer;
         this.chatHistory = [];
 
@@ -246,6 +305,10 @@ class AIDialogueManager {
         const log = document.getElementById("ai-chat-log");
         const title = document.getElementById("ai-chat-title");
         const relation = document.getElementById("ai-chat-relation");
+        const input = document.getElementById("ai-chat-input");
+        const sendBtn = document.getElementById("ai-chat-send");
+
+        if (!container || !log) return;
 
         log.innerHTML = "";
         container.style.display = "flex";
@@ -262,15 +325,20 @@ class AIDialogueManager {
 
         this.appendMessage("system", `Inizio conversazione con ${customer.name || "il cliente"}.`);
 
-        // Messaggio iniziale personalizzato in base al piatto
+        // Messaggio iniziale personalizzato
         const initialGreeting = `Ciao! Sono ${customer.name}. Ho sentito parlare molto del vostro ${customer.order || "cibo"}.`;
         this.appendMessage("customer", initialGreeting);
         this.chatHistory.push({ role: "assistant", content: initialGreeting });
 
-        setTimeout(() => {
-            const input = document.getElementById("ai-chat-input");
-            if (input) input.focus();
-        }, 100);
+        // Abilita/disabilita input in base allo stato AI
+        if (input && sendBtn) {
+            const isAIReady = !this.isLoading && this.isModelReady && !this.useFallback;
+            input.disabled = !isAIReady && !this.useFallback;
+            sendBtn.disabled = !isAIReady && !this.useFallback;
+            if (isAIReady || this.useFallback) {
+                setTimeout(() => input.focus(), 200);
+            }
+        }
     }
 
     closeChat() {
@@ -287,19 +355,35 @@ class AIDialogueManager {
 
     async sendMessage() {
         const input = document.getElementById("ai-chat-input");
+        const sendBtn = document.getElementById("ai-chat-send");
         if (!input) return;
 
         const text = input.value.trim();
         if (!text) return;
 
+        // Disabilita input durante l'elaborazione
+        input.disabled = true;
+        if (sendBtn) sendBtn.disabled = true;
         input.value = "";
+
         this.appendMessage("player", text);
         this.chatHistory.push({ role: "user", content: text });
 
-        if (this.useFallback || !this.engine) {
-            this.handleFallbackResponse(text);
-        } else {
-            await this.handleAIResponse(text);
+        try {
+            if (this.useFallback || !this.engine || !this.isModelReady) {
+                await this.handleFallbackResponse(text);
+            } else {
+                await this.handleAIResponse(text);
+            }
+        } catch (e) {
+            console.error("Errore durante invio messaggio:", e);
+            await this.handleFallbackResponse(text);
+        } finally {
+            // Riabilita input
+            input.disabled = false;
+            if (sendBtn) sendBtn.disabled = false;
+            if (!this.isChatOpen) return;
+            setTimeout(() => input.focus(), 100);
         }
     }
 
@@ -307,8 +391,6 @@ class AIDialogueManager {
         if (!this.currentCustomer) return;
 
         try {
-            // --- FIX: PROMPT DI SISTEMA MOLTO STRINGENTE ---
-            // Forziamo l'AI a parlare come un cliente, non come un professore.
             const systemPrompt = `Sei ${this.currentCustomer.name}, un cliente di un ristorante. 
 Stai parlando con la cameriera.
 Regole ASSOLUTE:
@@ -324,42 +406,52 @@ Regole ASSOLUTE:
                 ...this.chatHistory
             ];
 
-            const response = await this.engine.chat.completions.create({
+            // Timeout per la risposta
+            const responsePromise = this.engine.chat.completions.create({
                 messages,
                 temperature: 0.7,
-                max_tokens: 60 // Più basso = risposte più brevi e dirette
+                max_tokens: 60
             });
 
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("Timeout risposta AI")), 8000);
+            });
+
+            const response = await Promise.race([responsePromise, timeoutPromise]);
             const reply = response.choices[0].message.content.trim();
             
-            // Pulizia finale: rimuove eventuali doppi spazi o caratteri strani
             const cleanReply = reply.replace(/\*/g, '').replace(/[0-9]+\./g, '').trim();
             
             this.chatHistory.push({ role: "assistant", content: cleanReply });
             this.appendMessage("customer", cleanReply);
             this.updateRelationship(5, "Ottima risposta!");
+            
         } catch (err) {
-            console.error("Errore generazione risposta AI:", err);
-            this.handleFallbackResponse(userMessage);
+            console.warn("Errore generazione risposta AI:", err);
+            await this.handleFallbackResponse(userMessage);
         }
     }
 
-    handleFallbackResponse(userMessage) {
-        // Risposte di fallback molto più naturali
+    async handleFallbackResponse(userMessage) {
+        // Risposte di fallback naturali
         const responses = [
             "Mmmh, mi piace molto come parli!",
             "Sì, il cibo qui è davvero buono.",
             "Che bello chiacchierare con te!",
             "Hai ragione, sai sempre cosa dire.",
             "Mi fai sentire a mio agio.",
-            "Spero di tornare presto qui."
+            "Spero di tornare presto qui.",
+            "Che bella giornata oggi, vero?",
+            "Il tuo servizio è fantastico!"
         ];
         const randomReply = responses[Math.floor(Math.random() * responses.length)];
 
-        setTimeout(() => {
+        await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 400));
+        
+        if (this.isChatOpen) {
             this.appendMessage("customer", randomReply);
             this.updateRelationship(3, "Risposta ricevuta");
-        }, 500);
+        }
     }
 
     updateRelationship(delta, feedback) {
@@ -370,16 +462,21 @@ Regole ASSOLUTE:
         }
 
         this.currentCustomer.relationScore = Phaser.Math.Clamp(this.currentCustomer.relationScore + delta, 0, 100);
-        document.getElementById("ai-chat-relation").textContent = `${Math.floor(this.currentCustomer.relationScore)}%`;
+        
+        const relationEl = document.getElementById("ai-chat-relation");
+        if (relationEl) {
+            relationEl.textContent = `${Math.floor(this.currentCustomer.relationScore)}%`;
+        }
 
-        const infoText = `[Sistema]: ${feedback} (+${delta} Sintonia)`;
-        this.appendMessage("system", infoText);
+        if (feedback) {
+            this.appendMessage("system", `${feedback} (+${delta} Sintonia)`);
+        }
 
-        if (this.scene.showFloatingText) {
+        if (this.scene && this.scene.showFloatingText) {
             this.scene.showFloatingText(
-                this.currentCustomer.x, 
-                this.currentCustomer.y - 45, 
-                `❤️ +${delta} Sintonia`, 
+                this.currentCustomer.table?.x || this.currentCustomer.x || 300,
+                (this.currentCustomer.table?.y || this.currentCustomer.y || 300) - 45,
+                `❤️ +${delta} Sintonia`,
                 "#ff4757"
             );
         }
@@ -395,6 +492,16 @@ Regole ASSOLUTE:
         
         log.appendChild(msgDiv);
         log.scrollTop = log.scrollHeight;
+    }
+
+    // Metodo per pulire risorse se necessario
+    destroy() {
+        this.closeChat();
+        this.engine = null;
+        this.currentCustomer = null;
+        this.isModelReady = false;
+        this.useFallback = true;
+        this.isAIActive = false;
     }
 }
 
