@@ -1,24 +1,20 @@
-// radio.js - Sistema Radio Locale (Lettore MP3 personale) - VERSIONE AUDIO FIX
+// radio.js - Sistema Radio Locale con Bonus Pazienza per i Clienti
 
 class RadioSystem {
     constructor(scene) {
         this.scene = scene;
         this.currentAudio = null;
         this.isPlaying = false;
-        this.audioBuffer = null; // Salva il buffer decodificato
+        this.audioBuffer = null; 
+        
+        // Variabile per il bonus di pazienza
+        this.patienceBonus = 0.15; // 15% di riduzione del calo della pazienza
 
         // Crea i componenti della radio
         this.createRadioUI();
         this.setupFileInput();
     }
-        // Aggiungi questo metodo dentro RadioSystem
-    handleVisibilityChange() {
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && this.isPlaying) {
-                this.stopMusic(); // Ferma la radio se il giocatore cambia scheda
-            }
-        });
-    }
+
     // 1. Crea il pulsante Radio e il testo
     createRadioUI() {
         // Pulsante Radio
@@ -66,7 +62,7 @@ class RadioSystem {
         });
     }
 
-    // 3. FIX: Carica e decodifica l'audio manualmente
+    // 3. Carica e decodifica l'audio manualmente
     async loadAndPlayMusic(file) {
         // Se c'è già musica, fermala
         if (this.isPlaying) {
@@ -74,33 +70,26 @@ class RadioSystem {
         }
 
         try {
-            // Legge il file come ArrayBuffer
             const arrayBuffer = await file.arrayBuffer();
-            
-            // Decodifica l'audio usando il contesto audio del browser
             const audioContext = this.scene.sound.context;
             this.audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-            // Sblocca il contesto audio (se sospeso)
             if (audioContext.state === 'suspended') {
                 await audioContext.resume();
             }
 
-            // Crea la sorgente audio e la collega
             const source = audioContext.createBufferSource();
             source.buffer = this.audioBuffer;
             source.loop = true;
             
-            // Crea un gain per il volume
             const gainNode = audioContext.createGain();
-            gainNode.gain.value = 0.5; // Volume al 50%
+            gainNode.gain.value = 0.5;
 
             source.connect(gainNode);
             gainNode.connect(audioContext.destination);
 
             source.start(0);
 
-            // Salva il riferimento per fermarla dopo
             this.currentAudio = {
                 source: source,
                 gainNode: gainNode
@@ -108,9 +97,12 @@ class RadioSystem {
             
             this.isPlaying = true;
             
-            // Aggiorna l'interfaccia
             this.radioBtn.setText('⏹️ Ferma Radio');
             this.statusText.setText(`🎵 Ora: ${file.name.substring(0, 25)}...`);
+
+            // --- NUOVO: APPLICA IL BONUS DI PAZIENZA AI CLIENTI ---
+            this.applyPatienceBonus();
+            // ----------------------------------------------------
 
         } catch (error) {
             console.error("Errore nel caricamento dell'audio:", error);
@@ -128,7 +120,7 @@ class RadioSystem {
         }
     }
 
-    // 5. Ferma la musica
+    // 5. Ferma la musica e rimuovi il bonus
     stopMusic() {
         if (this.currentAudio) {
             try {
@@ -137,14 +129,40 @@ class RadioSystem {
                 // Ignora errori se già fermo
             }
             this.currentAudio = null;
-            this.audioBuffer = null; // Pulisce la memoria
+            this.audioBuffer = null; 
         }
         this.isPlaying = false;
         this.radioBtn.setText('📻 Radio');
         this.statusText.setText('');
+
+        // --- NUOVO: RIMUOVI IL BONUS DI PAZIENZA ---
+        this.removePatienceBonus();
+        // -------------------------------------------
     }
 
-    // 6. Pulizia automatica
+    // --- NUOVO: APPLICA BONUS AI CLIENTI ---
+    applyPatienceBonus() {
+        if (!this.scene.customers) return;
+        this.scene.customers.forEach(c => {
+            if (!c.isDead && c.patienceMultiplier) {
+                // Riduce il moltiplicatore (più basso = calo più lento)
+                c.patienceMultiplier = Math.max(0.3, c.patienceMultiplier - this.patienceBonus);
+            }
+        });
+    }
+
+    removePatienceBonus() {
+        if (!this.scene.customers) return;
+        this.scene.customers.forEach(c => {
+            if (!c.isDead && c.patienceMultiplier) {
+                // Ripristina il moltiplicatore originale
+                const npcConfig = window.NPC_REGISTRY[c.name] || {};
+                c.patienceMultiplier = npcConfig.patienceMultiplier || 1.0;
+            }
+        });
+    }
+
+    // 6. Pulizia automatica (se la scena viene chiusa)
     setupAudioEvents() {
         this.scene.events.on('shutdown', () => {
             if (this.isPlaying) {

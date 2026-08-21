@@ -1,7 +1,4 @@
-// ============================================
-// SISTEMA CUCINA REALE STILE OVERCOOKED CON SPRITE PNG
-// Ridimensionamento forzato per immagini ad alta risoluzione
-// ============================================
+// kitchen.js - Sistema Cucina con Guasti, Incendi e Animazione Fumo
 
 class KitchenSystem {
     constructor(scene) {
@@ -16,14 +13,17 @@ class KitchenSystem {
         this.chefRestY = 280;
         this.isChefMoving = false;
         this.chefDialog = null;
+        
+        // --- NUOVO: STATO DI GUASTO E INCENDIO ---
+        this.isOnFire = false;
+        this.fireTimer = null;
+        this.smokeEffects = [];
+        // ----------------------------------------
 
         this.preloadKitchenAssets();
         this.buildOvercookedKitchen();
     }
 
-    // --------------------------------------------
-    // 0. CARICAMENTO DELLE IMMAGINI REALISTICHE PNG
-    // --------------------------------------------
     preloadKitchenAssets() {
         const scene = this.scene;
         const assets = [
@@ -55,13 +55,9 @@ class KitchenSystem {
         }
     }
 
-    // --------------------------------------------
-    // 1. COSTRUZIONE LAYOUT CON RIDIMENSIONAMENTO
-    // --------------------------------------------
     buildOvercookedKitchen() {
         const scene = this.scene;
 
-        // --- PAVIMENTO MATTONELLATO CUCINA ---
         for (let x = 6; x < 8; x++) {
             for (let y = 0; y < 6; y++) {
                 const color = (x + y) % 2 === 0 ? 0x2c3e50 : 0x34495e;
@@ -69,13 +65,11 @@ class KitchenSystem {
             }
         }
 
-        // --- PARETE SEPARATRICE SALA / CUCINA ---
         const wall = scene.add.rectangle(595, 300, 10, 560, 0x1a252f).setDepth(2);
         for (let y = 30; y < 570; y += 35) {
             scene.add.rectangle(595, y, 14, 2, 0x2c3e50).setDepth(3);
         }
 
-        // --- DEFINIZIONE POSTAZIONI CUCINA ---
         const stationDefs = [
             { id: 'frigo', name: 'Frigo', texKey: 'st_frigo', x: 635, y: 80, food: 'acqua' },
             { id: 'tagliere', name: 'Banco', texKey: 'st_tagliere', x: 690, y: 80, food: 'panino' },
@@ -87,7 +81,6 @@ class KitchenSystem {
             { id: 'spillatore', name: 'Birra', texKey: 'st_spillatore', x: 690, y: 320, food: 'birra' }
         ];
 
-        // Disegna banconi metallici sotto gli elettrodomestici
         const topBench = scene.add.rectangle(690, 80, 160, 44, 0x34495e).setDepth(1);
         topBench.setStrokeStyle(2, 0x5d6d7e);
 
@@ -100,12 +93,15 @@ class KitchenSystem {
         const bottomBench = scene.add.rectangle(690, 320, 160, 44, 0x34495e).setDepth(1);
         bottomBench.setStrokeStyle(2, 0x5d6d7e);
 
-        // Creazione visiva delle stazioni
         stationDefs.forEach(def => {
             const stationSprite = scene.add.image(def.x, def.y, def.texKey).setDepth(3);
             stationSprite.setDisplaySize(56, 56);
 
-            // Barra di avanzamento cottura
+            // --- NUOVO: OGNI STAZIONE HA UN CONTATORE DI UTILIZZO E STATO ---
+            const usageCounter = 0;
+            const isBroken = false;
+            // -------------------------------------------------------------
+
             const progBg = scene.add.rectangle(def.x, def.y - 26, 36, 5, 0x1a1a2e).setDepth(5);
             progBg.setVisible(false);
 
@@ -113,7 +109,6 @@ class KitchenSystem {
             progBar.setOrigin(0, 0.5);
             progBar.setVisible(false);
 
-            // Cartellino ordine
             const slipBg = scene.add.rectangle(def.x, def.y + 26, 46, 12, 0xfef9e7).setDepth(7);
             slipBg.setStrokeStyle(1, 0xf39c12);
             slipBg.setVisible(false);
@@ -140,11 +135,15 @@ class KitchenSystem {
                 progBg: progBg,
                 progBar: progBar,
                 slipBg: slipBg,
-                slipText: slipText
+                slipText: slipText,
+                // --- NUOVO: STATO DI GUASTO ---
+                usageCount: 0,
+                isBroken: false,
+                smokeSprite: null
+                // -----------------------------
             };
         });
 
-        // --- BANCONE PASS PIATTI ---
         const counterX = 595;
         const passHeight = 200;
 
@@ -173,12 +172,11 @@ class KitchenSystem {
                 y: yPos,
                 occupied: false,
                 item: null,
-                imageObj: null, // Ora usiamo un oggetto image
+                imageObj: null,
                 index: index
             });
         });
 
-        // --- CHEF CUOCO ---
         if (scene.textures.exists('st_cuoco')) {
             this.chef = scene.add.image(this.chefRestX, this.chefRestY, 'st_cuoco').setDepth(8);
             this.chef.setDisplaySize(48, 48);
@@ -233,6 +231,13 @@ class KitchenSystem {
             return false;
         }
 
+        // --- NUOVO: CONTROLLA SE LA STAZIONE È ROTTA ---
+        if (station.isBroken) {
+            this.showChefDialog('⚠️ Rotto! Chiama il tecnico!', '#e74c3c');
+            return false;
+        }
+        // -------------------------------------------------
+
         this.addOrder(station.id, station.food, 'A');
         return true;
     }
@@ -245,6 +250,21 @@ class KitchenSystem {
             this.showChefDialog('Occupato!', '#e74c3c');
             return false;
         }
+
+        // --- NUOVO: CONTROLLA SE LA STAZIONE È ROTTA ---
+        if (station.isBroken) {
+            this.showChefDialog('⚠️ Rotto! Chiama il tecnico!', '#e74c3c');
+            return false;
+        }
+
+        // --- NUOVO: CONTROLLO USURA (30 utilizzi consecutivi) ---
+        station.usageCount++;
+        if (station.usageCount >= 30) {
+            this.breakStation(station);
+            this.showChefDialog(`💥 ${station.name} si è rotto per usura!`, '#e74c3c');
+            return false;
+        }
+        // -----------------------------------------------------
 
         this.cookingQueue.push({
             stationKey: stationKey,
@@ -330,13 +350,11 @@ class KitchenSystem {
             freeSlot.occupied = true;
             freeSlot.item = foodName;
 
-            // --- CORREZIONE DIMENSIONE: USIAMO setDisplaySize ---
             if (this.scene.textures.exists(foodName)) {
                 freeSlot.imageObj = this.scene.add.image(freeSlot.x, freeSlot.y, foodName)
-                    .setDisplaySize(28, 28) // FORZIAMO UNA DIMENSIONE PICCOLA (28x28 pixel)
+                    .setDisplaySize(28, 28)
                     .setDepth(6);
             } else {
-                // Fallback a emoji
                 const emoji = this.getFoodEmoji(foodName);
                 freeSlot.imageObj = this.scene.add.text(freeSlot.x, freeSlot.y, emoji, {
                     fontSize: '20px'
@@ -449,10 +467,135 @@ class KitchenSystem {
         });
     }
 
+    // =========================================================================
+    // NUOVA LOGICA DI GUASTO, INCENDIO E FUMO
+    // =========================================================================
+
+    // --- 1. GUASTO PER USURA ---
+    breakStation(station) {
+        if (station.isBroken) return;
+        station.isBroken = true;
+        station.usageCount = 0;
+
+        // Animazione fumo sulla stazione rotta
+        this.createSmokeEffect(station.x, station.y);
+        
+        // Se il gioco ha il telefono, avvisa
+        if (this.scene.phone) {
+            this.scene.showFloatingText(this.scene.phone.phoneX, this.scene.phone.phoneY - 50, '📞 CHIAMA IL TECNICO!', '#e74c3c');
+        }
+    }
+
+    // --- 2. RIPARAZIONE (Chiamata dal telefono) ---
+    repairStation(stationKey) {
+        const station = this.stations[stationKey];
+        if (!station || !station.isBroken) return false;
+
+        station.isBroken = false;
+        station.usageCount = 0;
+        
+        // Rimuovi il fumo
+        if (station.smokeSprite) {
+            station.smokeSprite.destroy();
+            station.smokeSprite = null;
+        }
+
+        this.showChefDialog(`🔧 ${station.name} riparato!`, '#2ecc71');
+        return true;
+    }
+
+    // --- 3. INCENDIO PER TROPPI ORDINI ---
+    checkForOverload() {
+        // Se ci sono più di 3 ordini in coda e non c'è già un incendio
+        if (this.cookingQueue.length >= 3 && !this.isOnFire) {
+            this.startFire();
+        }
+    }
+
+    startFire() {
+        this.isOnFire = true;
+        this.scene.gameActive = false;
+        
+        // Fiamme e fumo su tutta la cucina
+        this.createSmokeEffect(660, 200);
+        this.createSmokeEffect(700, 320);
+        
+        // Pausa di gioco forzata
+        this.scene.showFloatingText(400, 300, '🔥 INCENDIO IN CUCINA! CHIAMA I POMPIERI!', '#ff0000');
+        
+        // Timer di penalità: se non chiama i pompieri in 10 secondi, multa
+        this.fireTimer = this.scene.time.delayedCall(10000, () => {
+            if (this.isOnFire) {
+                this.scene.showFloatingText(400, 250, '💰 MULTA PER OMISSIONE DI SOCCORSO: -500€!', '#e74c3c');
+                window.GAME.score = Math.max(0, window.GAME.score - 500);
+                this.scene.updateHUD();
+                this.extinguishFire(false);
+            }
+        });
+    }
+
+    extinguishFire(calledFirefighters) {
+        if (!this.isOnFire) return;
+        this.isOnFire = false;
+        
+        if (this.fireTimer) {
+            this.fireTimer.remove();
+            this.fireTimer = null;
+        }
+
+        // Rimuovi tutto il fumo
+        this.smokeEffects.forEach(smoke => smoke.destroy());
+        this.smokeEffects = [];
+        Object.values(this.stations).forEach(st => {
+            if (st.smokeSprite) {
+                st.smokeSprite.destroy();
+                st.smokeSprite = null;
+            }
+        });
+
+        if (calledFirefighters) {
+            this.scene.showFloatingText(400, 300, '🚒 Incendio spento! Hai chiamato i pompieri.', '#2ecc71');
+        }
+
+        this.scene.gameActive = true;
+        this.isProcessing = false;
+        this.processQueue();
+    }
+
+    // --- 4. ANIMAZIONE FUMO (senza librerie esterne) ---
+    createSmokeEffect(x, y) {
+        // Crea un rettangolo semitrasparente che pulsa
+        const smoke = this.scene.add.rectangle(x, y, 40, 40, 0x888888, 0.3)
+            .setDepth(100)
+            .setScale(0.5);
+
+        // Animazione di "pulsazione" e dissolvenza
+        this.scene.tweens.add({
+            targets: smoke,
+            scaleX: 2.0,
+            scaleY: 2.0,
+            alpha: 0,
+            duration: 1500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Quad.easeOut'
+        });
+
+        this.smokeEffects.push(smoke);
+        return smoke;
+    }
+
+    // =========================================================================
+
     update(player) {
         if (this.chefShadow && this.chef) {
             this.chefShadow.x = this.chef.x;
             this.chefShadow.y = this.chef.y + 20;
+        }
+
+        // Controlla se la coda è troppo lunga (rischio incendio)
+        if (this.cookingQueue.length >= 3 && !this.isOnFire) {
+            this.checkForOverload();
         }
 
         const nearest = this.getNearestStation(player || this.scene.waitress);
@@ -488,12 +631,26 @@ class KitchenSystem {
             st.progBg.setVisible(false);
             st.progBar.setVisible(false);
             st.progBar.width = 0;
+            // Resetta anche il contatore di usura e lo stato di rotto a inizio livello
+            st.usageCount = 0;
+            st.isBroken = false;
+            if (st.smokeSprite) {
+                st.smokeSprite.destroy();
+                st.smokeSprite = null;
+            }
         }
         if (this.chef) {
             this.chef.x = this.chefRestX;
             this.chef.y = this.chefRestY;
         }
         this.isChefMoving = false;
+        
+        // Spegni eventuali incendi
+        if (this.isOnFire) {
+            this.extinguishFire(false);
+        }
+        this.smokeEffects.forEach(smoke => smoke.destroy());
+        this.smokeEffects = [];
     }
 }
 

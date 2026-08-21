@@ -96,10 +96,17 @@
                 cassata: 4000,
                 chinotto: 1200,
                 cannolo: 3500,
-                ginseng: 1500
+                ginseng: 1500,
+                frittomisto: 4000
             }
         }
     };
+
+    // --- VARIABILI PER GLI UPGRADE ---
+    let notebookLevel = 0;
+    let adsLevel = 0;
+    let cardsLevel = 0;
+    // ---------------------------------
 
     const FOOD_TEXTURES = {
         'Pizza': 'Pizza',
@@ -115,7 +122,8 @@
         'Cassata': 'Cassata',
         'Chinotto': 'Chinotto',
         'Cannolo': 'Cannolo',
-        'Ginseng': 'Ginseng'
+        'Ginseng': 'Ginseng',
+        'Fritto Misto': 'Fritto Misto'
     };
 
     const NPC_REGISTRY = {
@@ -362,7 +370,6 @@
             this.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
             this.load.image('Piatto Sporco', 'assets/Cibo/Piatto Sporco.png');
 
-            // --- IMMAGINI DINAMICHE PER IL LAVELLO ---
             this.load.image('Lavello_vuoto', 'assets/Lavello/Lavello_vuoto.png');
             this.load.image('Lavello_mezzopieno', 'assets/Lavello/Lavello_mezzopieno.png');
             this.load.image('Lavello_pieno', 'assets/Lavello/Lavello_pieno.png');
@@ -390,6 +397,7 @@
                 document.head.appendChild(link);
             }
         }
+
         create() {
             Object.keys(NPC_REGISTRY).forEach(npcName => {
                 const npcData = NPC_REGISTRY[npcName];
@@ -429,12 +437,33 @@
             this.bathroom = null;
             this.phone = null;
             this.isPaused = false;
+            this.spawnEvent = null;
+            // --- Variabili per il Taccuino ---
+            this.ordersTaken = 0;
+            this.maxOrders = 1;
+            // ---------------------------------
         }
         
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
 
-            // 1. Carica il salvataggio PRIMA di tutto (incluso aiManager)
+            // --- CARICA GLI UPGRADE DELLA CASA ---
+            try {
+                const savedUpgrades = JSON.parse(localStorage.getItem('waitress_house_upgrades') || '{}');
+                notebookLevel = savedUpgrades.notebook || 0;
+                adsLevel = savedUpgrades.ads || 0;
+                cardsLevel = savedUpgrades.cards || 0;
+            } catch(e) {
+                notebookLevel = 0;
+                adsLevel = 0;
+                cardsLevel = 0;
+            }
+
+            // Taccuino: aumenta il numero di comande che puoi prendere
+            this.maxOrders = 1 + notebookLevel;
+            this.ordersTaken = 0;
+            console.log(`📓 Taccuino livello ${notebookLevel}: puoi prendere ${this.maxOrders} comande contemporaneamente`);
+
             let savedData = null;
             try {
                 const raw = localStorage.getItem('waitress_save_data');
@@ -442,7 +471,6 @@
             } catch(e) {}
 
             if (savedData && savedData.level > 0) {
-                // Riprende dal salvataggio
                 GAME.score = savedData.score || 0;
                 GAME.level = savedData.level || 1;
                 GAME.customersServed = savedData.customersServed || 0;
@@ -455,12 +483,10 @@
                     window.HOUSE_STATE.purchased = savedData.housePurchased;
                 }
                 
-                // --- FIX: CARICA LE IMPOSTAZIONI QUI (PRIMA DI AI) ---
                 if (savedData.settings) {
                     GAME.settings = { ...GAME.settings, ...savedData.settings };
                 }
             } else {
-                // Partenza completamente nuova
                 GAME.customersServed = 0;
                 GAME.dirtyPlates = 0;
                 GAME.lives = 3;
@@ -505,12 +531,10 @@
                 this.bathroom = new window.BathroomSystem(this);
             }
             
-            // --- 2. ORA CREA L' AI MANAGER (che userà il GAME.settings appena caricato) ---
             if (typeof window.AIDialogueManager === 'function') {
                 if (GAME.settings.aiEnabled) {
                     this.aiManager = new window.AIDialogueManager(this, true);
                 } else {
-                    // Modalità AI disattivata: oggetto leggero senza caricamento di modelli o processi background
                     this.aiManager = {
                         useFallback: true,
                         isModelReady: true,
@@ -524,9 +548,20 @@
                 }
             }
 
-            // --- Aggiungi questo per attivare la Radio: ---
+            if (typeof window.StorySystem === 'function') {
+                this.story = new window.StorySystem(this);
+            }
+            
+            if (this.story) {
+                this.story.storyState.moneySaved = GAME.score;
+            }
+
             if (typeof window.RadioSystem === 'function') {
                 this.radio = new window.RadioSystem(this);
+            }
+
+            if (typeof window.QuestSystem === 'function') {
+                this.quest = new window.QuestSystem(this);
             }
 
             this.createWaitress();
@@ -569,7 +604,6 @@
                 if (this.phone.ringIndicator) this.phone.ringIndicator.setDepth(31);
             }
 
-            // FIX BIRRA ENORME
             this.time.delayedCall(100, () => {
                 this.children.list.forEach(child => {
                     if (child.texture && child.texture.key) {
@@ -599,14 +633,26 @@
             this.gameActive = true;
             this.tutorialActive = false;
             
+            this.ordersTaken = 0;
+            
             this.time.delayedCall(100, () => {
                 this.updateHUD();
             });
             
-            const spawnInterval = GAME.settings.difficulty === 'facile' ? 11000 : 
-                                  GAME.settings.difficulty === 'difficile' ? 7000 : 9000;
+            let spawnInterval = GAME.settings.difficulty === 'facile' ? 11000 : 
+                                GAME.settings.difficulty === 'difficile' ? 7000 : 9000;
             
-            this.time.addEvent({
+            if (adsLevel > 0) {
+                const reduction = 1 - (adsLevel * 0.08);
+                spawnInterval = Math.max(4000, spawnInterval * reduction);
+                console.log(`📢 Campagna Pubblicitaria livello ${adsLevel}: spawn interval = ${Math.round(spawnInterval)}ms`);
+            }
+            
+            if (this.spawnEvent) {
+                this.spawnEvent.remove();
+            }
+            
+            this.spawnEvent = this.time.addEvent({
                 delay: spawnInterval,
                 callback: () => { if (this.gameActive) this.trySpawnCustomer(); },
                 loop: true
@@ -703,7 +749,8 @@
                 'Cassata': '🍰',
                 'Chinotto': '🥤',
                 'Cannolo': '🥐',
-                'Ginseng': '☕'
+                'Ginseng': '☕',
+                'Fritto Misto': '🍤'
             };
             return map[foodName] || '🍽️';
         }
@@ -724,8 +771,8 @@
 
         createFallbackTilemap() {
             const tileSize = 32;
-            const mapWidth = 25;  // 800 / 32
-            const mapHeight = 18; // 576 / 32
+            const mapWidth = 25;
+            const mapHeight = 18;
 
             if (this.textures.exists('floor_sala')) {
                 for (let x = 0; x < 576; x += tileSize) {
@@ -885,14 +932,20 @@
                 fontFamily: 'Fredoka'
             }).setDepth(101);
             
-            this.trayText = this.add.text(560, 14, `${t('VASSOIO')} 0/4`, {
+            this.trayText = this.add.text(560, 14, `${t('VASSOIO')} 0/${CONFIG.tray.maxTotal}`, {
                 fontSize: '14px',
                 color: '#3498db',
                 fontFamily: 'Fredoka'
             }).setDepth(101);
             
-            this.platesText = this.add.text(680, 14, `${t('PIATTI')} 0`, {
+            this.ordersText = this.add.text(670, 14, `📝 ${this.ordersTaken}/${this.maxOrders}`, {
                 fontSize: '14px',
+                color: '#9b59b6',
+                fontFamily: 'Fredoka'
+            }).setDepth(101);
+            
+            this.platesText = this.add.text(750, 14, `${t('PIATTI')} 0`, {
+                fontSize: '12px',
                 color: '#e67e22',
                 fontFamily: 'Fredoka'
             }).setDepth(101);
@@ -901,7 +954,6 @@
         }
         
         createSink() {
-            // --- CREAZIONE DELL'IMMAGINE DINAMICA DEL LAVELLO ---
             this.sinkSprite = this.add.image(122.5, 540, 'Lavello_vuoto').setDepth(2);
             this.sinkSprite.setDisplaySize(95, 45);
             
@@ -1056,8 +1108,10 @@
                 a: Phaser.Input.Keyboard.KeyCodes.A,
                 s: Phaser.Input.Keyboard.KeyCodes.S,
                 d: Phaser.Input.Keyboard.KeyCodes.D,
+                e: Phaser.Input.Keyboard.KeyCodes.E,
                 h: Phaser.Input.Keyboard.KeyCodes.H,
                 k: Phaser.Input.Keyboard.KeyCodes.K,
+                m: Phaser.Input.Keyboard.KeyCodes.M,
                 shift: Phaser.Input.Keyboard.KeyCodes.SHIFT,
                 up: Phaser.Input.Keyboard.KeyCodes.UP,
                 down: Phaser.Input.Keyboard.KeyCodes.DOWN,
@@ -1144,7 +1198,15 @@
                 this.livesText.setText(`❤️ ${'❤️'.repeat(Math.max(0, GAME.lives))}`);
             }
             if (this.trayText && this.trayText.active) {
-                this.trayText.setText(`${t('VASSOIO')} ${this.waitressState.tray.length}/4`);
+                this.trayText.setText(`${t('VASSOIO')} ${this.waitressState.tray.length}/${CONFIG.tray.maxTotal}`);
+            }
+            if (this.ordersText && this.ordersText.active) {
+                this.ordersText.setText(`📝 ${this.ordersTaken}/${this.maxOrders}`);
+                if (this.ordersTaken >= this.maxOrders) {
+                    this.ordersText.setColor('#e74c3c');
+                } else {
+                    this.ordersText.setColor('#9b59b6');
+                }
             }
             if (this.platesText && this.platesText.active) {
                 this.platesText.setText(`${t('PIATTI')} ${GAME.dirtyPlates}`);
@@ -1153,21 +1215,22 @@
             this.updateSinkSprite();
         }
         
+        // === FUNZIONE spawnCustomer COMPLETAMENTE RISCRITTA ===
         spawnCustomer() {
-            // 1. Cerca un tavolo veramente libero (non occupato e pulito)
+            // 1. Limite massimo clienti (non più dei tavoli disponibili)
+            if (this.customers.length >= this.tables.length) return;
+
+            // 2. Cerca un tavolo libero
             let freeTable = this.tables.find(t => !t.occupied && t.status === 'libero');
-            
-            // 2. Se non c'è nessun tavolo pulito, cerca un tavolo sporco ma libero
             if (!freeTable) {
                 freeTable = this.tables.find(t => !t.occupied && t.status === 'piatto_sporco');
             }
+            if (!freeTable) return;
 
-            // 3. Se non c'è nessun tavolo disponibile, esci senza creare clienti
-            if (!freeTable) {
-                return; // <-- IMPORTANTE: fermati qui, non spawnare
-            }
+            // 3. ULTRASICUREZZA: Se nel frattempo un altro cliente lo ha occupato, fermati!
+            if (freeTable.occupied === true) return;
 
-            // Marca IMMEDIATAMENTE il tavolo come occupato prima di qualsiasi operazione asincrona
+            // 4. Occupa il tavolo SUBITO
             freeTable.occupied = true;
 
             const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto', 'Cannolo', 'Ginseng'];
@@ -1220,7 +1283,6 @@
                 }
             };
             
-            // 4. Ora segna il tavolo come occupato
             freeTable.occupied = true;
             freeTable.customer = customer;
             freeTable.status = 'ordinazione_pronta';
@@ -1237,6 +1299,7 @@
             this.createCustomerGraphics(customer);
             this.customers.push(customer);
         }
+        // ======================================================
         
         createCustomerGraphics(customer) {
             const table = customer.table;
@@ -1294,6 +1357,7 @@
                     pointer.event.stopPropagation();
                 }
                 
+                this.currentCustomer = customer;
                 if (this.aiManager) {
                     this.aiManager.openChat(customer);
                 }
@@ -1308,6 +1372,17 @@
             
             customer.orderBubble.on('pointerdown', handleTableClick);
             customer.chatBubble.on('pointerdown', handleChatClick);
+            
+            // Mazzo di carte: aumenta la pazienza dei clienti più anziani
+            const npcConfig = NPC_REGISTRY[customer.name] || {};
+            const isElderly = npcConfig.age && npcConfig.age >= 60;
+            let patienceBonus = 0;
+            
+            if (isElderly && cardsLevel > 0) {
+                patienceBonus = cardsLevel * 5;
+                customer.patienceMultiplier = Math.max(0.5, customer.patienceMultiplier - (patienceBonus / 100));
+                console.log(`🃏 Mazzo di carte livello ${cardsLevel}: anziano ${customer.name} pazienza +${patienceBonus}%`);
+            }
             
             customer.patienceBg = this.add.rectangle(table.x, table.y - 28, 50, 4, 0x333333);
             customer.patienceBg.setDepth(4);
@@ -1435,7 +1510,15 @@
                 return;
             }
 
+            // --- ORDINAZIONE PRONTA (PRENDERE ORDINE) ---
             if (table.status === 'ordinazione_pronta' && table.customer) {
+                if (this.ordersTaken >= this.maxOrders) {
+                    this.showFloatingText(this.waitress.x, this.waitress.y - 30, 
+                        `📓 Taccuino pieno! Massimo ${this.maxOrders} comande. Servine qualcuna!`, '#ff4444');
+                    triggerSfx('alert');
+                    return;
+                }
+                
                 if (GAME.carriedOrder) {
                     this.showFloatingText(this.waitress.x, this.waitress.y - 30, t('ERR_ALREADY_ORDER'), '#ff4444');
                     triggerSfx('click');
@@ -1443,6 +1526,8 @@
                 }
                 
                 triggerSfx('pickup');
+                
+                this.ordersTaken++;
                 
                 GAME.carriedOrder = {
                     tableId: table.id,
@@ -1456,12 +1541,15 @@
                 }
                 
                 this.updateNotepadUI(true);
+                this.updateHUD();
                 
-                this.showFloatingText(this.waitress.x, this.waitress.y - 40, t('MSG_ORDER_TAKEN'), '#ffd700');
+                this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
+                    `📝 Ordine preso! (${this.ordersTaken}/${this.maxOrders})`, '#ffd700');
                 this.showFloatingText(table.x, table.y - 30, t('MSG_ORDER_REC'), '#ffd700');
                 return;
             }
             
+            // --- ATTESA CIBO (SERVIRE IL CIBO) ---
             if (table.status === 'attesa_cibo' && table.customer) {
                 const foodIndex = this.waitressState.tray.findIndex(
                     f => f.food.toLowerCase() === table.customer.order.toLowerCase()
@@ -1474,12 +1562,22 @@
                     this.updateTrayGraphics();
                     this.updateHUD();
                     
+                    this.ordersTaken = Math.max(0, this.ordersTaken - 1);
+                    this.updateHUD();
+                    
                     table.customer.serve();
                     table.status = 'mangia';
                     if (table.customer.orderBubble) {
                         table.customer.orderBubble.setText('🍽️ Mmm!');
                     }
-                    
+
+                    // --- AGGIUNGI QUESTA RIGA QUI: FERMA IL TIMER ---
+                    if (table.customer.timerEvent) {
+                        table.customer.timerEvent.remove();
+                        table.customer.timerEvent = null;
+                    }
+                    // ----------------------------------------------
+
                     this.showFloatingText(table.x, table.y - 40, t('MSG_SERVED'), '#2ecc71');
                 } else {
                     this.showFloatingText(table.x, table.y - 40, `⏳ Vuole: ${table.customer.order}`, '#f39c12');
@@ -1551,12 +1649,14 @@
                     'risotto': 'fornelli',
                     'caponata': 'fornelli',
                     'arancina': 'friggitrice',
+                    'fritto misto': 'friggitrice',
                     'cassata': 'forno',
                     'cannolo': 'forno',
                     'chinotto': 'bevande',
-                    'caffè': 'caffe', 'caffe': 'caffe',
+                    'caffè': 'caffe',
                     'ginseng': 'caffe',
-                    'birra': 'spillatore', 'cola': 'bevande',
+                    'birra': 'spillatore', 
+                    'cola': 'bevande',
                     'acqua': 'frigo'
                 };
                 
@@ -1574,12 +1674,17 @@
                         const tableId = GAME.carriedOrder.tableId;
                         GAME.carriedOrder = null;
                         
+                        this.ordersTaken = Math.max(0, this.ordersTaken - 1);
+                        this.updateHUD();
+                        
                         this.updateNotepadUI(true);
                         
                         const msgChef = t('PRONTO') !== 'PRONTO' ? t('PRONTO') : '👨‍🍳 Comanda allo Chef!';
                         const labelTable = t('TABLE_SHORT') !== 'TABLE_SHORT' ? t('TABLE_SHORT') : 'Tavolo';
-                        this.showFloatingText(560, this.waitress.y - 20, msgChef, '#2ecc71');
-                        this.showFloatingText(560, this.waitress.y - 45, `📝 ${labelTable} ${tableId}: ${food}`, '#ffd700');
+                        this.showFloatingText(560, this.waitress.y - 20, 
+                            `${msgChef} (${this.ordersTaken}/${this.maxOrders} comande rimanenti)`, '#2ecc71');
+                        this.showFloatingText(560, this.waitress.y - 45, 
+                            `📝 ${labelTable} ${tableId}: ${food}`, '#ffd700');
                     } else {
                         this.showFloatingText(560, this.waitress.y - 30, t('OCCUPATO'), '#f39c12');
                         triggerSfx('alert');
@@ -1744,10 +1849,8 @@
                 if (this.kitchen && typeof this.kitchen.update === 'function') this.kitchen.update();
                 if (this.bathroom && typeof this.bathroom.update === 'function') this.bathroom.update(time, delta);
                 if (this.phone && typeof this.phone.update === 'function') this.phone.update(time, delta);
-                // Rimossa la chiamata a fixKitchenScales() a 60 FPS che causava grave lag alla CPU
             }
 
-            // Cheat code
             if (Phaser.Input.Keyboard.JustDown(this.keys.k) && this.keys.shift.isDown) {
                 GAME.customersServed = GAME.customersTarget;
                 GAME.score += 100;
@@ -1756,18 +1859,51 @@
                 return;
             }
 
+            // --- CHEAT: Shift + E (Sintonia Elena al 100%) ---
+            if (Phaser.Input.Keyboard.JustDown(this.keys.e) && this.keys.shift.isDown) {
+                const elena = this.customers.find(c => c.name === 'Elena');
+                
+                if (elena) {
+                    elena.relationScore = 100;
+                    this.showFloatingText(elena.x, elena.y - 50, '❤️ SINTONIA MASSIMA!', '#ff4757');
+                    triggerSfx('coin');
+                    
+                    if (this.quest) {
+                        this.quest.startElenaAdoptionQuest();
+                    }
+                    if (this.story) {
+                        this.story.storyState.elenaAdoptionQuest = true;
+                        this.story.saveStoryData();
+                    }
+                } else {
+                    this.showFloatingText(400, 250, '❌ Elena non è nel locale.', '#ff4444');
+                }
+                return;
+            }
+
+            // --- NUOVO CHEAT: Shift + M (Soldi 15.000€) ---
+            if (Phaser.Input.Keyboard.JustDown(this.keys.m) && this.keys.shift.isDown) {
+                GAME.score = 15000;
+                this.updateHUD();
+                this.showFloatingText(400, 250, '💰 15.000€ OTTENUTI! ORA COMPRA IL LOCALE!', '#ffd700');
+                triggerSfx('coin');
+                
+                if (this.story) {
+                    this.story.updateMoney();
+                }
+                return;
+            }
+
             if (Phaser.Input.Keyboard.JustDown(this.keys.h)) {
                 this.goToHouse();
                 return;
             }
 
-            // Controllo tasto PAUSA (ESC o P)
             if (Phaser.Input.Keyboard.JustDown(this.keys.esc) || Phaser.Input.Keyboard.JustDown(this.keys.p)) {
                 this.togglePause();
                 return;
             }
 
-            // --- MOVIMENTO SOLO TASTIERA (WASD) ---
             let moveX = 0, moveY = 0;
             const controls = GAME.settings.controls || 'wasd';
 
@@ -1813,6 +1949,39 @@
             }
         }
         
+        // === FUNZIONE updateRelationship ===
+        updateRelationship(delta, feedback) {
+            if (!this.currentCustomer) return;
+            if (typeof this.currentCustomer.relationScore !== "number") {
+                this.currentCustomer.relationScore = 50;
+            }
+            let newScore = this.currentCustomer.relationScore + delta;
+            this.currentCustomer.relationScore = Phaser.Math.Clamp(newScore, 0, 100);
+                    
+            document.getElementById("ai-chat-relation").textContent = `${Math.floor(this.currentCustomer.relationScore)}%`;
+            const infoText = `[Sistema]: ${feedback} (+${delta} Sintonia)`;
+            this.appendMessage("system", infoText);
+            if (this.scene.showFloatingText) {
+                this.scene.showFloatingText(
+                    this.currentCustomer.x,
+                    this.currentCustomer.y - 45,
+                    `❤️ +${delta} Sintonia`,
+                    "#ff4757"
+                );
+            }
+            if (this.currentCustomer.name === 'Elena' && this.currentCustomer.relationScore >= 100) {
+                if (this.scene.quest) {
+                    const alreadyActive = this.scene.quest.activeQuests.find(q => q.id === 'elena_adoption');
+                    const alreadyCompleted = this.scene.quest.completedQuests.includes('elena_adoption');
+                                    
+                    if (!alreadyActive && !alreadyCompleted) {
+                        console.log("👶 Elena al 100%! Avvio missione adozione.");
+                        this.scene.quest.startElenaAdoptionQuest();
+                    }
+                }
+            }
+        }
+
         interactWithClosest() {
             let closestTable = null;
             let minDist = CONFIG.waitress.interactRange;
@@ -1845,7 +2014,10 @@
             this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
             triggerSfx('coin');
             
-            // --- DATI DI SALVATAGGIO ---
+            if (this.story) {
+                this.story.onDayComplete(GAME.level);
+            }
+
             const saveData = {
                 score: GAME.score,
                 level: GAME.level + 1,
@@ -1856,10 +2028,8 @@
                 housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
             };
             
-            // --- SALVATAGGIO SU LOCALSTORAGE (PER IL MENU DI RIPRESA) ---
             localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
             
-            // --- SALVATAGGIO SU INDEXEDDB (PER IL BACKUP SU PC) ---
             if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
                 window.SaveManager.saveGame(saveData).then(() => {
                     console.log("💾 Backup IndexedDB aggiornato!");
@@ -1867,7 +2037,6 @@
                     console.error("Errore backup IndexedDB:", err);
                 });
             }
-            // ---------------------------------------------------------
             
             this.time.delayedCall(1200, () => {
                 if (window.LevelSummaryScene && !this.scene.get('LevelSummary')) {
@@ -1950,13 +2119,11 @@
             this.createButton(400, 240, t('GIOCA'), () => {
                 triggerSfx('click');
                 
-                // --- CORREZIONE DOPPIO TUTORIAL ---
                 if (localStorage.getItem('waitress_tutorial_done') === 'true') {
                     window.FORCE_TUTORIAL = false;
                 } else {
                     window.FORCE_TUTORIAL = true;
                 }
-                // -----------------------------------
                 
                 if (typeof window.SaveMenu === 'function') {
                     this.openSaveMenu();
@@ -2262,7 +2429,6 @@
 
             const currentLangData = langs[currentLangCode] || langs['it'];
 
-            // Box centrale lingua
             const langBox = this.add.rectangle(400, 370, 200, 30, 0x2c1a11);
             langBox.setStrokeStyle(1, 0xd27d2d);
 
@@ -2273,7 +2439,6 @@
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
 
-            // Tasto Freccia Sinistra
             const prevBtn = this.add.rectangle(270, 370, 40, 30, 0xd27d2d);
             prevBtn.setStrokeStyle(1, 0xffd700);
             prevBtn.setInteractive({ useHandCursor: true });
@@ -2294,7 +2459,6 @@
                 this.scene.restart();
             });
 
-            // Tasto Freccia Destra
             const nextBtn = this.add.rectangle(530, 370, 40, 30, 0xd27d2d);
             nextBtn.setStrokeStyle(1, 0xffd700);
             nextBtn.setInteractive({ useHandCursor: true });
@@ -2315,7 +2479,6 @@
                 this.scene.restart();
             });
 
-            // --- INTERRUTTORE AI ---
             this.add.text(400, 415, t('INTELLIGENZA ARTIFICIALE'), {
                 fontSize: '14px',
                 color: '#ffffff',
@@ -2339,7 +2502,6 @@
                 aiBtn.setFillStyle(GAME.settings.aiEnabled ? 0x27ae60 : 0xe74c3c);
                 aiTxt.setText(GAME.settings.aiEnabled ? 'INTELLIGENZA ARTIFICIALE: ON' : 'INTELLIGENZA ARTIFICIALE: OFF');
                 
-                // Salva le opzioni nel localStorage
                 try {
                     const raw = localStorage.getItem('waitress_save_data');
                     let data = raw ? JSON.parse(raw) : {};
@@ -2348,7 +2510,6 @@
                 } catch(e) {}
             });
 
-            // --- PULSANTE TORNA ---
             const backBtn = this.add.rectangle(400, 500, 260, 36, 0xd27d2d);
             backBtn.setStrokeStyle(2, 0xffd700);
             backBtn.setInteractive({ useHandCursor: true });
