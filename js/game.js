@@ -97,7 +97,9 @@
                 chinotto: 1200,
                 cannolo: 3500,
                 ginseng: 1500,
-                frittomisto: 4000
+                'fritto misto': 4000,
+                'pasta al pesto': 3500,
+                'panino milza': 3000
             }
         }
     };
@@ -107,6 +109,10 @@
     let adsLevel = 0;
     let cardsLevel = 0;
     // ---------------------------------
+
+    // --- SCALA CAMERIERA (MODIFICA QUESTO VALORE PER RIDIMENSIONARE) ---
+    const WAITRESS_SCALE = 0.35;
+    // -----------------------------------------------------------------
 
     const FOOD_TEXTURES = {
         'Pizza': 'Pizza',
@@ -123,66 +129,13 @@
         'Chinotto': 'Chinotto',
         'Cannolo': 'Cannolo',
         'Ginseng': 'Ginseng',
-        'Fritto Misto': 'Fritto Misto'
+        'Fritto Misto': 'Fritto Misto',
+        'Pasta al Pesto': 'Pasta al Pesto',
+        'Panino con la Milza': 'Panino Milza'
     };
 
-    const NPC_REGISTRY = {
-        'Maria': {
-            hasTilesheet: false,
-            emojiChar: '👩',
-            age: 30,
-            gender: 'female',
-            bio: 'Giovane donna di 30 anni, grande amante della bicicletta.'
-        },
-        'Elena': {
-            hasTilesheet: true,
-            key: 'elena_sheet',
-            path: 'Elena.jpg',
-            frameWidth: 32,
-            frameHeight: 32,
-            emojiChar: '👩‍🎓',
-            age: 20,
-            gender: 'female',
-            bio: 'Studentessa universitaria sui 20 anni. Gentile ma incasinata con gli studi.',
-            adoptTrigger: true
-        },
-        'Massimo': {
-            hasTilesheet: false,
-            emojiChar: '👨',
-            age: 50,
-            gender: 'male',
-            bio: 'Ingegnere di 50 anni, classico padre di famiglia.'
-        },
-        'Francesco': {
-            hasTilesheet: false,
-            emojiChar: '👱‍♂️',
-            age: 25,
-            gender: 'male',
-            bio: 'Ragazzo innamorato della cameriera che cerca di corteggiarla.',
-            patienceMultiplier: 0.5
-        },
-        'Rosa': {
-            hasTilesheet: false,
-            emojiChar: '👵',
-            age: 80,
-            gender: 'female',
-            bio: 'Anziana signora di 80 anni, molto gentile e prodiga di consigli.'
-        },
-        'Chiara': {
-            hasTilesheet: false,
-            emojiChar: '👩‍🏫',
-            age: 40,
-            gender: 'female',
-            bio: 'Madre di 40 anni, lavora come insegnante.'
-        },
-        'Sofia': {
-            hasTilesheet: false,
-            emojiChar: '👩‍💼',
-            age: 30,
-            gender: 'female',
-            bio: 'Donna in carriera sui 30 anni.'
-        }
-    };
+    // NPC_REGISTRY viene caricato da ai.js
+    const NPC_REGISTRY = window.NPC_CONFIG || {};
 
     let GAME = {
         score: 0,
@@ -352,10 +305,13 @@
                 console.warn('Tilesheet/Texture non trovata:', file.key);
             });
 
+            // --- TEXTURE TILEMAP ---
             this.load.image('floor_sala', 'assets/ambiente/1.png');
             this.load.image('floor_cucina', 'assets/ambiente/2.png');
             this.load.image('floor_bagno', 'assets/ambiente/4.png');
             this.load.image('wall', 'assets/ambiente/3.png');
+            
+            // --- TEXTURE CUCINA ---
             this.load.image('st_frigo', 'assets/cucina/frigo_acqua.png');
             this.load.image('st_tagliere', 'assets/cucina/banco_lavoro.png');
             this.load.image('st_fornelli', 'assets/cucina/fornelli.png');
@@ -366,19 +322,36 @@
             this.load.image('st_spillatore', 'assets/cucina/spillatore_birra.png');
             this.load.image('st_cuoco', 'assets/cucina/cuoco_cucina.png');
             this.load.image('st_bancone', 'assets/cucina/bancone_sala.png');
-            this.load.image('phone', 'assets/cucina/phone.png'); 
+            
+            // --- TELEFONO (ora in assets/Sala) ---
+            this.load.image('phone', 'assets/Sala/phone.png');
+            
+            // --- PACCO (fornitore) ---
+            this.load.image('pacco', 'assets/Sala/pacco.png');
+            
+            // --- AUDIO ---
             this.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
+            this.load.audio('scarico', 'assets/audio/scarico.mp3');
+            
+            // --- PIATTI E LAVELLO ---
             this.load.image('Piatto Sporco', 'assets/Cibo/Piatto Sporco.png');
-
             this.load.image('Lavello_vuoto', 'assets/Lavello/Lavello_vuoto.png');
             this.load.image('Lavello_mezzopieno', 'assets/Lavello/Lavello_mezzopieno.png');
             this.load.image('Lavello_pieno', 'assets/Lavello/Lavello_pieno.png');
 
+            // --- TEXTURE CAMERIERA ---
+            this.load.image('cameriera_avanti', 'assets/Cameriera/Cameriera_Avanti.png');
+            this.load.image('cameriera_destra', 'assets/Cameriera/Cameriera_Destra.png');
+            this.load.image('cameriera_dietro', 'assets/Cameriera/Cameriera_Dietro.png');
+            this.load.image('cameriera_sinistra', 'assets/Cameriera/Cameriera_Sinistra.png');
+
+            // --- CIBO ---
             Object.keys(FOOD_TEXTURES).forEach(foodName => {
                 const fileName = FOOD_TEXTURES[foodName];
                 this.load.image(foodName, `assets/Cibo/${fileName}.png`);
             });
 
+            // --- NPC (caricati da NPC_CONFIG) ---
             Object.keys(NPC_REGISTRY).forEach(npcName => {
                 const npcData = NPC_REGISTRY[npcName];
                 if (npcData.hasTilesheet && npcData.path) {
@@ -389,6 +362,7 @@
                 }
             });
 
+            // --- FONT ---
             if (!document.getElementById('fredoka-font-link')) {
                 const link = document.createElement('link');
                 link.id = 'fredoka-font-link';
@@ -438,16 +412,50 @@
             this.phone = null;
             this.isPaused = false;
             this.spawnEvent = null;
-            // --- Variabili per il Taccuino ---
+            this.priceSystem = null;
+            this.quest = null;
+            this.crime = null;
+            this.supplier = null;
+            this.trayIndicator = null;
+            this.tilemap = null;
+            this.isPhoneActive = false;
             this.ordersTaken = 0;
             this.maxOrders = 1;
-            // ---------------------------------
+            this.passPiattiZone = null;
+            this.npcManager = null;
+            this._phoneInputStates = null;
+            
+            // --- VARIABILI PER IL SISTEMA DI INTERAZIONE ---
+            this.waitressHasOrder = false;
+            this.waitressHasFood = false;
+            this.carriedFood = null;
+            this.currentOrder = null;
+            // ----------------------------------------------------
         }
         
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
 
-            // --- CARICA GLI UPGRADE DELLA CASA ---
+            if (typeof window.PriceSystem === 'function') {
+                this.priceSystem = new window.PriceSystem(this);
+                console.log('💰 Sistema prezzi attivato!');
+            }
+
+            if (typeof window.QuestSystem === 'function') {
+                this.quest = new window.QuestSystem(this);
+                console.log('📋 Sistema missioni attivato!');
+            }
+
+            if (typeof window.CrimeSystem === 'function') {
+                this.crime = new window.CrimeSystem(this);
+                console.log('🕵️ Sistema criminale attivato!');
+            }
+
+            if (typeof window.SupplierSystem === 'function') {
+                this.supplier = new window.SupplierSystem(this);
+                console.log('📦 Sistema fornitore attivato!');
+            }
+
             try {
                 const savedUpgrades = JSON.parse(localStorage.getItem('waitress_house_upgrades') || '{}');
                 notebookLevel = savedUpgrades.notebook || 0;
@@ -459,10 +467,15 @@
                 cardsLevel = 0;
             }
 
-            // Taccuino: aumenta il numero di comande che puoi prendere
+            if (notebookLevel > 0) {
+                console.log(`📓 Taccuino livello ${notebookLevel}: puoi prendere ${1 + notebookLevel} comande`);
+            } else {
+                console.log('📓 Taccuino non acquistato: 1 comanda alla volta');
+            }
+
             this.maxOrders = 1 + notebookLevel;
             this.ordersTaken = 0;
-            console.log(`📓 Taccuino livello ${notebookLevel}: puoi prendere ${this.maxOrders} comande contemporaneamente`);
+            console.log(`📓 Taccuino livello ${notebookLevel}: maxOrders = ${this.maxOrders}`);
 
             let savedData = null;
             try {
@@ -508,13 +521,7 @@
 
             applyUpgrades();
 
-            if (typeof window.TilemapSystem === 'function') {
-                this.tilemap = new window.TilemapSystem(this);
-                this.tilemap.createTileMap();
-            } else {
-                this.createFallbackTilemap();
-            }
-
+            // 1. PRIMA crea lo stato della cameriera
             this.waitressState = {
                 tray: [],
                 targetX: 300,
@@ -522,9 +529,35 @@
             };
             this.pendingAction = null;
 
+            // 2. POI crea la fisica e lo sprite della cameriera
+            this.createWaitress();
+
+            // 3. POI crea la Tilemap
+            if (typeof window.TilemapSystem === 'function') {
+                this.tilemap = new window.TilemapSystem(this);
+                this.tilemap.createTileMap();
+            } else {
+                this.createFallbackTilemap();
+            }
+
+            // 4. Collider con i muri
+            if (this.tilemap && this.tilemap.wallGroup) {
+                this.physics.add.collider(this.waitress, this.tilemap.wallGroup);
+            }
+
+            // 5. POI crea tavoli, lavello, cucina, ecc.
             this.createRestaurant();
+            this.createSink();
+            
             if (typeof window.KitchenSystem === 'function') {
                 this.kitchen = new window.KitchenSystem(this);
+                console.log('✅ KitchenSystem inizializzato!');
+                if (this.kitchen && this.kitchen.stations) {
+                    console.log('🔍 Stazioni disponibili:', Object.keys(this.kitchen.stations));
+                }
+            } else {
+                console.error('❌ KitchenSystem non trovato!');
+                this.kitchen = null;
             }
             
             if (typeof window.BathroomSystem === 'function') {
@@ -547,6 +580,13 @@
                     };
                 }
             }
+            
+            // Inizializza NPCManager
+            if (this.aiManager && this.aiManager.npcManager) {
+                this.npcManager = this.aiManager.npcManager;
+            } else if (window.NPCManager) {
+                this.npcManager = new window.NPCManager(this);
+            }
 
             if (typeof window.StorySystem === 'function') {
                 this.story = new window.StorySystem(this);
@@ -560,12 +600,8 @@
                 this.radio = new window.RadioSystem(this);
             }
 
-            if (typeof window.QuestSystem === 'function') {
-                this.quest = new window.QuestSystem(this);
-            }
-
-            this.createWaitress();
-            this.createSink();
+            // --- CREA LA ZONA PASS PIATTI ---
+            this.createPassPiatti();
 
             this.time.removeAllEvents();
 
@@ -634,6 +670,9 @@
             this.tutorialActive = false;
             
             this.ordersTaken = 0;
+            this.maxOrders = 1 + notebookLevel;
+            
+            console.log(`📓 Taccuino: maxOrders = ${this.maxOrders}`);
             
             this.time.delayedCall(100, () => {
                 this.updateHUD();
@@ -654,7 +693,11 @@
             
             this.spawnEvent = this.time.addEvent({
                 delay: spawnInterval,
-                callback: () => { if (this.gameActive) this.trySpawnCustomer(); },
+                callback: () => { 
+                    if (this.gameActive && this.customers.length < this.tables.length) {
+                        this.trySpawnCustomer();
+                    }
+                },
                 loop: true
             });
             
@@ -750,7 +793,9 @@
                 'Chinotto': '🥤',
                 'Cannolo': '🥐',
                 'Ginseng': '☕',
-                'Fritto Misto': '🍤'
+                'Fritto Misto': '🍤',
+                'Pasta al Pesto': '🍝',
+                'Panino con la Milza': '🥖'
             };
             return map[foodName] || '🍽️';
         }
@@ -802,28 +847,19 @@
         }
         
         createRestaurant() {
-            if (!this.textures.exists('floor_sala')) {
-                for (let x = 0; x < 6; x++) {
-                    for (let y = 0; y < 6; y++) {
-                        const color = (x + y) % 2 === 0 ? 0x3d2518 : 0x2f1d13;
-                        this.add.rectangle(x * 100 + 50, y * 100 + 50, 100, 100, color).setDepth(0);
-                    }
-                }
-            }
-            
             const tablePositions = [
-                { x: 125, y: 160, id: 1 },
-                { x: 125, y: 400, id: 2 },
-                { x: 350, y: 160, id: 3 },
-                { x: 350, y: 400, id: 4 }
+                { x: 180, y: 220, id: 1 },
+                { x: 400, y: 220, id: 2 },
+                { x: 180, y: 420, id: 3 },
+                { x: 400, y: 420, id: 4 }
             ];
             
             tablePositions.forEach(pos => {
-                this.add.ellipse(pos.x, pos.y + 38, 80, 20, 0x000000, 0.35);
+                this.add.ellipse(pos.x, pos.y + 38, 80, 20, 0x000000, 0.35).setDepth(pos.y - 1);
                 
                 const table = this.add.rectangle(pos.x, pos.y, 70, 45, 0x5c2c16);
                 table.setStrokeStyle(2, 0xd27d2d);
-                table.setDepth(1);
+                table.setDepth(pos.y);
                 
                 const labelTable = t('TABLE_SHORT') !== 'TABLE_SHORT' ? t('TABLE_SHORT') : 'Tav.';
                 this.add.text(pos.x, pos.y - 30, `${labelTable} ${pos.id}`, {
@@ -831,7 +867,7 @@
                     color: '#ffd700',
                     fontStyle: 'bold',
                     fontFamily: 'Fredoka'
-                }).setOrigin(0.5).setDepth(2);
+                }).setOrigin(0.5).setDepth(pos.y + 1);
                 
                 const tableData = {
                     id: pos.id,
@@ -846,12 +882,28 @@
                 };
                 
                 table.setInteractive({ useHandCursor: true });
+                
+                // --- BLOCCA IL CLICK DIRETTO SUI TAVOLI ---
                 table.on('pointerdown', () => {
-                    const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, pos.x, pos.y);
+                    if (this.isPhoneActive) {
+                        return;
+                    }
+                    
+                    const dist = Phaser.Math.Distance.Between(
+                        this.waitress.x,
+                        this.waitress.y,
+                        pos.x,
+                        pos.y
+                    );
                     if (dist <= CONFIG.waitress.interactRange) {
                         this.interactWithTable(tableData);
                     } else {
-                        this.showFloatingText(pos.x, pos.y - 40, "Avvicinati con WASD!", '#ffd700');
+                        this.showFloatingText(
+                            pos.x,
+                            pos.y - 40,
+                            "Avvicinati con WASD!",
+                            '#ffd700'
+                        );
                     }
                 });
                 
@@ -860,15 +912,44 @@
         }
 
         createBanconeZone() {
-            const passZone = this.add.rectangle(595, 420, 30, 220, 0x000000, 0.001);
+            const passZone = this.add.rectangle(595, 420, 60, 80, 0x000000, 0.001);
             passZone.setDepth(6);
             passZone.setInteractive({ useHandCursor: true });
+            
+            // --- BLOCCA IL CLICK SUL BANCONE ---
             passZone.on('pointerdown', () => {
-                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 550, this.waitress.y);
-                if (dist <= CONFIG.waitress.interactRange) {
-                    this.interactWithBancone();
+                if (this.isPhoneActive) {
+                    return;
+                }
+                
+                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 595, 420);
+                if (dist <= CONFIG.waitress.interactRange + 30) {
+                    this.handleCounterInteraction();
                 } else {
-                    this.showFloatingText(560, this.waitress.y - 30, "Avvicinati con WASD!", '#ffd700');
+                    this.showFloatingText(595, 420 - 30, 'Avvicinati al Pass Piatti!', '#ffd700');
+                }
+            });
+        }
+
+        createPassPiatti() {
+            const passX = 595;
+            const passY = 420;
+            
+            this.passPiattiZone = this.add.zone(passX, passY, 60, 80);
+            this.passPiattiZone.setRectangleDropZone(60, 80);
+            this.passPiattiZone.setInteractive({ useHandCursor: true });
+            
+            // --- BLOCCA IL CLICK SUL PASS PIATTI ---
+            this.passPiattiZone.on('pointerdown', () => {
+                if (this.isPhoneActive) {
+                    return;
+                }
+                
+                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, passX, passY);
+                if (dist <= CONFIG.waitress.interactRange + 30) {
+                    this.handleCounterInteraction();
+                } else {
+                    this.showFloatingText(passX, passY - 30, 'Avvicinati al Pass Piatti!', '#ffd700');
                 }
             });
         }
@@ -876,19 +957,22 @@
         createWaitress() {
             this.waitressShadow = this.add.ellipse(300, 320, 30, 10, 0x000000, 0.3);
             
-            this.waitress = this.add.text(300, 300, '👩‍🍳', {
-                fontSize: '36px'
-            }).setOrigin(0.5).setDepth(10);
+            if (this.textures.exists('cameriera_avanti')) {
+                this.waitress = this.add.image(300, 300, 'cameriera_avanti')
+                    .setOrigin(0.5)
+                    .setDepth(10)
+                    .setScale(WAITRESS_SCALE);
+            } else {
+                this.waitress = this.add.text(300, 300, '👩‍🍳', {
+                    fontSize: '36px'
+                }).setOrigin(0.5).setDepth(10);
+            }
 
             this.physics.add.existing(this.waitress, false);
             if (this.waitress.body) {
                 this.waitress.body.setSize(24, 24);
                 this.waitress.body.setOffset(6, 12);
                 this.waitress.body.setCollideWorldBounds(true);
-            }
-
-            if (this.tilemap && this.tilemap.wallGroup) {
-                this.physics.add.collider(this.waitress, this.tilemap.wallGroup);
             }
         }
         
@@ -959,12 +1043,27 @@
             
             this.sinkSprite.setInteractive({ useHandCursor: true });
             
+            // --- BLOCCA IL CLICK SUL LAVELLO ---
             this.sinkSprite.on('pointerdown', () => {
-                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 100, 540);
+                if (this.isPhoneActive) {
+                    return;
+                }
+                
+                const dist = Phaser.Math.Distance.Between(
+                    this.waitress.x,
+                    this.waitress.y,
+                    100,
+                    540
+                );
                 if (dist <= CONFIG.waitress.interactRange) {
                     this.washDishes();
                 } else {
-                    this.showFloatingText(75, 510, "Avvicinati con WASD!", '#ffd700');
+                    this.showFloatingText(
+                        75,
+                        510,
+                        "Avvicinati con WASD!",
+                        '#ffd700'
+                    );
                 }
             });
 
@@ -1102,6 +1201,178 @@
             }
         }
 
+        // ============================================================
+        // BLOCCO GAMEPLAY DURANTE IL TELEFONO
+        // ============================================================
+        //
+        // IMPORTANTE:
+        // questo metodo NON mette in pausa Phaser.
+        // NON ferma i timer.
+        // NON ferma la pazienza dei clienti.
+        //
+        // Blocca esclusivamente:
+        // - movimento cameriera
+        // - click sui tavoli
+        // - click sui clienti
+        // - click sul lavello
+        // - click sul pass piatti
+        //
+        // ============================================================
+
+        setPhoneGameplayLock(locked) {
+
+            this.isPhoneActive = !!locked;
+
+            if (!this._phoneInputStates) {
+                this._phoneInputStates = new Map();
+            }
+
+            const interactiveObjects = [];
+
+            // --------------------------------------------------------
+            // LAVELLO
+            // --------------------------------------------------------
+
+            if (this.sinkSprite) {
+                interactiveObjects.push(
+                    this.sinkSprite
+                );
+            }
+
+            // --------------------------------------------------------
+            // PASS PIATTI
+            // --------------------------------------------------------
+
+            if (this.passPiattiZone) {
+                interactiveObjects.push(
+                    this.passPiattiZone
+                );
+            }
+
+            // --------------------------------------------------------
+            // TAVOLI
+            // --------------------------------------------------------
+
+            if (Array.isArray(this.tables)) {
+
+                this.tables.forEach(table => {
+
+                    if (
+                        table &&
+                        table.graphic
+                    ) {
+
+                        interactiveObjects.push(
+                            table.graphic
+                        );
+                    }
+                });
+            }
+
+            // --------------------------------------------------------
+            // CLIENTI
+            // --------------------------------------------------------
+
+            if (Array.isArray(this.customers)) {
+
+                this.customers.forEach(customer => {
+
+                    if (!customer) {
+                        return;
+                    }
+
+                    [
+                        'emoji',
+                        'sprite',
+                        'orderBubble',
+                        'chatBubble'
+                    ].forEach(key => {
+
+                        if (customer[key]) {
+
+                            interactiveObjects.push(
+                                customer[key]
+                            );
+                        }
+                    });
+                });
+            }
+
+            // --------------------------------------------------------
+            // BLOCCA
+            // --------------------------------------------------------
+
+            if (locked) {
+
+                interactiveObjects.forEach(obj => {
+
+                    if (
+                        !obj ||
+                        !obj.input
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        !this._phoneInputStates.has(obj)
+                    ) {
+
+                        this._phoneInputStates.set(
+                            obj,
+                            obj.input.enabled !== false
+                        );
+                    }
+
+                    obj.input.enabled = false;
+                });
+
+                // ----------------------------------------------------
+                // STOP IMMEDIATO CAMERIERA
+                // ----------------------------------------------------
+
+                if (
+                    this.waitress &&
+                    this.waitress.body
+                ) {
+
+                    this.waitress.body.setVelocity(
+                        0,
+                        0
+                    );
+
+                    if (
+                        typeof this.waitress.body.stop ===
+                        'function'
+                    ) {
+
+                        this.waitress.body.stop();
+                    }
+                }
+
+            } else {
+
+                // ----------------------------------------------------
+                // RIPRISTINA INPUT
+                // ----------------------------------------------------
+
+                this._phoneInputStates.forEach(
+                    (wasEnabled, obj) => {
+
+                        if (
+                            obj &&
+                            obj.input
+                        ) {
+
+                            obj.input.enabled =
+                                wasEnabled;
+                        }
+                    }
+                );
+
+                this._phoneInputStates.clear();
+            }
+        }
+
         setupKeyboard() {
             this.keys = this.input.keyboard.addKeys({
                 w: Phaser.Input.Keyboard.KeyCodes.W,
@@ -1215,75 +1486,54 @@
             this.updateSinkSprite();
         }
         
-        // === FUNZIONE spawnCustomer COMPLETAMENTE RISCRITTA ===
+        // ============================================================
+        // MODIFICATO: spawnCustomer() usa NPCManager
+        // ============================================================
         spawnCustomer() {
-            // 1. Limite massimo clienti (non più dei tavoli disponibili)
             if (this.customers.length >= this.tables.length) return;
 
-            // 2. Cerca un tavolo libero
             let freeTable = this.tables.find(t => !t.occupied && t.status === 'libero');
             if (!freeTable) {
                 freeTable = this.tables.find(t => !t.occupied && t.status === 'piatto_sporco');
             }
             if (!freeTable) return;
 
-            // 3. ULTRASICUREZZA: Se nel frattempo un altro cliente lo ha occupato, fermati!
             if (freeTable.occupied === true) return;
 
-            // 4. Occupa il tavolo SUBITO
             freeTable.occupied = true;
 
-            const foods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto', 'Cannolo', 'Ginseng'];
-            const selectedFood = foods[Phaser.Math.Between(0, foods.length - 1)];
-            
-            const names = Object.keys(NPC_REGISTRY);
-            const name = names[Phaser.Math.Between(0, names.length - 1)];
-            
-            const npcConfig = NPC_REGISTRY[name] || {};
-
-            let gender = npcConfig.gender || 'male';
-            let bringsChild = false;
-
-            let initialPatience = 100;
-            if (freeTable.status === 'piatto_sporco') {
-                initialPatience = 60;
+            // Usa il NPCManager per generare il cliente
+            let customer = null;
+            if (this.npcManager && typeof this.npcManager.spawnCustomer === 'function') {
+                customer = this.npcManager.spawnCustomer();
             }
             
-            const customer = {
-                name: name,
-                order: selectedFood,
-                patience: initialPatience,
-                bladder: 0,
-                gender: gender,
-                isInBathroom: false,
-                bubbleIcon: null,
-                isDead: false,
-                table: freeTable,
-                relationScore: 50,
-                adoptTrigger: npcConfig.adoptTrigger || false,
-                patienceMultiplier: npcConfig.patienceMultiplier || 1.0,
-                bringsChild: bringsChild,
-                emojiChar: npcConfig.emojiChar || (gender === 'female' ? '👩' : '👨'),
-                hasTilesheet: npcConfig.hasTilesheet || false,
-                tilesheetKey: npcConfig.key || null,
-                x: freeTable.x,
-                y: freeTable.y,
-                orderBubble: null,
-                chatBubble: null,
-                childGraphic: null,
-                patienceBar: null,
-                patienceBg: null,
-                emoji: null,
-                sprite: null,
-                timerEvent: null,
-                serve: () => {
-                    this.time.delayedCall(CONFIG.customers.eatingDuration, () => {
-                        this.finishMeal(customer);
-                    });
-                }
-            };
+            // Fallback se NPCManager non disponibile
+            if (!customer) {
+                customer = this.generateFallbackCustomer();
+            }
             
-            freeTable.occupied = true;
+            if (!customer) {
+                freeTable.occupied = false;
+                return;
+            }
+
+            // Se il customer ha già un ordine ma ha anche una lista di piatti preferiti
+            // e l'ordine non è stato impostato, usa il primo piatto della lista
+            if (!customer.order && customer.favoriteFoods && customer.favoriteFoods.length > 0) {
+                customer.order = customer.favoriteFoods[Phaser.Math.Between(0, customer.favoriteFoods.length - 1)];
+            }
+            
+            // Se ancora non ha un ordine, usa un piatto casuale dalla lista completa
+            if (!customer.order) {
+                const foods = Object.keys(FOOD_TEXTURES);
+                customer.order = foods[Phaser.Math.Between(0, foods.length - 1)];
+            }
+
+            customer.table = freeTable;
+            customer.x = freeTable.x;
+            customer.y = freeTable.y;
+            
             freeTable.customer = customer;
             freeTable.status = 'ordinazione_pronta';
 
@@ -1299,17 +1549,64 @@
             this.createCustomerGraphics(customer);
             this.customers.push(customer);
         }
-        // ======================================================
+
+        // ============================================================
+        // NUOVO: generateFallbackCustomer() per emergenza
+        // ============================================================
+        generateFallbackCustomer() {
+            // Metodo di emergenza se NPCManager non è disponibile
+            const fallbackNames = ['Elena', 'Maria', 'Francesco', 'Rosa'];
+            const foods = Object.keys(FOOD_TEXTURES);
+            const name = fallbackNames[Phaser.Math.Between(0, fallbackNames.length - 1)];
+            const npcConfig = NPC_REGISTRY[name] || {};
+            
+            return {
+                name: name,
+                order: foods[Phaser.Math.Between(0, foods.length - 1)],
+                patience: 100,
+                bladder: 0,
+                gender: npcConfig.gender || 'female',
+                isInBathroom: false,
+                bubbleIcon: null,
+                isDead: false,
+                table: null,
+                relationScore: 50,
+                adoptTrigger: npcConfig.adoptTrigger || false,
+                patienceMultiplier: npcConfig.patienceMultiplier || 1.0,
+                bringsChild: false,
+                emojiChar: npcConfig.emojiChar || '👩',
+                hasTilesheet: npcConfig.hasTilesheet || false,
+                tilesheetKey: npcConfig.key || null,
+                x: 0,
+                y: 0,
+                orderBubble: null,
+                chatBubble: null,
+                childGraphic: null,
+                patienceBar: null,
+                patienceBg: null,
+                emoji: null,
+                sprite: null,
+                timerEvent: null,
+                noTip: npcConfig.noTip || false,
+                tipMultiplier: npcConfig.tipMultiplier || 1.0,
+                serve: () => {
+                    this.time.delayedCall(CONFIG.customers.eatingDuration, () => {
+                        this.finishMeal(this.customers[this.customers.length - 1]);
+                    });
+                }
+            };
+        }
         
         createCustomerGraphics(customer) {
             const table = customer.table;
             
             customer.shadow = this.add.ellipse(table.x, table.y + 35, 40, 10, 0x000000, 0.25);
+            customer.shadow.setDepth(table.y - 1);
             
             if (customer.hasTilesheet && customer.tilesheetKey && this.textures.exists(customer.tilesheetKey)) {
                 customer.sprite = this.add.sprite(table.x, table.y + 10, customer.tilesheetKey, 0);
                 customer.sprite.setScale(1.2);
-                customer.sprite.setDepth(5);
+                customer.sprite.setDepth(table.y);
                 customer.sprite.setInteractive({ useHandCursor: true });
                 
                 if (this.anims.exists(`${customer.tilesheetKey}_idle_0`)) {
@@ -1318,13 +1615,13 @@
             } else {
                 customer.emoji = this.add.text(table.x, table.y + 10, customer.emojiChar, {
                     fontSize: '36px'
-                }).setOrigin(0.5).setDepth(5).setInteractive({ useHandCursor: true });
+                }).setOrigin(0.5).setDepth(table.y).setInteractive({ useHandCursor: true });
             }
 
             if (customer.bringsChild) {
                 customer.childGraphic = this.add.text(table.x + 24, table.y + 24, '👶', {
                     fontSize: '16px'
-                }).setOrigin(0.5).setDepth(5);
+                }).setOrigin(0.5).setDepth(table.y);
             }
 
             customer.orderBubble = this.add.text(table.x - 18, table.y - 15, '📝 ?', {
@@ -1332,16 +1629,18 @@
                 color: '#ffffff',
                 backgroundColor: '#110906',
                 padding: { x: 4, y: 3 }
-            }).setOrigin(0.5).setDepth(5).setInteractive({ useHandCursor: true });
+            }).setOrigin(0.5).setDepth(table.y + 2).setInteractive({ useHandCursor: true });
 
             customer.chatBubble = this.add.text(table.x + 22, table.y - 15, '💬', {
                 fontSize: '12px',
                 color: '#ffffff',
                 backgroundColor: '#27ae60',
                 padding: { x: 4, y: 3 }
-            }).setOrigin(0.5).setDepth(5).setInteractive({ useHandCursor: true });
+            }).setOrigin(0.5).setDepth(table.y + 2).setInteractive({ useHandCursor: true });
             
             const handleTableClick = () => {
+                if (this.isPhoneActive) return;
+                
                 const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, table.x, table.y);
                 if (dist <= CONFIG.waitress.interactRange) {
                     this.interactWithTable(table);
@@ -1356,6 +1655,8 @@
                 } else if (pointer && pointer.event && typeof pointer.event.stopPropagation === 'function') {
                     pointer.event.stopPropagation();
                 }
+                
+                if (this.isPhoneActive) return;
                 
                 this.currentCustomer = customer;
                 if (this.aiManager) {
@@ -1373,7 +1674,6 @@
             customer.orderBubble.on('pointerdown', handleTableClick);
             customer.chatBubble.on('pointerdown', handleChatClick);
             
-            // Mazzo di carte: aumenta la pazienza dei clienti più anziani
             const npcConfig = NPC_REGISTRY[customer.name] || {};
             const isElderly = npcConfig.age && npcConfig.age >= 60;
             let patienceBonus = 0;
@@ -1385,11 +1685,11 @@
             }
             
             customer.patienceBg = this.add.rectangle(table.x, table.y - 28, 50, 4, 0x333333);
-            customer.patienceBg.setDepth(4);
+            customer.patienceBg.setDepth(table.y - 1);
             
             customer.patienceBar = this.add.rectangle(table.x - 25, table.y - 28, 50, 4, 0x2ecc71);
             customer.patienceBar.setOrigin(0, 0.5);
-            customer.patienceBar.setDepth(5);
+            customer.patienceBar.setDepth(table.y);
             
             customer.timerEvent = this.time.addEvent({
                 delay: 100,
@@ -1429,31 +1729,68 @@
             }
         }
         
+        // ============================================================
+        // MODIFICATO: finishMeal() - CONSUMA CIBO
+        // ============================================================
         finishMeal(customer) {
-            const basePay = 14;
-            const multiplier = customer.patience > 50 ? 1.3 : (customer.patience < 20 ? 0.8 : 1.0);
-            const tip = Math.floor(basePay * multiplier);
+            let basePay = 14;
+            if (this.priceSystem) {
+                basePay = this.priceSystem.getFoodPrice(customer.order);
+            }
+            
+            // Considera il moltiplicatore mancia specifico dell'NPC
+            const customerConfig = NPC_REGISTRY[customer.name] || {};
+            const tipMultiplier = customerConfig.tipMultiplier || customer.tipMultiplier || 1.0;
+            const noTip = customerConfig.noTip || customer.noTip || false;
+            
+            let multiplier = customer.patience > 50 ? 1.3 : (customer.patience < 20 ? 0.8 : 1.0);
+            let tip = Math.floor(basePay * multiplier);
+            
+            // Marco non lascia mance
+            if (noTip) {
+                tip = 0;
+            } else {
+                tip = Math.floor(tip * tipMultiplier);
+            }
             
             GAME.score += tip;
             GAME.customersServed++;
             this.updateHUD();
             
-            this.showFloatingText(customer.table.x, customer.table.y - 40, `+${tip}€ 💵`, '#2ecc71');
+            this.showFloatingText(customer.table.x, customer.table.y - 40, 
+                noTip ? `💰 +${tip}€ (niente mancia)` : `+${tip}€ 💵`, '#2ecc71');
             triggerSfx('coin');
+            
+            // ============================================================
+            // CONSUMA CIBO DALLE SCORTE
+            // ============================================================
+            if (this.supplier && typeof this.supplier.consumeFood === 'function') {
+                const consumed = this.supplier.consumeFood(1);
+                if (!consumed) {
+                    // Se non c'è cibo, non dovrebbe succedere, ma logghiamo
+                    console.warn('⚠️ Scorte esaurite! Il cliente ha mangiato ma le scorte sono a 0!');
+                }
+            }
             
             customer.table.status = 'piatto_sporco';
             
             if (this.textures.exists('Piatto Sporco')) {
                 customer.table.dirtySprite = this.add.image(customer.table.x, customer.table.y + 15, 'Piatto Sporco')
                     .setDisplaySize(32, 32)
-                    .setDepth(6);
+                    .setDepth(customer.table.y + 1);
             } else {
                 customer.table.dirtyLabel = this.add.text(customer.table.x, customer.table.y + 15, '🍽️ SPORCO', {
                     fontSize: '8px',
                     color: '#e67e22',
                     fontStyle: 'bold',
                     fontFamily: 'Fredoka'
-                }).setOrigin(0.5);
+                }).setOrigin(0.5).setDepth(customer.table.y + 1);
+            }
+            
+            // FERMA IL TIMER DEL CLIENTE PRIMA DI RIMUOVERLO
+            if (customer.timerEvent) {
+                customer.timerEvent.remove();
+                customer.timerEvent = null;
             }
             
             this.removeCustomer(customer);
@@ -1463,33 +1800,80 @@
             }
         }
         
+        // ============================================================
+        // MODIFICATO: removeCustomer() - CON FERMO TIMER
+        // ============================================================
         removeCustomer(customer) {
+            if (!customer) return;
+            
             customer.isDead = true;
-            customer.table.occupied = false;
-            customer.table.customer = null;
-            if (customer.table.status !== 'piatto_sporco') {
-                customer.table.status = 'piatto_sporco';
+            
+            // FERMA IL TIMER
+            if (customer.timerEvent) {
+                customer.timerEvent.remove();
+                customer.timerEvent = null;
             }
             
-            if (customer.timerEvent) customer.timerEvent.remove();
-            if (customer.emoji) customer.emoji.destroy();
-            if (customer.sprite) customer.sprite.destroy();
-            if (customer.childGraphic) customer.childGraphic.destroy();
-            if (customer.orderBubble) customer.orderBubble.destroy();
-            if (customer.chatBubble) customer.chatBubble.destroy();
-            if (customer.bubbleIcon) {
-                customer.bubbleIcon.destroy();
-                customer.bubbleIcon = null;
+            if (customer.table) {
+                customer.table.occupied = false;
+                customer.table.customer = null;
+                if (customer.table.status !== 'piatto_sporco') {
+                    customer.table.status = 'piatto_sporco';
+                }
             }
-            if (customer.shadow) customer.shadow.destroy();
-            if (customer.patienceBar) customer.patienceBar.destroy();
-            if (customer.patienceBg) customer.patienceBg.destroy();
+            
+            const toDestroy = [
+                'emoji', 'sprite', 'childGraphic', 'orderBubble', 'chatBubble',
+                'bubbleIcon', 'shadow', 'patienceBar', 'patienceBg'
+            ];
+            
+            toDestroy.forEach(key => {
+                if (customer[key]) {
+                    try {
+                        customer[key].destroy();
+                    } catch(e) {
+                        // Ignora errori di distruzione
+                    }
+                    customer[key] = null;
+                }
+            });
             
             const index = this.customers.indexOf(customer);
-            if (index > -1) this.customers.splice(index, 1);
+            if (index > -1) {
+                this.customers.splice(index, 1);
+            }
         }
         
+        ensureTrayIndicator() {
+            if (!this.trayIndicator || !this.trayIndicator.active) {
+                this.trayIndicator = this.add.text(0, 0, '', {
+                    fontSize: '16px',
+                    fontFamily: 'Fredoka',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                }).setDepth(11).setOrigin(0.5);
+                
+                if (this.waitress) {
+                    this.trayIndicator.x = this.waitress.x;
+                    this.trayIndicator.y = this.waitress.y - 30;
+                }
+            }
+        }
+        
+        // ============================================================
+        // interactWithTable() - con blocco telefono
+        // ============================================================
         interactWithTable(table) {
+            if (this.isPhoneActive) return;
+            
+            if (!table) return;
+            
+            if (table.customer && table.customer.isDead) {
+                table.customer = null;
+                table.occupied = false;
+                return;
+            }
+            
             if (this.tutorialActive && this.tutorialStepTarget) {
                 if (this.tutorialStepTarget === 'take_order' && table.customer === this.tutorial.fakeCustomer) {
                     this.tutorial.progressStep();
@@ -1510,11 +1894,10 @@
                 return;
             }
 
-            // --- ORDINAZIONE PRONTA (PRENDERE ORDINE) ---
             if (table.status === 'ordinazione_pronta' && table.customer) {
                 if (this.ordersTaken >= this.maxOrders) {
                     this.showFloatingText(this.waitress.x, this.waitress.y - 30, 
-                        `📓 Taccuino pieno! Massimo ${this.maxOrders} comande. Servine qualcuna!`, '#ff4444');
+                        `📓 Taccuino pieno! Massimo ${this.maxOrders} comande.`, '#ff4444');
                     triggerSfx('alert');
                     return;
                 }
@@ -1535,7 +1918,8 @@
                 };
                 
                 table.status = 'attesa_cibo';
-                if (table.customer.orderBubble) {
+                
+                if (table.customer.orderBubble && table.customer.orderBubble.active) {
                     table.customer.orderBubble.setText('⏳ Cibo');
                     table.customer.orderBubble.setColor('#ffd700');
                 }
@@ -1549,7 +1933,6 @@
                 return;
             }
             
-            // --- ATTESA CIBO (SERVIRE IL CIBO) ---
             if (table.status === 'attesa_cibo' && table.customer) {
                 const foodIndex = this.waitressState.tray.findIndex(
                     f => f.food.toLowerCase() === table.customer.order.toLowerCase()
@@ -1559,24 +1942,46 @@
                     triggerSfx('serve');
                     
                     this.waitressState.tray.splice(foodIndex, 1);
+                    
+                    this.ensureTrayIndicator();
                     this.updateTrayGraphics();
                     this.updateHUD();
                     
                     this.ordersTaken = Math.max(0, this.ordersTaken - 1);
                     this.updateHUD();
                     
-                    table.customer.serve();
-                    table.status = 'mangia';
-                    if (table.customer.orderBubble) {
-                        table.customer.orderBubble.setText('🍽️ Mmm!');
+                    // ============================================================
+                    // FASE MANGIA - GESTIONE CORRETTA DEL TIMER
+                    // ============================================================
+                    const eatingCustomer = table.customer;
+
+                    if (eatingCustomer.timerEvent) {
+                        eatingCustomer.timerEvent.remove();
+                        eatingCustomer.timerEvent = null;
                     }
 
-                    // --- AGGIUNGI QUESTA RIGA QUI: FERMA IL TIMER ---
-                    if (table.customer.timerEvent) {
-                        table.customer.timerEvent.remove();
-                        table.customer.timerEvent = null;
+                    table.status = 'mangia';
+
+                    eatingCustomer.timerEvent = this.time.delayedCall(
+                        CONFIG.customers.eatingDuration,
+                        () => {
+                            if (
+                                eatingCustomer.isDead ||
+                                !eatingCustomer.table ||
+                                eatingCustomer.table.customer !== eatingCustomer ||
+                                eatingCustomer.table.status !== 'mangia'
+                            ) {
+                                return;
+                            }
+
+                            eatingCustomer.timerEvent = null;
+                            this.finishMeal(eatingCustomer);
+                        }
+                    );
+
+                    if (table.customer.orderBubble && table.customer.orderBubble.active) {
+                        table.customer.orderBubble.setText('🍽️ Mmm!');
                     }
-                    // ----------------------------------------------
 
                     this.showFloatingText(table.x, table.y - 40, t('MSG_SERVED'), '#2ecc71');
                 } else {
@@ -1602,6 +2007,7 @@
                 
                 this.waitressState.tray.push({ food: 'piatto_sporco' });
                 
+                this.ensureTrayIndicator();
                 this.updateTrayGraphics();
                 this.updateHUD();
                 
@@ -1623,79 +2029,25 @@
             }
         }
         
+        // ============================================================
+        // interactWithBancone() - con blocco telefono
+        // ============================================================
         interactWithBancone() {
+            if (this.isPhoneActive) return;
+            
             if (this.tutorialActive && this.tutorialStepTarget === 'counter') {
                 this.tutorial.progressStep();
-            } else if (this.tutorialActive && this.tutorialStepTarget) {
-                this.showFloatingText(560, this.waitress.y - 30, "⚠️ Segui le frecce del tutorial!", '#f39c12');
                 return;
             }
 
-            const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 560, this.waitress.y);
-            if (dist > CONFIG.waitress.interactRange) {
+            const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 595, 420);
+            if (dist > CONFIG.waitress.interactRange + 30) {
                 this.showFloatingText(this.waitress.x, this.waitress.y - 30, t('ERR_CLOSE_COUNTER'), '#ff4444');
                 triggerSfx('click');
                 return;
             }
             
-            if (GAME.carriedOrder) {
-                const food = GAME.carriedOrder.foodName.toLowerCase();
-                let stationKey = null;
-                
-                const foodStationMap = {
-                    'pizza': 'forno',
-                    'patatine': 'friggitrice',
-                    'panino': 'fornelli',
-                    'risotto': 'fornelli',
-                    'caponata': 'fornelli',
-                    'arancina': 'friggitrice',
-                    'fritto misto': 'friggitrice',
-                    'cassata': 'forno',
-                    'cannolo': 'forno',
-                    'chinotto': 'bevande',
-                    'caffè': 'caffe',
-                    'ginseng': 'caffe',
-                    'birra': 'spillatore', 
-                    'cola': 'bevande',
-                    'acqua': 'frigo'
-                };
-                
-                stationKey = foodStationMap[food] || 'tagliere';
-                
-                if (stationKey && this.kitchen) {
-                    const success = this.kitchen.addOrder(
-                        stationKey,
-                        GAME.carriedOrder.foodName,
-                        GAME.carriedOrder.tableId
-                    );
-                    
-                    if (success) {
-                        triggerSfx('order_placed');
-                        const tableId = GAME.carriedOrder.tableId;
-                        GAME.carriedOrder = null;
-                        
-                        this.ordersTaken = Math.max(0, this.ordersTaken - 1);
-                        this.updateHUD();
-                        
-                        this.updateNotepadUI(true);
-                        
-                        const msgChef = t('PRONTO') !== 'PRONTO' ? t('PRONTO') : '👨‍🍳 Comanda allo Chef!';
-                        const labelTable = t('TABLE_SHORT') !== 'TABLE_SHORT' ? t('TABLE_SHORT') : 'Tavolo';
-                        this.showFloatingText(560, this.waitress.y - 20, 
-                            `${msgChef} (${this.ordersTaken}/${this.maxOrders} comande rimanenti)`, '#2ecc71');
-                        this.showFloatingText(560, this.waitress.y - 45, 
-                            `📝 ${labelTable} ${tableId}: ${food}`, '#ffd700');
-                    } else {
-                        this.showFloatingText(560, this.waitress.y - 30, t('OCCUPATO'), '#f39c12');
-                        triggerSfx('alert');
-                    }
-                } else {
-                    this.showFloatingText(560, this.waitress.y - 30, t('ERR_NO_FOOD_SERVED'), '#ff4444');
-                }
-                return;
-            }
-            
-            this.pickUpFoodFromCounter();
+            this.handleCounterInteraction();
         }
         
         pickUpFoodFromCounter() {
@@ -1705,48 +2057,197 @@
                 return;
             }
             
-            if (!this.kitchen) return;
+            if (!this.kitchen) {
+                this.showFloatingText(595, this.waitress.y - 30, '❌ Cucina non disponibile!', '#ff4444');
+                return;
+            }
 
             const food = this.kitchen.pickUpFood();
             if (food) {
                 triggerSfx('pickup');
                 this.waitressState.tray.push({ food: food });
+                
+                this.ensureTrayIndicator();
                 this.updateTrayGraphics();
                 this.updateHUD();
                 
-                const textureKey = this.getFoodTexture(food);
-                if (textureKey) {
-                    const tempImg = this.add.image(this.waitress.x, this.waitress.y - 20, food);
-                    
-                    if (food.toLowerCase() === 'birra') {
-                        tempImg.setDisplaySize(28, 40);
-                    } else {
-                        tempImg.setDisplaySize(32, 32);
-                    }
-                    
-                    tempImg.setDepth(200);
-
-                    this.tweens.add({
-                        targets: tempImg,
-                        y: this.waitress.y - 70,
-                        alpha: 0,
-                        duration: 1000,
-                        ease: 'Cubic.easeOut',
-                        onComplete: () => tempImg.destroy()
-                    });
-
-                    this.showFloatingText(this.waitress.x, this.waitress.y - 40, `📦 ${food} ${t('FOOD_READY')}`, '#2ecc71');
-                } else {
-                    const emoji = this.getFoodEmoji(food);
-                    this.showFloatingText(this.waitress.x, this.waitress.y - 40, `${emoji} ${food} ${t('FOOD_TAKEN')}`, '#2ecc71');
-                }
+                const emoji = this.getFoodEmoji(food);
+                this.showFloatingText(this.waitress.x, this.waitress.y - 40, `${emoji} ${food} pronto!`, '#2ecc71');
             } else {
-                this.showFloatingText(560, this.waitress.y - 30, t('ERR_NO_READY_FOOD'), '#999999');
-                triggerSfx('click');
+                this.showFloatingText(595, this.waitress.y - 30, '📦 Nessun cibo pronto', '#999999');
             }
         }
         
+        // ============================================================
+        // handleCounterInteraction() - decrementa ordersTaken
+        // ============================================================
+        handleCounterInteraction() {
+            if (GAME.carriedOrder) {
+                const order = GAME.carriedOrder;
+                const foodName = order.foodName;
+                const tableId = order.tableId;
+
+                const normalizedFood = String(foodName || '')
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .trim();
+
+                const foodStationMap = {
+                    'pizza': 'forno',
+                    'patatine': 'friggitrice',
+                    'panino': 'fornelli',
+                    'risotto': 'fornelli',
+                    'pasta al pesto': 'fornelli',
+                    'panino milza': 'fornelli',
+                    'caponata': 'fornelli',
+                    'arancina': 'friggitrice',
+                    'fritto misto': 'friggitrice',
+                    'cassata': 'forno',
+                    'cannolo': 'forno',
+                    'chinotto': 'bevande',
+                    'caffe': 'caffe',
+                    'ginseng': 'caffe',
+                    'birra': 'spillatore',
+                    'cola': 'bevande',
+                    'acqua': 'frigo'
+                };
+
+                const stationKey = foodStationMap[normalizedFood];
+
+                if (!stationKey) {
+                    this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
+                        '❌ Nessuna stazione per questo cibo!', '#ff0000');
+                    console.warn('Nessuna stazione per foodName:', foodName, 'normalizzato:', normalizedFood);
+                    return;
+                }
+
+                if (this.kitchen && typeof this.kitchen.addOrder === 'function') {
+                    const added = this.kitchen.addOrder(stationKey, foodName, tableId);
+                    if (added) {
+                        this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
+                            `📝 ${t('ORDER_SENT')}`, '#00ff00');
+                        triggerSfx('cook');
+                        
+                        // DECREMENTA ordersTaken quando l'ordine viene consegnato al cuoco
+                        this.ordersTaken = Math.max(0, this.ordersTaken - 1);
+                        
+                        GAME.carriedOrder = null;
+                        this.waitressHasOrder = false;
+                        this.currentOrder = null;
+                        this.updateNotepadUI(true);
+                        this.updateHUD();
+                        return;
+                    }
+                    this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
+                        '⚠️ Il cuoco non può prendere l\'ordine!', '#ffaa00');
+                    return;
+                }
+                return;
+            }
+
+            if (!this.kitchen) {
+                this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
+                    '❌ Cucina non disponibile!', '#ff4444');
+                return;
+            }
+
+            if (this.kitchen.counterSlots) {
+                const occupiedSlots = this.kitchen.counterSlots.filter(slot => slot.occupied);
+                console.log(`🔍 Slot occupati nel pass: ${occupiedSlots.length}`, occupiedSlots);
+                
+                if (occupiedSlots.length === 0) {
+                    this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
+                        'Nessun piatto pronto nel pass', '#999999');
+                    return;
+                }
+            }
+
+            if (typeof this.kitchen.pickUpFood === 'function') {
+                const food = this.kitchen.pickUpFood();
+                if (food) {
+                    this.waitressState.tray.push({ food: food });
+                    
+                    this.ensureTrayIndicator();
+                    this.updateTrayGraphics();
+                    this.updateHUD();
+                    
+                    const emoji = this.getFoodEmoji(food);
+                    this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
+                        `${emoji} ${food} ${t('FOOD_TAKEN')}`, '#2ecc71');
+                    triggerSfx('pickup');
+                    
+                    console.log(`✅ Cibo preso dal pass: ${food}`);
+                    return;
+                }
+            }
+
+            this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
+                '⚠️ Problema nel prelevare il cibo!', '#ffaa00');
+        }
+        
+        updateTrayGraphics() {
+            const count = this.waitressState.tray.length;
+            const dirtyCount = this.waitressState.tray.filter(item => item.food === 'piatto_sporco').length;
+            const foodCount = count - dirtyCount;
+            
+            this.ensureTrayIndicator();
+            
+            let indicatorText = '';
+            if (count > 0) {
+                if (dirtyCount > 0 && foodCount > 0) {
+                    indicatorText = '🍽️🍕';
+                } else if (dirtyCount > 0) {
+                    indicatorText = dirtyCount === 1 ? '🍽️' : dirtyCount === 2 ? '🍽️🍽️' : '🍽️🍽️🍽️';
+                } else if (foodCount > 0) {
+                    indicatorText = foodCount === 1 ? '🍕' : foodCount === 2 ? '🍕🍕' : '🍕🍕🍕';
+                }
+            }
+            
+            if (this.trayIndicator && this.trayIndicator.active) {
+                this.trayIndicator.setText(indicatorText);
+                this.trayIndicator.x = this.waitress.x;
+                this.trayIndicator.y = this.waitress.y - 30;
+            }
+        }
+        
+        // ============================================================
+        // interactWithClosest() - con blocco telefono
+        // ============================================================
+        interactWithClosest() {
+            if (!this.gameActive || this.isPaused || this.isPhoneActive) return;
+
+            const passDist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 595, 420);
+            if (passDist <= CONFIG.waitress.interactRange + 30) {
+                this.handleCounterInteraction();
+                return;
+            }
+
+            let closestTable = null;
+            let minDistance = Infinity;
+
+            this.tables.forEach(table => {
+                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, table.x, table.y);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestTable = table;
+                }
+            });
+
+            if (closestTable && minDistance <= CONFIG.waitress.interactRange) {
+                this.interactWithTable(closestTable);
+                return;
+            }
+            
+            this.showFloatingText(this.waitress.x, this.waitress.y - 30, 'Niente da fare qui', '#999999');
+        }
+        
+        // ============================================================
+        // washDishes() - con blocco telefono
+        // ============================================================
         washDishes() {
+            if (this.isPhoneActive) return;
+            
             if (this.tutorialActive && this.tutorialStepTarget === 'wash_sink') {
                 this.tutorial.progressStep();
                 GAME.dirtyPlates = 0;
@@ -1774,6 +2275,7 @@
                     }
                 }
                 
+                this.ensureTrayIndicator();
                 this.updateTrayGraphics();
                 this.updateHUD();
                 this.showFloatingText(75, 510, '🧹 Piatto depositato!', '#3498db');
@@ -1799,27 +2301,6 @@
             }
         }
         
-        updateTrayGraphics() {
-            const count = this.waitressState.tray.length;
-            const dirtyCount = this.waitressState.tray.filter(item => item.food === 'piatto_sporco').length;
-            const foodCount = count - dirtyCount;
-            let emoji = '👩‍🍳';
-            
-            if (dirtyCount > 0) {
-                if (dirtyCount === 1) emoji = '👩‍🍳🍽️';
-                else if (dirtyCount === 2) emoji = '👩‍🍳🍽️🍽️';
-                else if (dirtyCount >= 3) emoji = '👩‍🍳🍽️🍽️🍽️';
-                
-                if (foodCount > 0) emoji = '👩‍🍳🍕🍽️';
-            } else {
-                if (count === 1) emoji = '👩‍🍳🍽️';
-                else if (count === 2) emoji = '👩‍🍳🥘🍽️';
-                else if (count >= 3) emoji = '👩‍🍳🍕🍔🥤';
-            }
-            
-            this.waitress.setText(emoji);
-        }
-        
         showFloatingText(x, y, text, color) {
             const txt = this.add.text(x, y, text, {
                 fontSize: '13px',
@@ -1840,15 +2321,78 @@
             });
         }
         
+        // ============================================================
+        // MODIFICATO: update() - CON BLOCO ALL'INIZIO
+        // ============================================================
         update(time, delta) {
             if (!this.gameActive && !this.isPaused) return;
-
             if (this.isPaused) return;
 
+            // ============================================================
+            // BLOCCA TUTTO SE IL TELEFONO È ATTIVO
+            // ============================================================
+            if (this.isPhoneActive) {
+                // Ferma la cameriera
+                if (this.waitress && this.waitress.body) {
+                    this.waitress.body.setVelocity(0, 0);
+                    if (typeof this.waitress.body.stop === 'function') {
+                        this.waitress.body.stop();
+                    }
+                }
+                
+                // Blocca il movimento
+                this.waitress.x = Phaser.Math.Clamp(this.waitress.x, 40, 560);
+                this.waitress.y = Phaser.Math.Clamp(this.waitress.y, 70, 560);
+                
+                // Non processare altro
+                return;
+            }
+            // ============================================================
+
+            // +++ PULISCI I CLIENTI MORTI +++
+            this.customers = this.customers.filter(c => {
+                if (c.isDead) {
+                    if (c.table) {
+                        c.table.occupied = false;
+                        c.table.customer = null;
+                    }
+                    return false;
+                }
+                return true;
+            });
+
+            // I timer dei clienti CONTINUANO anche durante il telefono
+            // (non fermiamo i customer.timerEvent)
+
+            // Aggiorna sistemi che devono continuare
             if (!this.tutorialActive) {
                 if (this.kitchen && typeof this.kitchen.update === 'function') this.kitchen.update();
                 if (this.bathroom && typeof this.bathroom.update === 'function') this.bathroom.update(time, delta);
                 if (this.phone && typeof this.phone.update === 'function') this.phone.update(time, delta);
+            }
+
+            if (this.quest && typeof this.quest.update === 'function') {
+                this.quest.update();
+            }
+
+            if (this.crime && typeof this.crime.update === 'function') {
+                this.crime.update(time, delta);
+            }
+
+            if (this.supplier && this.supplier.packageSpawned && this.waitress) {
+                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 100, 480);
+                if (dist <= 50) {
+                    this.supplier.pickUpPackage();
+                }
+            }
+
+            if (this.supplier && this.supplier.foodStock <= 0) {
+                if (!this.supplier._lowStockWarningShown) {
+                    this.showFloatingText(400, 140, '📦 SCORTE ESAURITE! Chiama il fornitore!', '#ff4d4d');
+                    this.supplier._lowStockWarningShown = true;
+                }
+            } else if (this.supplier) {
+                this.supplier._lowStockWarningShown = false;
             }
 
             if (Phaser.Input.Keyboard.JustDown(this.keys.k) && this.keys.shift.isDown) {
@@ -1859,16 +2403,14 @@
                 return;
             }
 
-            // --- CHEAT: Shift + E (Sintonia Elena al 100%) ---
             if (Phaser.Input.Keyboard.JustDown(this.keys.e) && this.keys.shift.isDown) {
                 const elena = this.customers.find(c => c.name === 'Elena');
-                
                 if (elena) {
                     elena.relationScore = 100;
                     this.showFloatingText(elena.x, elena.y - 50, '❤️ SINTONIA MASSIMA!', '#ff4757');
                     triggerSfx('coin');
                     
-                    if (this.quest) {
+                    if (this.quest && typeof this.quest.startElenaAdoptionQuest === 'function') {
                         this.quest.startElenaAdoptionQuest();
                     }
                     if (this.story) {
@@ -1881,7 +2423,6 @@
                 return;
             }
 
-            // --- NUOVO CHEAT: Shift + M (Soldi 15.000€) ---
             if (Phaser.Input.Keyboard.JustDown(this.keys.m) && this.keys.shift.isDown) {
                 GAME.score = 15000;
                 this.updateHUD();
@@ -1894,125 +2435,315 @@
                 return;
             }
 
-            if (Phaser.Input.Keyboard.JustDown(this.keys.h)) {
+            // --- BLOCCA H / ESC / P DURANTE LA CHIAMATA ---
+            if (
+                !this.isPhoneActive &&
+                Phaser.Input.Keyboard.JustDown(this.keys.h)
+            ) {
                 this.goToHouse();
                 return;
             }
 
-            if (Phaser.Input.Keyboard.JustDown(this.keys.esc) || Phaser.Input.Keyboard.JustDown(this.keys.p)) {
+            if (
+                !this.isPhoneActive &&
+                (
+                    Phaser.Input.Keyboard.JustDown(
+                        this.keys.esc
+                    ) ||
+                    Phaser.Input.Keyboard.JustDown(
+                        this.keys.p
+                    )
+                )
+            ) {
                 this.togglePause();
                 return;
             }
 
-            let moveX = 0, moveY = 0;
-            const controls = GAME.settings.controls || 'wasd';
+            // ===========================================================
+            // MOVIMENTO CAMERIERA
+            // ===========================================================
 
-            if (controls === 'wasd') {
-                if (this.keys.w?.isDown) moveY = -1;
-                if (this.keys.s?.isDown) moveY = 1;
-                if (this.keys.a?.isDown) moveX = -1;
-                if (this.keys.d?.isDown) moveX = 1;
-            } else {
-                if (this.keys.up?.isDown) moveY = -1;
-                if (this.keys.down?.isDown) moveY = 1;
-                if (this.keys.left?.isDown) moveX = -1;
-                if (this.keys.right?.isDown) moveX = 1;
+            let moveX = 0;
+            let moveY = 0;
+
+            // Durante il telefono NON leggiamo WASD/frecce.
+            if (!this.isPhoneActive) {
+
+                const controls =
+                    GAME.settings.controls || 'wasd';
+
+                if (controls === 'wasd') {
+
+                    if (this.keys.w?.isDown) {
+                        moveY = -1;
+                    }
+
+                    if (this.keys.s?.isDown) {
+                        moveY = 1;
+                    }
+
+                    if (this.keys.a?.isDown) {
+                        moveX = -1;
+                    }
+
+                    if (this.keys.d?.isDown) {
+                        moveX = 1;
+                    }
+
+                } else {
+
+                    if (this.keys.up?.isDown) {
+                        moveY = -1;
+                    }
+
+                    if (this.keys.down?.isDown) {
+                        moveY = 1;
+                    }
+
+                    if (this.keys.left?.isDown) {
+                        moveX = -1;
+                    }
+
+                    if (this.keys.right?.isDown) {
+                        moveX = 1;
+                    }
+                }
             }
 
-            if (moveX !== 0 && moveY !== 0) {
+            // Movimento diagonale
+            if (
+                moveX !== 0 &&
+                moveY !== 0
+            ) {
                 moveX *= 0.7071;
                 moveY *= 0.7071;
             }
 
-            if (moveX !== 0 || moveY !== 0) {
-                if (this.waitress.body) {
-                    this.waitress.body.setVelocity(moveX * CONFIG.waitress.speed, moveY * CONFIG.waitress.speed);
+            // ===========================================================
+            // VELOCITÀ
+            // ===========================================================
+
+            if (this.waitress.body) {
+
+                if (this.isPhoneActive) {
+
+                    // BLOCCO ASSOLUTO
+                    this.waitress.body.setVelocity(
+                        0,
+                        0
+                    );
+
+                    // Cancella anche eventuale velocità residua
+                    if (
+                        typeof this.waitress.body.stop ===
+                        'function'
+                    ) {
+                        this.waitress.body.stop();
+                    }
+
+                } else {
+
+                    if (
+                        moveX !== 0 ||
+                        moveY !== 0
+                    ) {
+                        this.waitress.body.setVelocity(
+                            moveX * CONFIG.waitress.speed,
+                            moveY * CONFIG.waitress.speed
+                        );
+                    } else {
+                        this.waitress.body.setVelocity(
+                            0,
+                            0
+                        );
+                    }
                 }
-            } else {
-                if (this.waitress.body) {
-                    this.waitress.body.setVelocity(0, 0);
+            }
+
+            // ===========================================================
+            // ANIMAZIONE / DIREZIONE
+            // ===========================================================
+
+            if (
+                !this.isPhoneActive &&
+                this.waitress &&
+                typeof this.waitress.setTexture ===
+                    'function'
+            ) {
+
+                if (moveX > 0) {
+
+                    this.waitress.setTexture(
+                        'cameriera_destra'
+                    );
+
+                    this.waitress.setScale(
+                        WAITRESS_SCALE
+                    );
+
+                } else if (moveX < 0) {
+
+                    this.waitress.setTexture(
+                        'cameriera_sinistra'
+                    );
+
+                    this.waitress.setScale(
+                        WAITRESS_SCALE
+                    );
+
+                } else if (moveY < 0) {
+
+                    this.waitress.setTexture(
+                        'cameriera_dietro'
+                    );
+
+                    this.waitress.setScale(
+                        WAITRESS_SCALE
+                    );
+
+                } else if (moveY > 0) {
+
+                    this.waitress.setTexture(
+                        'cameriera_avanti'
+                    );
+
+                    this.waitress.setScale(
+                        WAITRESS_SCALE
+                    );
                 }
             }
 
             if (this.waitress.body) {
-                this.waitress.x = Phaser.Math.Clamp(this.waitress.x, 30, 540);
-                this.waitress.y = Phaser.Math.Clamp(this.waitress.y, 70, 560);
+                this.waitress.x = Phaser.Math.Clamp(
+                    this.waitress.x,
+                    40,
+                    560
+                );
+
+                this.waitress.y = Phaser.Math.Clamp(
+                    this.waitress.y,
+                    70,
+                    560
+                );
             }
+
+            this.waitress.setDepth(this.waitress.y);
 
             if (this.waitressShadow) {
                 this.waitressShadow.x = this.waitress.x;
                 this.waitressShadow.y = this.waitress.y + 16;
             }
 
-            if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
+            if (this.trayIndicator && this.trayIndicator.active) {
+                this.trayIndicator.x = this.waitress.x;
+                this.trayIndicator.y = this.waitress.y - 30;
+            }
+
+            // SPACE = interazione.
+            // Durante il telefono NON deve funzionare.
+            if (
+                !this.isPhoneActive &&
+                Phaser.Input.Keyboard.JustDown(this.keys.space)
+            ) {
                 this.interactWithClosest();
             }
         }
         
-        // === FUNZIONE updateRelationship ===
+        // ============================================================
+        // MODIFICATO: updateRelationship() usa sentiment-based
+        // ============================================================
         updateRelationship(delta, feedback) {
             if (!this.currentCustomer) return;
-            if (typeof this.currentCustomer.relationScore !== "number") {
-                this.currentCustomer.relationScore = 50;
-            }
-            let newScore = this.currentCustomer.relationScore + delta;
-            this.currentCustomer.relationScore = Phaser.Math.Clamp(newScore, 0, 100);
-                    
-            document.getElementById("ai-chat-relation").textContent = `${Math.floor(this.currentCustomer.relationScore)}%`;
-            const infoText = `[Sistema]: ${feedback} (+${delta} Sintonia)`;
-            this.appendMessage("system", infoText);
-            if (this.scene.showFloatingText) {
-                this.scene.showFloatingText(
-                    this.currentCustomer.x,
-                    this.currentCustomer.y - 45,
-                    `❤️ +${delta} Sintonia`,
-                    "#ff4757"
+            
+            if (this.npcManager && typeof this.npcManager.updateRelationshipFromMessage === 'function') {
+                // Usa il NPCManager per gestire la relazione
+                const result = this.npcManager.updateRelationshipFromMessage(
+                    this.currentCustomer.name,
+                    feedback
                 );
-            }
-            if (this.currentCustomer.name === 'Elena' && this.currentCustomer.relationScore >= 100) {
-                if (this.scene.quest) {
-                    const alreadyActive = this.scene.quest.activeQuests.find(q => q.id === 'elena_adoption');
-                    const alreadyCompleted = this.scene.quest.completedQuests.includes('elena_adoption');
-                                    
-                    if (!alreadyActive && !alreadyCompleted) {
-                        console.log("👶 Elena al 100%! Avvio missione adozione.");
-                        this.scene.quest.startElenaAdoptionQuest();
+                
+                this.currentCustomer.relationScore = this.npcManager.getRelationship(
+                    this.currentCustomer.name
+                );
+                
+                const relationEl = document.getElementById("ai-chat-relation");
+                if (relationEl) {
+                    relationEl.textContent = `${Math.floor(this.currentCustomer.relationScore)}%`;
+                }
+                
+                if (this.showFloatingText) {
+                    const color = result.delta > 0 ? "#ff4757" : "#e74c3c";
+                    this.showFloatingText(
+                        this.currentCustomer.x,
+                        this.currentCustomer.y - 45,
+                        `${result.delta > 0 ? '❤️ +' : '💔 '}${result.delta} Sintonia`,
+                        color
+                    );
+                }
+                
+                // Gestisci eventi speciali
+                if (result.specialEvent === 'BREAKUP') {
+                    this.gameOver();
+                } else if (result.specialEvent === 'ADOPTION_READY') {
+                    if (this.quest && typeof this.quest.startElenaAdoptionQuest === 'function') {
+                        this.quest.startElenaAdoptionQuest();
+                    }
+                }
+            } else {
+                // Fallback: metodo originale
+                if (typeof this.currentCustomer.relationScore !== "number") {
+                    this.currentCustomer.relationScore = 50;
+                }
+                let newScore = this.currentCustomer.relationScore + delta;
+                this.currentCustomer.relationScore = Phaser.Math.Clamp(newScore, 0, 100);
+                
+                const relationEl = document.getElementById("ai-chat-relation");
+                if (relationEl) {
+                    relationEl.textContent = `${Math.floor(this.currentCustomer.relationScore)}%`;
+                }
+                
+                const infoText = `[Sistema]: ${feedback} (+${delta} Sintonia)`;
+                if (typeof this.appendMessage === 'function') {
+                    this.appendMessage("system", infoText);
+                }
+                
+                if (this.showFloatingText) {
+                    this.showFloatingText(
+                        this.currentCustomer.x,
+                        this.currentCustomer.y - 45,
+                        `❤️ +${delta} Sintonia`,
+                        "#ff4757"
+                    );
+                }
+                
+                if (this.currentCustomer.name === 'Elena' && this.currentCustomer.relationScore >= 100) {
+                    if (this.quest && typeof this.quest.startElenaAdoptionQuest === 'function') {
+                        const alreadyActive = this.quest.activeQuests && this.quest.activeQuests.find(q => q.id === 'elena_adoption');
+                        const alreadyCompleted = this.quest.completedQuests && this.quest.completedQuests.includes('elena_adoption');
+                        
+                        if (!alreadyActive && !alreadyCompleted) {
+                            console.log("Hai raggiunto il massimo della sintonia con Elena.");
+                            this.quest.startElenaAdoptionQuest();
+                        }
                     }
                 }
             }
         }
 
-        interactWithClosest() {
-            let closestTable = null;
-            let minDist = CONFIG.waitress.interactRange;
-            
-            this.tables.forEach(t => {
-                const d = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, t.x, t.y);
-                if (d < minDist) {
-                    minDist = d;
-                    closestTable = t;
-                }
-            });
-            
-            if (closestTable) {
-                this.interactWithTable(closestTable);
-                return;
-            }
-            
-            if (Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 560, this.waitress.y) <= CONFIG.waitress.interactRange) {
-                this.interactWithBancone();
-                return;
-            }
-            
-            if (Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 100, 540) <= CONFIG.waitress.interactRange) {
-                this.washDishes();
-            }
-        }
-        
         levelComplete() {
             this.gameActive = false;
             this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
             triggerSfx('coin');
+            
+            if (this.priceSystem) {
+                this.priceSystem.updateInflation(GAME.level);
+                console.log(`📈 Inflazione aggiornata al giorno ${GAME.level}`);
+            }
+            
+            if (GAME.score >= 15000) {
+                this.showFloatingText(400, 250, '🏆 HAI RAGGIUNTO 15.000€! LOCALE TUO!', '#ffd700');
+                triggerSfx('coin');
+            }
             
             if (this.story) {
                 this.story.onDayComplete(GAME.level);
@@ -2074,6 +2805,7 @@
         }
     }
 
+    // ==================== MENU SCENE ====================
     class MenuScene extends Phaser.Scene {
         constructor() {
             super('Menu');
@@ -2232,6 +2964,7 @@
         }
     }
 
+    // ==================== GAME OVER SCENE ====================
     class GameOverScene extends Phaser.Scene {
         constructor() {
             super('GameOver');
@@ -2298,122 +3031,6 @@
             });
             houseBtn.on('pointerover', () => { houseBtn.setFillStyle(0x2980b9); });
             houseBtn.on('pointerout', () => { houseBtn.setFillStyle(0x3498db); });
-
-            const menuBtn = this.add.rectangle(400, 435, 300, 40, 0xd27d2d);
-            menuBtn.setStrokeStyle(1.5, 0xffd700);
-            menuBtn.setInteractive({ useHandCursor: true });
-
-            this.add.text(400, 435, t('TORNA'), {
-                fontSize: '13px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-
-            menuBtn.on('pointerdown', () => {
-                triggerSfx('click');
-                this.scene.start('Menu');
-            });
-            menuBtn.on('pointerover', () => { menuBtn.setFillStyle(0xe59866); });
-            menuBtn.on('pointerout', () => { menuBtn.setFillStyle(0xd27d2d); });
-        }
-    }
-
-    class SettingsScene extends Phaser.Scene {
-        constructor() {
-            super('Settings');
-        }
-        
-        create() {
-            this.cameras.main.setBackgroundColor('#1a0a04');
-            
-            const card = this.add.rectangle(400, 300, 520, 500, 0x110906, 0.85);
-            card.setStrokeStyle(2, 0xd27d2d);
-            
-            this.add.text(400, 65, t('IMPOSTAZIONI'), {
-                fontSize: '28px',
-                color: '#ffd700',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            this.add.text(400, 115, t('AUDIO_SETTINGS'), {
-                fontSize: '14px',
-                color: '#ffffff',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            const audioBtn = this.add.rectangle(400, 145, 180, 30, GAME.settings.soundEnabled ? 0x27ae60 : 0xe74c3c);
-            audioBtn.setInteractive({ useHandCursor: true });
-            audioBtn.setStrokeStyle(1, 0xffffff);
-            
-            const audioTxt = this.add.text(400, 145, GAME.settings.soundEnabled ? t('ACTIVE') : t('DISABLED'), {
-                fontSize: '13px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            audioBtn.on('pointerdown', () => {
-                GAME.settings.soundEnabled = !GAME.settings.soundEnabled;
-                triggerSfx('click');
-                audioBtn.setFillStyle(GAME.settings.soundEnabled ? 0x27ae60 : 0xe74c3c);
-                audioTxt.setText(GAME.settings.soundEnabled ? t('ACTIVE') : t('DISABLED'));
-            });
-            
-            this.add.text(400, 190, t('DIFFICULTY_LEVEL'), {
-                fontSize: '14px',
-                color: '#ffffff',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            const diffs = ['facile', 'normale', 'difficile'];
-            const diffKeys = { 'facile': t('EASY'), 'normale': t('NORMAL'), 'difficile': t('HARD') };
-            
-            diffs.forEach((diff, i) => {
-                const x = 230 + i * 170;
-                const btn = this.add.rectangle(x, 220, 120, 28, 
-                    GAME.settings.difficulty === diff ? 0x27ae60 : 0x2c1a11
-                );
-                btn.setStrokeStyle(1, 0xd27d2d);
-                btn.setInteractive({ useHandCursor: true });
-                
-                this.add.text(x, 220, diffKeys[diff].toUpperCase(), {
-                    fontSize: '12px',
-                    color: '#ffffff',
-                    fontStyle: 'bold',
-                    fontFamily: 'Fredoka'
-                }).setOrigin(0.5);
-                
-                btn.on('pointerdown', () => {
-                    triggerSfx('click');
-                    GAME.settings.difficulty = diff;
-                    this.scene.restart();
-                });
-            });
-            
-            this.add.text(400, 265, t('CONTROL_SYSTEM'), {
-                fontSize: '14px',
-                color: '#ffffff',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            const ctrlBtn = this.add.rectangle(400, 295, 230, 30, 0x2c1a11);
-            ctrlBtn.setStrokeStyle(1, 0xd27d2d);
-            ctrlBtn.setInteractive({ useHandCursor: true });
-            
-            const ctrlTxt = this.add.text(400, 295, `${t('KEYBOARD')} ${GAME.settings.controls.toUpperCase()}`, {
-                fontSize: '13px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            ctrlBtn.on('pointerdown', () => {
-                GAME.settings.controls = GAME.settings.controls === 'wasd' ? 'frecce' : 'wasd';
-                triggerSfx('click');
-                ctrlTxt.setText(`${t('KEYBOARD')} ${GAME.settings.controls.toUpperCase()}`);
-            });
 
             this.add.text(400, 340, t('LANGUAGE_SELECT'), {
                 fontSize: '14px',
@@ -2528,6 +3145,7 @@
         }
     }
 
+    // ==================== CREDITS SCENE ====================
     class CreditsScene extends Phaser.Scene {
         constructor() {
             super('Credits');
@@ -2588,6 +3206,51 @@
         }
     }
 
+    // Nota: La classe SettingsScene deve essere definita altrove o commentata se non presente
+    // Per ora la lascio come placeholder
+    class SettingsScene extends Phaser.Scene {
+        constructor() {
+            super('Settings');
+        }
+        
+        create() {
+            this.cameras.main.setBackgroundColor('#1a0a04');
+            
+            const card = this.add.rectangle(400, 300, 500, 400, 0x110906, 0.9);
+            card.setStrokeStyle(2, 0xd27d2d);
+            
+            this.add.text(400, 80, 'IMPOSTAZIONI', {
+                fontSize: '28px',
+                color: '#ffd700',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+            
+            this.add.text(400, 150, 'Impostazioni in sviluppo...', {
+                fontSize: '16px',
+                color: '#e0d5c1',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+            
+            const backBtn = this.add.rectangle(400, 350, 240, 40, 0xd27d2d);
+            backBtn.setStrokeStyle(1.5, 0xffffff);
+            backBtn.setInteractive({ useHandCursor: true });
+            
+            this.add.text(400, 350, 'TORNA AL MENU', {
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+            
+            backBtn.on('pointerdown', () => {
+                triggerSfx('click');
+                this.scene.start('Menu');
+            });
+        }
+    }
+
+    // ==================== CONFIGURAZIONE PHASER ====================
     const scenesList = [PreloadScene, MenuScene, SettingsScene, CreditsScene, GameScene, GameOverScene];
     
     if (window.HouseScene) {
@@ -2616,6 +3279,7 @@
         }
     };
 
+    // ==================== AVVIO GIOCO ====================
     window.addEventListener('load', () => {
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) {

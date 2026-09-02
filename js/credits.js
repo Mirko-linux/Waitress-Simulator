@@ -1,4 +1,4 @@
-// credits.js - Titoli di Coda Epici e Tecnici
+
 
 class CreditsScene extends Phaser.Scene {
     constructor() {
@@ -6,15 +6,13 @@ class CreditsScene extends Phaser.Scene {
     }
 
     create() {
-        this.cameras.main.setBackgroundColor('#0a0502'); // Sfondo nero scuro
+        this.cameras.main.setBackgroundColor('#0a0502'); 
 
-        // --- 1. MUSICA EPICA DI FONDO (opzionale) ---
-        // Se hai un file audio, decommenta queste righe e metti il nome del file
-        // this.music = this.sound.add('credits_music', { volume: 0.3, loop: false });
-        // this.music.play();
+        
+        
+        
+        
 
-        // --- 2. CREA IL TESTO SCORREVOLE ---
-        // Tutto il testo dei crediti. Puoi mettere ciò che vuoi qui dentro.
         const creditLines = [
             "🎮 THE WAITRESS - IL GIOCO",
             "Un'avventura gestionale creata con passione",
@@ -89,27 +87,24 @@ class CreditsScene extends Phaser.Scene {
             "",
             ""
         ];
-
-        // --- 3. IMPOSTAZIONI DI SCORRIMENTO ---
-        const textHeight = 30; // Altezza di ogni riga
-        const startY = 700;    // Parte da sotto lo schermo
-        const speed = 1.2;    // Velocità di scorrimento (più basso = più lento)
+        const textHeight = 30; 
+        const startY = 700;    
+        const speed = 1.2;    
 
         let currentY = startY;
         let textObjects = [];
 
-        // Crea tutte le righe di testo
         creditLines.forEach((line, index) => {
-            // Formatta il testo: le righe con "=" sono titoli, le righe vuote sono spazi
+            
             let color = '#ecf0f1';
             let fontSize = '18px';
             let fontStyle = 'normal';
 
             if (line.includes('=')) {
-                color = '#d27d2d'; // Colore arancione per i separatori
+                color = '#d27d2d'; 
                 fontSize = '14px';
             } else if (line.includes('THE WAITRESS')) {
-                color = '#ffd700'; // Oro per il titolo
+                color = '#ffd700'; 
                 fontSize = '32px';
                 fontStyle = 'bold';
             } else if (line.includes('SVILUPPO') || line.includes('TECNOLOGIE') || line.includes('GRAFICA')) {
@@ -117,7 +112,7 @@ class CreditsScene extends Phaser.Scene {
                 fontSize = '22px';
                 fontStyle = 'bold';
             } else if (line === 'FINE' || line === 'GRAZIE PER AVER GIOCATO!') {
-                color = '#2ecc71'; // Verde per la fine
+                color = '#2ecc71'; 
                 fontSize = '28px';
                 fontStyle = 'bold';
             }
@@ -134,25 +129,25 @@ class CreditsScene extends Phaser.Scene {
             currentY += textHeight;
         });
 
-        // --- 4. ANIMAZIONE DI SCORRIMENTO ---
-        // Invece di usare un tween su ogni oggetto, usiamo un update che li sposta tutti insieme.
-        // Appena il primo oggetto esce dallo schermo, lo rimuoviamo.
+        
+        
+        
 
-        // Variabile per tenere traccia del tempo di esecuzione
+        
         let elapsedTime = 0;
-        const totalDuration = textObjects.length * 100; // Durata totale in frame
+        const totalDuration = textObjects.length * 100; 
 
-        // Aggiungi un effetto "fade in" per i primi secondi
+        
         this.cameras.main.fadeIn(1500, 0, 0, 0);
 
-        // Memorizza i testi e la loro posizione per l'update
+        
         this.creditTexts = textObjects;
         this.scrollSpeed = speed;
         this.startY = startY;
         this.textHeight = textHeight;
 
-        // --- 5. PULSANTE PER SKIPPARE (opzionale) ---
-        // Se il giocatore si stanca, può cliccare per andare al menu
+        
+        
         const skipBtn = this.add.text(750, 550, '⏩ SALTA', {
             fontSize: '14px',
             color: '#555555',
@@ -165,13 +160,13 @@ class CreditsScene extends Phaser.Scene {
             this.endCredits();
         });
 
-        // Variabile per sapere se i crediti sono finiti
+        
         this.creditsFinished = false;
         this.finishTimer = null;
     }
 
     update() {
-        // Sposta tutti i testi verso l'alto
+        
         if (this.creditTexts) {
             let allOutOfScreen = true;
 
@@ -179,7 +174,7 @@ class CreditsScene extends Phaser.Scene {
                 if (textObj.active) {
                     textObj.y -= this.scrollSpeed;
                     
-                    // Fade in quando entra dallo schermo
+                    
                     if (textObj.y < 650 && textObj.y > 500) {
                         textObj.setAlpha(Math.min(1, (650 - textObj.y) / 150));
                     } else if (textObj.y < 500) {
@@ -188,14 +183,14 @@ class CreditsScene extends Phaser.Scene {
                         textObj.setAlpha(0);
                     }
 
-                    // Se il testo è ancora visibile
+                    
                     if (textObj.y > -50) {
                         allOutOfScreen = false;
                     }
                 }
             });
 
-            // Se tutti i testi sono usciti dallo schermo, finisci i crediti
+            
             if (allOutOfScreen && !this.creditsFinished) {
                 this.creditsFinished = true;
                 this.finishTimer = this.time.delayedCall(2000, () => {
@@ -206,10 +201,10 @@ class CreditsScene extends Phaser.Scene {
     }
 
     endCredits() {
-        // Ferma la musica se c'è
-        // if (this.music) this.music.stop();
+        
+        
 
-        // Torna al menu
+        
         this.cameras.main.fadeOut(1000, 0, 0, 0);
         this.time.delayedCall(1200, () => {
             this.scene.start('Menu');
@@ -217,7 +212,7 @@ class CreditsScene extends Phaser.Scene {
     }
 }
 
-// Registra la scena se non è già presente
+
 if (typeof window.CreditsScene === 'undefined') {
     window.CreditsScene = CreditsScene;
 }

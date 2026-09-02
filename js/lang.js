@@ -161,6 +161,7 @@ const LOCAL_AUTO_TRANSLATIONS = {
         "FOOD_CHINOTTO": "🥤 Chinotto",
         "FOOD_CANNOLO": "🥐 Cannolo",
         "FOOD_GINSENG": "☕ Ginseng"
+        
     },
     "es": {
         "GIOCA": "▶ JUGAR",

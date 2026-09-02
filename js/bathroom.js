@@ -3,8 +3,8 @@ class BathroomSystem {
         this.scene = scene;
         
         // --- IMPOSTAZIONI DI GIOCO ---
-        this.baseIncrementRate = 0.40; // Aumentato: si riempie in circa 5 secondi
-        this.femaleMultiplier = 1.8;   // Le donne vanno in bagno quasi il doppio più veloce
+        this.baseIncrementRate = 0.40; 
+        this.femaleMultiplier = 1.8;   
         
         // --- COORDINATE DEL BAGNO ---
         this.bathroomX = 620;
@@ -12,7 +12,6 @@ class BathroomSystem {
         this.bathroomWidth = 150;
         this.bathroomHeight = 130;
         
-        // Punto in cui il cliente sparisce e riappare dopo
         this.entryX = this.bathroomX - 6;    
         this.entryY = this.bathroomY + 65;   
         this.wcX = this.bathroomX + 95;
@@ -24,19 +23,25 @@ class BathroomSystem {
         this.customersInQueue = [];
         this.currentCustomerInBathroom = null;
         
+        // --- AUDIO SCARICO ---
+        this.flushSound = null;
+        
         this.createBathroomGraphics();
-        this.setupDebugging(); // Per vedere in console quando vanno in bagno
+        this.setupAudio();
     }
 
-    setupDebugging() {
-        // Se vuoi vedere i messaggi nella console del browser, togli il commento qui sotto
-        // console.log("🚻 BathroomSystem: Caricato con successo!");
+    setupAudio() {
+        if (this.scene.cache.audio.exists('scarico')) {
+            this.flushSound = this.scene.sound.add('scarico');
+        } else {
+            console.warn("Audio 'scarico' non trovato. Il bagno funzionerà senza suono.");
+            this.flushSound = null;
+        }
     }
 
     createBathroomGraphics() {
         const scene = this.scene;
         
-        // --- PAVIMENTO ---
         const floorBg = scene.add.rectangle(
             this.bathroomX + 75, 
             this.bathroomY + 65, 
@@ -47,7 +52,6 @@ class BathroomSystem {
         floorBg.setDepth(0); 
         floorBg.setStrokeStyle(2, 0x1a252f);
         
-        // --- PIASTRELLE ---
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
                 const color = (i + j) % 2 === 0 ? 0x34495e : 0x2c3e50;
@@ -61,14 +65,12 @@ class BathroomSystem {
             }
         }
         
-        // --- MURI ---
         const leftWallTop = scene.add.rectangle(this.bathroomX - 6, this.bathroomY + 25, 12, 45, 0x1a252f).setDepth(2);
         const leftWallBottom = scene.add.rectangle(this.bathroomX - 6, this.bathroomY + 105, 12, 50, 0x1a252f).setDepth(2);
         const rightWall = scene.add.rectangle(this.bathroomX + this.bathroomWidth + 6, this.bathroomY + 65, 12, this.bathroomHeight, 0x1a252f).setDepth(2);
         const topWall = scene.add.rectangle(this.bathroomX + 75, this.bathroomY - 6, this.bathroomWidth, 12, 0x1a252f).setDepth(2);
         const bottomWall = scene.add.rectangle(this.bathroomX + 75, this.bathroomY + this.bathroomHeight + 6, this.bathroomWidth, 12, 0x1a252f).setDepth(2);
 
-        // --- PORTA ---
         const doorFrame = scene.add.rectangle(this.entryX + 6, this.entryY + 2, 38, 54, 0x2c3e50).setDepth(3);
         doorFrame.setStrokeStyle(2, 0x7f8c8d);
         const handle = scene.add.rectangle(this.entryX + 12, this.entryY + 2, 4, 10, 0xf1c40f).setDepth(4);
@@ -77,13 +79,11 @@ class BathroomSystem {
             backgroundColor: '#110906', padding: { x: 4, y: 2 }
         }).setOrigin(0.5).setDepth(4);
 
-        // --- WC ---
         const cubicle = scene.add.rectangle(this.wcX, this.wcY, 55, 65, 0x3d2518).setDepth(3);
         cubicle.setStrokeStyle(2, 0x5c2c16);
         const toilet = scene.add.text(this.wcX, this.wcY, '🚽', { fontSize: '40px' }).setOrigin(0.5).setDepth(4);
         const tp = scene.add.text(this.wcX + 20, this.wcY - 15, '🧻', { fontSize: '16px' }).setOrigin(0.5).setDepth(4);
         
-        // --- CARTELLI ---
         const sign = scene.add.text(this.bathroomX + 75, this.bathroomY - 20, '🚻 WC', {
             fontSize: '16px', color: '#1abc9c', fontStyle: 'bold', fontFamily: 'Fredoka'
         }).setOrigin(0.5).setDepth(4);
@@ -98,34 +98,62 @@ class BathroomSystem {
         if (!this.scene || !this.scene.gameActive) return;
         const deltaSec = delta / 1000;
 
-        // Scansiona tutti i clienti attivi
+        // Scansiona i clienti NON in bagno
         this.scene.customers.forEach(customer => {
-            // Se è morto, in bagno o nel tutorial, salta
             if (!customer || customer.isDead || customer.isInBathroom || this.scene.tutorialActive) return;
 
-            // --- GARANTISCI CHE bladder SIA INIZIALIZZATO ---
+            // --- BUG FIX 2: UN CLIENTE CHE STA MANGIANDO NON VA IN BAGNO ---
+            if (customer.table && customer.table.status === 'mangia') return;
+
             if (customer.bladder === undefined || customer.bladder === null) {
                 customer.bladder = 0;
             }
 
-            // Calcola la velocità di riempimento
             let rate = this.baseIncrementRate;
             if (customer.gender === 'female') rate *= this.femaleMultiplier;
 
             customer.bladder += rate * deltaSec;
             customer.bladder = Math.min(customer.bladder, 100);
 
-            // Aggiorna l'icona del water sopra la testa (se supera il 40%)
             this.updateBathroomBubble(customer);
 
-            // --- CONTROLLO SOGLIA (FORZATO AL 60%) ---
+            // --- CONTROLLO SOGLIA (60%) ---
             if (customer.bladder >= 60) {
                 this.goToBathroom(customer);
             }
         });
 
-        // Controlla se c'è qualcuno in coda che può entrare
         this.processQueue();
+    }
+
+    // --- BUG FIX 1: MUOVI LA GRAFICA, NON SOLO L'OGGETTO ---
+    moveCustomerGraphics(customer, targetX, targetY, duration, onComplete) {
+        // Muove TUTTE le parti grafiche del cliente insieme
+        const targets = [];
+        
+        if (customer.emoji) targets.push(customer.emoji);
+        if (customer.sprite) targets.push(customer.sprite);
+        if (customer.shadow) targets.push(customer.shadow);
+        
+        // Se non ci sono elementi grafici (cliente eliminato), esci
+        if (targets.length === 0) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        this.scene.tweens.add({
+            targets: targets,
+            x: targetX,
+            y: targetY,
+            duration: duration,
+            ease: 'Quad.easeInOut',
+            onComplete: () => {
+                // Aggiorna anche le coordinate logiche
+                customer.x = targetX;
+                customer.y = targetY;
+                if (onComplete) onComplete();
+            }
+        });
     }
 
     updateBathroomBubble(customer) {
@@ -133,7 +161,6 @@ class BathroomSystem {
             customer.bubbleIcon = this.scene.add.text(
                 customer.x, customer.y - 45, '🚽', { fontSize: '26px' }
             ).setOrigin(0.5).setDepth(15);
-            // Aggiungi un piccolo effetto di rimbalzo
             this.scene.tweens.add({
                 targets: customer.bubbleIcon,
                 y: customer.y - 55,
@@ -148,17 +175,18 @@ class BathroomSystem {
     }
 
     goToBathroom(customer) {
-        // Se il bagno è occupato, metti in coda
+        if (customer.isInBathroom || customer.isDead) return;
+        if (customer.table && customer.table.status === 'mangia') return; // Non mandare chi mangia
+
+        // Se il bagno è occupato, mettilo in coda
         if (this.bathroomOccupied) {
             if (!this.customersInQueue.includes(customer)) {
                 this.customersInQueue.push(customer);
-                // Penalità leggera per l'attesa
-                customer.patience = Math.max(0, customer.patience - 2);
             }
             return;
         }
 
-        // --- FORZA L'INGRESSO ---
+        // Occupa il bagno
         this.bathroomOccupied = true;
         this.currentCustomerInBathroom = customer;
         customer.isInBathroom = true;
@@ -170,74 +198,84 @@ class BathroomSystem {
             customer.bubbleIcon = null;
         }
 
-        // Salva la posizione originale per farlo tornare dopo
+        // Salva posizione originale
         const originalX = customer.x;
         const originalY = customer.y;
 
-        // --- FASE 1: CAMMINA VERSO L'INGRESSO ---
-        this.scene.tweens.add({
-            targets: customer,
-            x: this.entryX,    
-            y: this.entryY,
-            duration: 300,
-            ease: 'Quad.easeIn',
-            onComplete: () => {
-                // --- FASE 2: ENTRA E SCOMPARE ---
-                customer.x = this.wcX;
-                customer.y = this.wcY;
-                
-                // Nascondi tutti i suoi elementi grafici
-                if (customer.sprite) customer.sprite.setVisible(false);
-                if (customer.emoji) customer.emoji.setVisible(false);
-                if (customer.shadow) customer.shadow.setVisible(false);
-                if (customer.orderBubble) customer.orderBubble.setVisible(false);
-                if (customer.chatBubble) customer.chatBubble.setVisible(false);
-                
-                // Metti IN PAUSA il timer della pazienza (così non muore mentre è in bagno!)
-                if (customer.timerEvent) customer.timerEvent.paused = true;
+        // --- FASE 1: MUOVI LA GRAFICA VERSO L'INGRESSO ---
+        this.moveCustomerGraphics(customer, this.entryX, this.entryY, 300, () => {
+            // --- FASE 2: ENTRA E SCOMPARE ---
+            customer.x = this.wcX;
+            customer.y = this.wcY;
 
-                // Tempo che ci mette in bagno (tra 2 e 4 secondi)
-                const stayTime = Phaser.Math.Between(2000, 4000);
+            // Nascondi i grafici
+            if (customer.sprite) customer.sprite.setVisible(false);
+            if (customer.emoji) customer.emoji.setVisible(false);
+            if (customer.shadow) customer.shadow.setVisible(false);
+            if (customer.orderBubble) customer.orderBubble.setVisible(false);
+            if (customer.chatBubble) customer.chatBubble.setVisible(false);
+            
+            // METTI IN PAUSA IL TIMER
+            if (customer.timerEvent) customer.timerEvent.paused = true;
 
-                this.scene.time.delayedCall(stayTime, () => {
-                    // --- FASE 3: ESCE E TORNA AL TAVOLO ---
+            // AUDIO SCARICO
+            if (this.flushSound) {
+                this.flushSound.play();
+            }
+
+            // Tempo in bagno
+            const stayTime = Phaser.Math.Between(2000, 4000);
+
+            this.scene.time.delayedCall(stayTime, () => {
+                // --- BUG FIX 3: CONTROLLA CHE IL CLIENTE SIA ANCORA VIVO ---
+                if (!customer || customer.isDead) {
+                    // Il cliente è stato eliminato: libera il bagno
                     this.bathroomOccupied = false;
                     this.occupiedText.setVisible(false);
                     this.currentCustomerInBathroom = null;
-                    
-                    customer.isInBathroom = false;
-                    customer.bladder = 0; // Vescica svuotata!
-                    
-                    // Riprendi il timer della pazienza
-                    if (customer.timerEvent) customer.timerEvent.paused = false;
+                    this.processQueue();
+                    return;
+                }
 
-                    // Rendi visibili i grafici
-                    if (customer.sprite) customer.sprite.setVisible(true);
-                    if (customer.emoji) customer.emoji.setVisible(true);
-                    if (customer.shadow) customer.shadow.setVisible(true);
-                    if (customer.orderBubble) customer.orderBubble.setVisible(true);
-                    if (customer.chatBubble) customer.chatBubble.setVisible(true);
+                // --- FASE 3: ESCE E TORNA AL TAVOLO ---
+                this.bathroomOccupied = false;
+                this.occupiedText.setVisible(false);
+                this.currentCustomerInBathroom = null;
+                
+                customer.isInBathroom = false;
+                customer.bladder = 0; 
+                
+                // Riprendi il timer
+                if (customer.timerEvent) customer.timerEvent.paused = false;
 
-                    // Torna al tavolo
-                    this.scene.tweens.add({
-                        targets: customer,
-                        x: originalX,
-                        y: originalY,
-                        duration: 300,
-                        ease: 'Quad.easeOut'
-                    });
+                // Rendi visibili i grafici
+                if (customer.sprite) customer.sprite.setVisible(true);
+                if (customer.emoji) customer.emoji.setVisible(true);
+                if (customer.shadow) customer.shadow.setVisible(true);
+                if (customer.orderBubble) customer.orderBubble.setVisible(true);
+                if (customer.chatBubble) customer.chatBubble.setVisible(true);
 
-                    // Controlla se c'è qualcuno in coda
+                // Torna al tavolo (muovendo la grafica)
+                this.moveCustomerGraphics(customer, originalX, originalY, 300, () => {
+                    // Controlla la coda
                     this.processQueue();
                 });
-            }
+            });
         });
+    }
+
+    // --- BUG FIX 4: RIMUOVI IL CLIENTE DALLA CODA ---
+    removeCustomerFromQueue(customer) {
+        const index = this.customersInQueue.indexOf(customer);
+        if (index > -1) {
+            this.customersInQueue.splice(index, 1);
+        }
     }
 
     processQueue() {
         if (!this.bathroomOccupied && this.customersInQueue.length > 0) {
             const nextCustomer = this.customersInQueue.shift();
-            if (nextCustomer && !nextCustomer.isDead) {
+            if (nextCustomer && !nextCustomer.isDead && !nextCustomer.isInBathroom) {
                 this.goToBathroom(nextCustomer);
             }
         }
@@ -249,7 +287,6 @@ class BathroomSystem {
         this.customersInQueue = [];
         if (this.occupiedText) this.occupiedText.setVisible(false);
         
-        // Resetta la vescica di tutti i clienti attivi per evitare bug
         if (this.scene) {
             this.scene.customers.forEach(c => {
                 if (c && !c.isDead) {
@@ -260,4 +297,4 @@ class BathroomSystem {
         }
     }
 }
-window.BathroomSystem = BathroomSystem
+window.BathroomSystem = BathroomSystem;

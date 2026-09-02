@@ -1,4 +1,4 @@
-// tilemap.js - Versione corretta per 800x600 (25x19 tile da 32px)
+// tilemap.js - Versione CORRETTA per 800x600 (25x19 tile da 32px)
 
 class TilemapSystem {
     constructor(scene) {
@@ -41,12 +41,19 @@ class TilemapSystem {
 
                 // --- 3. MURI INTERNI (Separazione Sala/Cucina) ---
                 // Muro verticale alla colonna 18 (tra sala e cucina)
+                // IMPORTANTE: Il tavolo 4 è a destra (x=350), quindi NON deve essere murato!
                 if (col === 18 && !isWall) {
-                    isWall = true;
-                    // Creiamo un passaggio (porta) tra le righe 9, 10, 11 (centro)
+                    // Il passaggio centrale è SEMPRE aperto (righe 8-10)
                     if (row >= 8 && row <= 10) {
                         isWall = false;
                         floorType = 0; // Passaggio sala
+                    } else if (row >= 11 && row <= 17) {
+                        // Apri l'ingresso anche per il tavolo 4 (in basso a destra)
+                        isWall = false;
+                        floorType = 0;
+                    } else {
+                        // Tutte le altre righe sono muri (tranne l'ingresso)
+                        isWall = true;
                     }
                 }
 
@@ -66,7 +73,14 @@ class TilemapSystem {
                     isWall = true;
                 }
 
-                // --- 5. ZONA LAVELLO PIATTI (in basso a sinistra) ---
+                // --- 5. PORTA DI INGRESSO (in basso a sinistra) ---
+                // Riga 18 (ultima riga), colonne da 6 a 8
+                if (row === this.mapHeight - 1 && col >= 6 && col <= 8) {
+                    isWall = false;
+                    floorType = 0; // Pavimento sala
+                }
+
+                // --- 6. ZONA LAVELLO (in basso a sinistra) ---
                 // Lasciamo lo spazio libero per il lavello in basso a sinistra
 
                 this.mapData[row][col] = floorType;
