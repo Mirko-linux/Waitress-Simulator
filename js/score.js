@@ -1,8 +1,4 @@
-// ============================================
-// WAITRESS SIMULATOR - Sistema Punteggio & Medaglie
-// ============================================
 (function () {
-    // DEFINIZIONE MEDAGLIE
     const MEDAL_TYPES = {
         OK: { key: 'medaglia_ok', file: 'assets/Punteggio/MEDAGLIA_OK.png', title: 'OK', color: '#cd7f32', minScoreRatio: 0.5 },
         BUONO: { key: 'medaglia_buono', file: 'assets/Punteggio/MedagliaBUONO.png', title: 'BUONO!', color: '#c0c0c0', minScoreRatio: 0.8 },
@@ -10,7 +6,6 @@
         SUPER: { key: 'medaglia_super', file: 'assets/Punteggio/MedagliaSUPER.png', title: 'SUPER!', color: '#9b59b6', minScoreRatio: 1.4 }
     };
 
-    // Funzione per calcolare la medaglia in base al punteggio
     function calculateMedal(score, targetScore) {
         const target = targetScore || 100;
         const ratio = score / target;
@@ -28,6 +23,9 @@
         init(data) {
             this.levelData = {
                 score: data.score || 0,
+                earned: data.earned || 0,
+                rent: data.rent || 50,
+                net: data.net || 0,
                 served: data.served || 0,
                 target: data.target || 10,
                 lives: data.lives || 3,
@@ -63,7 +61,7 @@
             panel.strokeRoundedRect(panelX, panelY, panelWidth, panelHeight, 16);
 
             const targetScore = this.levelData.target * 15;
-            const medal = calculateMedal(this.levelData.score, targetScore);
+            const medal = calculateMedal(this.levelData.earned, targetScore);
 
             this.add.text(width / 2, panelY + 40, `LIVELLO ${this.levelData.level} COMPLETATO!`, {
                 fontSize: '24px', fontStyle: 'bold', fill: '#f39c12', align: 'center'
@@ -76,7 +74,6 @@
                 const scale = Math.min(maxDimension / medalImg.width, maxDimension / medalImg.height);
                 medalImg.setScale(scale);
             } else {
-                // Fallback se l'immagine della medaglia non c'è
                 this.add.text(width / 2, medalY, '🏅', {
                     fontSize: '80px', align: 'center'
                 }).setOrigin(0.5);
@@ -90,7 +87,9 @@
             const spacing = 32;
             const stats = [
                 { label: 'Clienti Serviti:', value: `${this.levelData.served} / ${this.levelData.target}` },
-                { label: 'Punteggio Finale:', value: `${this.levelData.score} PT` },
+                { label: 'Incassi totali:', value: `${this.levelData.earned} €` },
+                { label: 'Affitto casa:', value: `- ${this.levelData.rent} €` },
+                { label: 'Saldo netto:', value: `${this.levelData.net} €` },
                 { label: 'Vite Rimaste:', value: '❤️'.repeat(Math.max(0, this.levelData.lives)) }
             ];
 
@@ -102,37 +101,24 @@
 
             const btnY = panelY + panelHeight - 50;
 
-            // --- FIX: PULSANTE PROSSIMO LIVELLO ---
-            this.createButton(width / 2 - 80, btnY, 'PROSSIMO LIVELLO', '#2ecc71', () => {
-                if (window.GAME) {
-                    // 1. Incrementa il livello
-                    window.GAME.level++;
-                    
-                    // 2. Resetta i contatori per il nuovo livello
-                    window.GAME.customersServed = 0;
-                    window.GAME.lives = 3;
-                    window.GAME.dirtyPlates = 0;
-                    window.GAME.carriedOrder = null;
-                    window.GAME.customersTarget = 6 + (window.GAME.level * 4);
-
-                    // 3. Salva i dati nel localStorage (così non si perde se si ricarica la pagina)
-                    const saveData = {
-                        score: window.GAME.score,
-                        level: window.GAME.level,
-                        customersServed: 0,
-                        lives: 3,
-                        dirtyPlates: 0,
-                        settings: window.GAME.settings,
-                        housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
-                    };
-                    localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
-                    
-                    console.log(`📈 Avanzamento al Livello ${window.GAME.level}`);
+            this.createButton(width / 2 - 80, btnY, 'PROSEGUI', '#2ecc71', () => {
+                const saveData = {
+                    score: window.GAME.score,
+                    level: window.GAME.level + 1,
+                    customersServed: 0,
+                    lives: 3,
+                    dirtyPlates: 0,
+                    settings: window.GAME.settings,
+                    housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
+                };
+                localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
+                
+                if (window.HouseScene && !this.scene.get('House')) {
+                    this.scene.add('House', window.HouseScene, true);
+                } else {
+                    this.scene.start('House');
                 }
-                // RIAVVIA IL GIOCO CON I NUOVI DATI!
-                this.scene.start('Game');
             });
-            // --- FINE FIX ---
 
             this.createButton(width / 2 + 80, btnY, 'MENU', '#e74c3c', () => {
                 this.scene.start('Menu');

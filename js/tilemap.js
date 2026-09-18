@@ -1,13 +1,10 @@
-// tilemap.js - Versione CORRETTA per 800x600 (25x19 tile da 32px)
-
+// tilemap.js - Versione CORRETTA
 class TilemapSystem {
     constructor(scene) {
         this.scene = scene;
         this.tileSize = 32;
-
-        // DIMENSIONI ESATTE PER 800x600
-        this.mapWidth = 25;  // 800 / 32 = 25
-        this.mapHeight = 19; // 608 / 32 = 19 (copre i 600px e un po' di bordo)
+        this.mapWidth = 25;
+        this.mapHeight = 19;
         
         this.mapData = [];
         this.collisionLayer = [];
@@ -25,63 +22,57 @@ class TilemapSystem {
             this.collisionLayer[row] = [];
 
             for (let col = 0; col < this.mapWidth; col++) {
-                let floorType = 0; // 0 = sala, 1 = cucina
+                let floorType = 0;
                 let isWall = false;
 
-                // --- 1. MURI ESTERNI (tutti i bordi) ---
+                // MURI ESTERNI
                 if (row === 0 || row === this.mapHeight - 1 || col === 0 || col === this.mapWidth - 1) {
                     isWall = true;
-                    floorType = 0; 
                 }
 
-                // --- 2. ZONA CUCINA (a destra, da colonna 19 a 23) ---
+                // ZONA CUCINA (colonne 19-23)
                 if (col >= 19 && col <= 23 && !isWall) {
-                    floorType = 1; // Pavimento cucina
+                    floorType = 1;
                 }
 
-                // --- 3. MURI INTERNI (Separazione Sala/Cucina) ---
-                // Muro verticale alla colonna 18 (tra sala e cucina)
-                // IMPORTANTE: Il tavolo 4 è a destra (x=350), quindi NON deve essere murato!
+                // MURO VERTICALE TRA SALA E CUCINA (colonna 18)
                 if (col === 18 && !isWall) {
-                    // Il passaggio centrale è SEMPRE aperto (righe 8-10)
+                    // Apri passaggio centrale (righe 8-10)
                     if (row >= 8 && row <= 10) {
                         isWall = false;
-                        floorType = 0; // Passaggio sala
-                    } else if (row >= 11 && row <= 17) {
-                        // Apri l'ingresso anche per il tavolo 4 (in basso a destra)
-                        isWall = false;
-                        floorType = 0;
                     } else {
-                        // Tutte le altre righe sono muri (tranne l'ingresso)
                         isWall = true;
                     }
                 }
 
-                // --- 4. ZONA BAGNO (in basso a destra, colonne 19-21, righe 15-17) ---
+                // ZONA BAGNO (colonne 19-21, righe 15-17)
                 if (col >= 19 && col <= 21 && row >= 15 && row <= 17 && !isWall) {
-                    floorType = 2; // Pavimento bagno
-                }
-                // Muro del bagno (in alto)
-                if (col >= 19 && col <= 21 && row === 14 && !isWall) {
-                    isWall = true;
-                    if (col === 20) {
-                        isWall = false; // Porta del bagno al centro
-                    }
-                }
-                // Muro del bagno (sinistra)
-                if (col === 18 && row >= 15 && row <= 17 && !isWall) {
-                    isWall = true;
+                    floorType = 2;
                 }
 
-                // --- 5. PORTA DI INGRESSO (in basso a sinistra) ---
-                // Riga 18 (ultima riga), colonne da 6 a 8
-                if (row === this.mapHeight - 1 && col >= 6 && col <= 8) {
+                // PORTA DI INGRESSO (riga 18, colonne 6-8)
+                if (row === 18 && col >= 6 && col <= 8) {
                     isWall = false;
-                    floorType = 0; // Pavimento sala
+                    floorType = 0;
                 }
 
-                // --- 6. ZONA LAVELLO (in basso a sinistra) ---
-                // Lasciamo lo spazio libero per il lavello in basso a sinistra
+                // CORRIDOIO DALLA PORTA AI TAVOLI (colonne 6-8, righe 17-18)
+                if (row === 17 && col >= 6 && col <= 8) {
+                    isWall = false;
+                    floorType = 0;
+                }
+
+                // CORRIDOIO ORIZZONTALE (colonne 0-18, riga 17)
+                if (row === 17 && col >= 2 && col <= 18) {
+                    isWall = false;
+                    floorType = 0;
+                }
+
+                // CORRIDOIO VERTICALE DAL LAVELLO (colonna 2-3, righe 10-17)
+                if (col >= 2 && col <= 3 && row >= 10 && row <= 17) {
+                    isWall = false;
+                    floorType = 0;
+                }
 
                 this.mapData[row][col] = floorType;
                 this.collisionLayer[row][col] = isWall;
@@ -96,7 +87,6 @@ class TilemapSystem {
             this.wallGroup = this.scene.physics.add.staticGroup();
         }
 
-        // Sfondo nero di base per evitare il vuoto
         this.scene.add.rectangle(400, 300, 800, 600, 0x000000).setDepth(-10);
 
         for (let row = 0; row < this.mapHeight; row++) {
@@ -110,7 +100,6 @@ class TilemapSystem {
                 else if (floorType === 1) floorKey = 'floor_cucina';
                 else if (floorType === 2) floorKey = 'floor_bagno';
 
-                // Disegna il pavimento
                 if (floorKey && this.scene.textures.exists(floorKey)) {
                     const floor = this.scene.add.image(x, y, floorKey);
                     floor.setOrigin(0.5, 0.5);
@@ -118,7 +107,6 @@ class TilemapSystem {
                     floor.setDepth(0);
                 }
 
-                // Disegna il muro e la fisica
                 if (this.collisionLayer[row][col]) {
                     if (this.scene.textures.exists('wall')) {
                         const wall = this.wallGroup.create(x, y, 'wall');
@@ -131,7 +119,6 @@ class TilemapSystem {
                             wall.refreshBody();
                         }
                     } else {
-                        // Fallback: se manca l'immagine del muro, disegna un rettangolo nero
                         const wallRect = this.scene.add.rectangle(x, y, this.tileSize, this.tileSize, 0x111111).setDepth(1);
                         this.wallGroup.create(x, y, null).setSize(this.tileSize, this.tileSize).setVisible(false);
                     }

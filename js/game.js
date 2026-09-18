@@ -59,6 +59,20 @@
         }
     }
 
+    function unlockAudioContext() {
+        try {
+            if (window.game && window.game.sound && window.game.sound.context) {
+                const ctx = window.game.sound.context;
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+            }
+            if (window.AUDIO && window.AUDIO.ctx && window.AUDIO.ctx.state === 'suspended') {
+                window.AUDIO.ctx.resume();
+            }
+        } catch (e) {}
+    }
+
     const CONFIG = {
         width: 800,
         height: 600,
@@ -104,15 +118,14 @@
         }
     };
 
-    // --- VARIABILI PER GLI UPGRADE ---
     let notebookLevel = 0;
     let adsLevel = 0;
     let cardsLevel = 0;
-    // ---------------------------------
 
-    // --- SCALA CAMERIERA (MODIFICA QUESTO VALORE PER RIDIMENSIONARE) ---
     const WAITRESS_SCALE = 0.35;
-    // -----------------------------------------------------------------
+    const UNIFORM_SIZE = 45;
+    const ENTRANCE_X = 240;
+    const ENTRANCE_Y = 592;
 
     const FOOD_TEXTURES = {
         'Pizza': 'Pizza',
@@ -134,7 +147,6 @@
         'Panino con la Milza': 'Panino Milza'
     };
 
-    // NPC_REGISTRY viene caricato da ai.js
     const NPC_REGISTRY = window.NPC_CONFIG || {};
 
     let GAME = {
@@ -145,6 +157,9 @@
         lives: 3,
         dirtyPlates: 0,
         carriedOrder: null,
+        isCheater: false,
+        suspicion: 0,
+        compartmentHidden: false,
         settings: {
             soundEnabled: true,
             difficulty: 'normale',
@@ -186,16 +201,29 @@
     class SynthAudio {
         constructor() {
             this.ctx = null;
+            this.unlocked = false;
         }
         init() {
             if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    this.ctx = null;
+                }
             }
+        }
+        unlock() {
+            this.init();
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+            this.unlocked = true;
         }
         playSfx(type) {
             if (!GAME.settings.soundEnabled) return;
             try {
                 this.init();
+                if (!this.ctx) return;
                 if (this.ctx.state === 'suspended') {
                     this.ctx.resume();
                 }
@@ -247,9 +275,7 @@
                     osc.start(now);
                     osc.stop(now + 0.15);
                 }
-            } catch (e) {
-                console.warn("Impossibile riprodurre l'audio sintetico", e);
-            }
+            } catch (e) {}
         }
     }
     const SYNTH = new SynthAudio();
@@ -265,6 +291,7 @@
     window.GAME = GAME;
     window.NPC_REGISTRY = NPC_REGISTRY;
     window.triggerSfx = triggerSfx;
+    window.unlockAudioContext = unlockAudioContext;
 
     class PreloadScene extends Phaser.Scene {
         constructor() {
@@ -301,17 +328,13 @@
                 loadingText.destroy();
             });
 
-            this.load.on('loaderror', (file) => {
-                console.warn('Tilesheet/Texture non trovata:', file.key);
-            });
+            this.load.on('loaderror', (file) => {});
 
-            // --- TEXTURE TILEMAP ---
             this.load.image('floor_sala', 'assets/ambiente/1.png');
             this.load.image('floor_cucina', 'assets/ambiente/2.png');
             this.load.image('floor_bagno', 'assets/ambiente/4.png');
             this.load.image('wall', 'assets/ambiente/3.png');
             
-            // --- TEXTURE CUCINA ---
             this.load.image('st_frigo', 'assets/cucina/frigo_acqua.png');
             this.load.image('st_tagliere', 'assets/cucina/banco_lavoro.png');
             this.load.image('st_fornelli', 'assets/cucina/fornelli.png');
@@ -323,35 +346,32 @@
             this.load.image('st_cuoco', 'assets/cucina/cuoco_cucina.png');
             this.load.image('st_bancone', 'assets/cucina/bancone_sala.png');
             
-            // --- TELEFONO (ora in assets/Sala) ---
             this.load.image('phone', 'assets/Sala/phone.png');
-            
-            // --- PACCO (fornitore) ---
             this.load.image('pacco', 'assets/Sala/pacco.png');
+            this.load.image('radio', 'assets/Sala/radio.png');
             
-            // --- AUDIO ---
             this.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
             this.load.audio('scarico', 'assets/audio/scarico.mp3');
-            
-            // --- PIATTI E LAVELLO ---
+            this.load.audio('caffe', 'assets/audio/caffe.wav');
+            this.load.audio('npc_call_center', 'assets/audio/Pubblicita/npc_call_center.mp3');
+            this.load.audio('npc_call_center_1', 'assets/audio/Pubblicita/npc_call_center_1.mp3');
+            this.load.audio('npc_call_center_2', 'assets/audio/Pubblicita/npc_call_center_2.mp3');
+
             this.load.image('Piatto Sporco', 'assets/Cibo/Piatto Sporco.png');
             this.load.image('Lavello_vuoto', 'assets/Lavello/Lavello_vuoto.png');
             this.load.image('Lavello_mezzopieno', 'assets/Lavello/Lavello_mezzopieno.png');
             this.load.image('Lavello_pieno', 'assets/Lavello/Lavello_pieno.png');
 
-            // --- TEXTURE CAMERIERA ---
             this.load.image('cameriera_avanti', 'assets/Cameriera/Cameriera_Avanti.png');
             this.load.image('cameriera_destra', 'assets/Cameriera/Cameriera_Destra.png');
             this.load.image('cameriera_dietro', 'assets/Cameriera/Cameriera_Dietro.png');
             this.load.image('cameriera_sinistra', 'assets/Cameriera/Cameriera_Sinistra.png');
 
-            // --- CIBO ---
             Object.keys(FOOD_TEXTURES).forEach(foodName => {
                 const fileName = FOOD_TEXTURES[foodName];
                 this.load.image(foodName, `assets/Cibo/${fileName}.png`);
             });
 
-            // --- NPC (caricati da NPC_CONFIG) ---
             Object.keys(NPC_REGISTRY).forEach(npcName => {
                 const npcData = NPC_REGISTRY[npcName];
                 if (npcData.hasTilesheet && npcData.path) {
@@ -360,9 +380,30 @@
                         frameHeight: npcData.frameHeight || 32
                     });
                 }
+                
+                if (npcData.textureUp && npcData.textureDown && npcData.textureLeft && npcData.textureRight) {
+                    this.load.image(npcData.textureUp, `assets/NPC/${npcName}/${npcData.textureUp}`);
+                    this.load.image(npcData.textureDown, `assets/NPC/${npcName}/${npcData.textureDown}`);
+                    this.load.image(npcData.textureLeft, `assets/NPC/${npcName}/${npcData.textureLeft}`);
+                    this.load.image(npcData.textureRight, `assets/NPC/${npcName}/${npcData.textureRight}`);
+                }
             });
 
-            // --- FONT ---
+            this.load.image('Poliziotto_Avanti', 'assets/NPC/Poliziotto/Poliziotto_Avanti.png');
+            this.load.image('Poliziotto_Dietro', 'assets/NPC/Poliziotto/Poliziotto_Dietro.png');
+            this.load.image('Poliziotto_Sinistra', 'assets/NPC/Poliziotto/Poliziotto_Sinistra.png');
+            this.load.image('Poliziotto_Destra', 'assets/NPC/Poliziotto/Poliziotto_Destra.png');
+
+            this.load.image('bubble_order', 'assets/UI/bubbles/bubble_order.png');
+            this.load.image('bubble_talk', 'assets/UI/bubbles/bubble_talk.png');
+            this.load.image('bubble_happy', 'assets/UI/bubbles/bubble_happy.png');
+            this.load.image('bubble_angry', 'assets/UI/bubbles/bubble_angry.png');
+            this.load.image('bubble_sad', 'assets/UI/bubbles/bubble_sad.png');
+            this.load.image('bubble_cash', 'assets/UI/engine/bubble_cash.png');
+            this.load.image('bubble_pee', 'assets/UI/bubbles/bubble_pee.png');
+            this.load.image('bubble_music', 'assets/UI/bubbles/bubble_music.png');
+            this.load.image('bubble_mission', 'assets/UI/bubbles/bubble_mission.png');
+
             if (!document.getElementById('fredoka-font-link')) {
                 const link = document.createElement('link');
                 link.id = 'fredoka-font-link';
@@ -373,6 +414,24 @@
         }
 
         create() {
+            const unlockAudio = () => {
+                try {
+                    if (this.sound && this.sound.context && this.sound.context.state === 'suspended') {
+                        this.sound.context.resume();
+                    }
+                    unlockAudioContext();
+                    SYNTH.unlock();
+                } catch (e) {}
+            };
+
+            this.input.on('pointerdown', unlockAudio);
+            this.input.on('keydown', unlockAudio);
+
+            this.events.once('shutdown', () => {
+                this.input.off('pointerdown', unlockAudio);
+                this.input.off('keydown', unlockAudio);
+            });
+
             Object.keys(NPC_REGISTRY).forEach(npcName => {
                 const npcData = NPC_REGISTRY[npcName];
                 if (npcData.hasTilesheet && npcData.key) {
@@ -424,36 +483,118 @@
             this.passPiattiZone = null;
             this.npcManager = null;
             this._phoneInputStates = null;
+            this.playerNickname = 'Cameriera';
+            this.callCenterSound = null;
+            this.packageClickZone = null;
+            this.packageTooltip = null;
+            this.sinkCollider = null;
+            this.hiddenCompartment = null;
+            this.inspectionActive = false;
             
-            // --- VARIABILI PER IL SISTEMA DI INTERAZIONE ---
             this.waitressHasOrder = false;
             this.waitressHasFood = false;
             this.carriedFood = null;
             this.currentOrder = null;
-            // ----------------------------------------------------
+            this.levelEarnings = 0;
+
+            this.isCheater = false;
+            this.arrestTriggered = false;
+            this.policeNPC = null;
+        }
+        
+        cleanupCustomers() {
+            if (!this.customers) return;
+            this.customers.forEach(customer => {
+                if (!customer) return;
+                if (customer.timerEvent) {
+                    customer.timerEvent.remove();
+                    customer.timerEvent = null;
+                }
+                if (customer.movementTimeout) {
+                    customer.movementTimeout.remove();
+                    customer.movementTimeout = null;
+                }
+                ['emoji', 'sprite', 'childGraphic', 'bubble', 'bubbleIcon',
+                 'shadow', 'patienceBar', 'patienceBg'].forEach(key => {
+                    if (customer[key] && customer[key].destroy) {
+                        try { customer[key].destroy(); } catch(e) {}
+                        customer[key] = null;
+                    }
+                });
+                customer.isDead = true;
+            });
+            this.customers = [];
         }
         
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
 
+            const unlockAudio = () => {
+                try {
+                    if (this.sound && this.sound.context && this.sound.context.state === 'suspended') {
+                        this.sound.context.resume();
+                    }
+                    unlockAudioContext();
+                    SYNTH.unlock();
+                } catch (e) {}
+            };
+
+            this.input.on('pointerdown', unlockAudio);
+            this.input.on('keydown', unlockAudio);
+
+            this.events.once('shutdown', () => {
+                this.input.off('pointerdown', unlockAudio);
+                this.input.off('keydown', unlockAudio);
+            });
+
+            this.cleanupCustomers();
+            this.customers = [];
+            this.tables = [];
+
+            if (this.spawnEvent) {
+                this.spawnEvent.remove();
+                this.spawnEvent = null;
+            }
+            this.time.removeAllEvents();
+
+            this.ordersTaken = 0;
+            this.levelEarnings = 0;
+            this.isPhoneActive = false;
+            this.isPaused = false;
+            this.arrestTriggered = false;
+            this.policeNPC = null;
+            this.packageClickZone = null;
+            this.packageTooltip = null;
+            this.trayIndicator = null;
+            this.waitressState = { tray: [], targetX: 300, targetY: 300 };
+            this.pendingAction = null;
+            this.currentCustomer = null;
+            this.gameActive = true;
+            this.cheatClicks = 0;
+            this.tutorialActive = false;
+            this.hiddenCompartment = null;
+            this.inspectionActive = false;
+
+            this.playerNickname = localStorage.getItem('waitress_nickname') || 'Cameriera';
+
+            if (this.sound.get('npc_call_center')) {
+                this.callCenterSound = this.sound.add('npc_call_center', {
+                    volume: 0.5,
+                    loop: false
+                });
+            }
+
             if (typeof window.PriceSystem === 'function') {
                 this.priceSystem = new window.PriceSystem(this);
-                console.log('💰 Sistema prezzi attivato!');
             }
-
             if (typeof window.QuestSystem === 'function') {
                 this.quest = new window.QuestSystem(this);
-                console.log('📋 Sistema missioni attivato!');
             }
-
             if (typeof window.CrimeSystem === 'function') {
                 this.crime = new window.CrimeSystem(this);
-                console.log('🕵️ Sistema criminale attivato!');
             }
-
             if (typeof window.SupplierSystem === 'function') {
                 this.supplier = new window.SupplierSystem(this);
-                console.log('📦 Sistema fornitore attivato!');
             }
 
             try {
@@ -467,15 +608,7 @@
                 cardsLevel = 0;
             }
 
-            if (notebookLevel > 0) {
-                console.log(`📓 Taccuino livello ${notebookLevel}: puoi prendere ${1 + notebookLevel} comande`);
-            } else {
-                console.log('📓 Taccuino non acquistato: 1 comanda alla volta');
-            }
-
             this.maxOrders = 1 + notebookLevel;
-            this.ordersTaken = 0;
-            console.log(`📓 Taccuino livello ${notebookLevel}: maxOrders = ${this.maxOrders}`);
 
             let savedData = null;
             try {
@@ -492,10 +625,28 @@
                 GAME.customersTarget = 6 + (GAME.level * 4);
                 GAME.carriedOrder = null;
 
+                let isSaveTampered = false;
+                try {
+                    const rawSave = localStorage.getItem('waitress_save_data');
+                    if (rawSave) {
+                        const parsedSave = JSON.parse(rawSave);
+                        if (parsedSave && parsedSave.sig) {
+                            isSaveTampered = !window.SaveManager.verifySave(parsedSave);
+                        }
+                    }
+                } catch (e) {}
+
+                GAME.isCheater = isSaveTampered;
+
+                if (isSaveTampered) {
+                    localStorage.setItem('waitress_cheater_flag', 'true');
+                } else {
+                    localStorage.removeItem('waitress_cheater_flag');
+                }
+
                 if (savedData.housePurchased && window.HOUSE_STATE) {
                     window.HOUSE_STATE.purchased = savedData.housePurchased;
                 }
-                
                 if (savedData.settings) {
                     GAME.settings = { ...GAME.settings, ...savedData.settings };
                 }
@@ -507,6 +658,9 @@
                 GAME.level = 1;
                 GAME.carriedOrder = null;
                 GAME.score = 0;
+                GAME.isCheater = false;
+                GAME.suspicion = 0;
+                GAME.compartmentHidden = false;
                 GAME.settings = {
                     soundEnabled: true,
                     difficulty: 'normale',
@@ -515,24 +669,15 @@
                 };
             }
 
-            this.gameActive = true;
-            this.cheatClicks = 0;
-            this.tutorialActive = false;
+            this.isCheater = GAME.isCheater || false;
+
+            if (typeof GAME.suspicion !== 'number') GAME.suspicion = 0;
+            if (typeof GAME.compartmentHidden !== 'boolean') GAME.compartmentHidden = false;
 
             applyUpgrades();
 
-            // 1. PRIMA crea lo stato della cameriera
-            this.waitressState = {
-                tray: [],
-                targetX: 300,
-                targetY: 300
-            };
-            this.pendingAction = null;
-
-            // 2. POI crea la fisica e lo sprite della cameriera
             this.createWaitress();
 
-            // 3. POI crea la Tilemap
             if (typeof window.TilemapSystem === 'function') {
                 this.tilemap = new window.TilemapSystem(this);
                 this.tilemap.createTileMap();
@@ -540,30 +685,23 @@
                 this.createFallbackTilemap();
             }
 
-            // 4. Collider con i muri
             if (this.tilemap && this.tilemap.wallGroup) {
                 this.physics.add.collider(this.waitress, this.tilemap.wallGroup);
             }
 
-            // 5. POI crea tavoli, lavello, cucina, ecc.
             this.createRestaurant();
             this.createSink();
-            
+
             if (typeof window.KitchenSystem === 'function') {
                 this.kitchen = new window.KitchenSystem(this);
-                console.log('✅ KitchenSystem inizializzato!');
-                if (this.kitchen && this.kitchen.stations) {
-                    console.log('🔍 Stazioni disponibili:', Object.keys(this.kitchen.stations));
-                }
             } else {
-                console.error('❌ KitchenSystem non trovato!');
                 this.kitchen = null;
             }
-            
+
             if (typeof window.BathroomSystem === 'function') {
                 this.bathroom = new window.BathroomSystem(this);
             }
-            
+
             if (typeof window.AIDialogueManager === 'function') {
                 if (GAME.settings.aiEnabled) {
                     this.aiManager = new window.AIDialogueManager(this, true);
@@ -580,8 +718,7 @@
                     };
                 }
             }
-            
-            // Inizializza NPCManager
+
             if (this.aiManager && this.aiManager.npcManager) {
                 this.npcManager = this.aiManager.npcManager;
             } else if (window.NPCManager) {
@@ -591,37 +728,50 @@
             if (typeof window.StorySystem === 'function') {
                 this.story = new window.StorySystem(this);
             }
-            
             if (this.story) {
                 this.story.storyState.moneySaved = GAME.score;
             }
 
+            if (this.story && this.crime) {
+                if (this.story.canTriggerClanMission(GAME.level)) {
+                    this.time.delayedCall(8000, () => {
+                        if (this.story && this.story.canTriggerClanMission(GAME.level)) {
+                            this.story.triggerClanCall();
+                        }
+                    });
+                }
+            }
+
             if (typeof window.RadioSystem === 'function') {
                 this.radio = new window.RadioSystem(this);
+                if (this.radio.isPurchased && !this.radio.isPlaced && this.radio.deliveryPending) {
+                    const currentDay = window.GAME.level;
+                    const deliveryDay = this.radio.getDeliveryDay();
+                    if (deliveryDay && currentDay >= deliveryDay) {
+                        this.radio.completeDelivery();
+                    } else if (deliveryDay && currentDay < deliveryDay) {
+                        this.radio.setPendingRadioDelivery();
+                    }
+                }
             }
 
-            // --- CREA LA ZONA PASS PIATTI ---
             this.createPassPiatti();
-
-            this.time.removeAllEvents();
+            this.createHiddenCompartment();
 
             const tutorialSkipped = localStorage.getItem('waitress_tutorial_done') === 'true';
-
-            if (!tutorialSkipped) {
-                window.FORCE_TUTORIAL = true;
-            } else {
-                window.FORCE_TUTORIAL = false;
-            }
+            window.FORCE_TUTORIAL = !tutorialSkipped;
 
             if (window.FORCE_TUTORIAL && typeof window.TutorialSystem === 'function') {
                 this.tutorialActive = true;
                 this.tutorial = new window.TutorialSystem(this);
-                GAME.level = 0; 
+                GAME.level = 0;
             } else {
                 if (GAME.customersTarget === 0) {
                     GAME.customersTarget = 6 + GAME.level * 4;
                 }
-                this.startSpawning();
+                if (!this.isCheater) {
+                    this.startSpawning();
+                }
             }
 
             this.createBanconeZone();
@@ -652,10 +802,97 @@
                     }
                 });
             });
+
+            if (this.isCheater) {
+                this.time.delayedCall(1000, () => {
+                    this.spawnPoliceArrest();
+                });
+            }
+        }
+
+        createHiddenCompartment() {
+            const compartmentX = 700;
+            const compartmentY = 500;
+
+            const textureExists = this.textures.exists('scomparto_nascosto');
+
+            if (textureExists) {
+                this.hiddenCompartment = this.add.image(compartmentX, compartmentY, 'scomparto_nascosto')
+                    .setInteractive({ useHandCursor: true })
+                    .setDepth(100);
+            } else {
+                this.hiddenCompartment = this.add.rectangle(compartmentX, compartmentY, 60, 60, 0x2c1a11, 0.7)
+                    .setStrokeStyle(2, 0xd27d2d)
+                    .setInteractive({ useHandCursor: true })
+                    .setDepth(100);
+
+                this.add.text(compartmentX, compartmentY, '🗄️', {
+                    fontSize: '28px'
+                }).setOrigin(0.5).setDepth(101);
+            }
+
+            if (GAME.compartmentHidden) {
+                this.hiddenCompartment.setVisible(false);
+            }
+
+            let clickCount = 0;
+            let clickTimer = null;
+
+            this.hiddenCompartment.on('pointerdown', () => {
+                if (this.isPhoneActive) return;
+                if (GAME.compartmentHidden) return;
+
+                clickCount++;
+                if (clickCount === 1) {
+                    clickTimer = setTimeout(() => {
+                        clickCount = 0;
+                    }, 300);
+                } else if (clickCount === 2) {
+                    clearTimeout(clickTimer);
+                    clickCount = 0;
+                    GAME.compartmentHidden = true;
+                    this.hiddenCompartment.setVisible(false);
+                    this.showFloatingText(compartmentX, compartmentY - 20, '🔒 Scomparto Nascosto!', '#2ecc71');
+                    triggerSfx('pickup');
+                }
+            });
+        }
+
+        checkPoliceInspection() {
+            if (GAME.suspicion >= 100 && !this.inspectionActive) {
+                this.inspectionActive = true;
+                this.gameActive = false;
+
+                this.showFloatingText(400, 300, '🚨 CONTROLLO FINANZA IN CORSO! 🚨', '#ff0000');
+                triggerSfx('alert');
+
+                this.time.delayedCall(4000, () => {
+                    if (GAME.compartmentHidden) {
+                        this.showFloatingText(400, 300, '✅ Ispezione superata! Nessun illecito trovato.', '#2ecc71');
+                        GAME.suspicion = 0;
+                        this.gameActive = true;
+                        this.inspectionActive = false;
+                    } else {
+                        this.inspectionActive = false;
+                        this.arrestWaitress();
+                    }
+                });
+            }
         }
 
         startSpawning() {
             if (this.tutorialActive) return;
+            if (this.isCheater) return;
+
+            this.customers = [];
+            this.tables.forEach(t => {
+                t.occupied = false;
+                t.reserved = false;
+                t.customer = null;
+                t._seatedCustomer = null;
+                t._activeOrder = null;
+                if (!t.dirty) t.status = 'libero';
+            });
 
             if (GAME.customersTarget === 0) {
                 GAME.customersServed = 0;
@@ -672,8 +909,6 @@
             this.ordersTaken = 0;
             this.maxOrders = 1 + notebookLevel;
             
-            console.log(`📓 Taccuino: maxOrders = ${this.maxOrders}`);
-            
             this.time.delayedCall(100, () => {
                 this.updateHUD();
             });
@@ -684,7 +919,6 @@
             if (adsLevel > 0) {
                 const reduction = 1 - (adsLevel * 0.08);
                 spawnInterval = Math.max(4000, spawnInterval * reduction);
-                console.log(`📢 Campagna Pubblicitaria livello ${adsLevel}: spawn interval = ${Math.round(spawnInterval)}ms`);
             }
             
             if (this.spawnEvent) {
@@ -708,9 +942,193 @@
         }
 
         trySpawnCustomer() {
-            if (!this.tutorialActive) {
+            if (!this.tutorialActive && !this.isCheater) {
                 this.spawnCustomer();
             }
+        }
+
+        spawnPoliceArrest() {
+            if (!this.isCheater || this.arrestTriggered) return;
+            this.arrestTriggered = true;
+            this.gameActive = false;
+            this.tutorialActive = false;
+            
+            if (this.spawnEvent) this.spawnEvent.remove();
+            
+            const police = {
+                name: 'Poliziotto',
+                hasDirectionalTextures: true,
+                textureUp: 'Poliziotto_Dietro',
+                textureDown: 'Poliziotto_Avanti',
+                textureLeft: 'Poliziotto_Sinistra',
+                textureRight: 'Poliziotto_Destra',
+                x: ENTRANCE_X,
+                y: ENTRANCE_Y,
+                sprite: null,
+                shadow: null,
+                speed: 70,
+                movementData: null
+            };
+            
+            if (!this.textures.exists('Poliziotto_Avanti')) {
+                police.shadow = this.add.ellipse(police.x, police.y + 10, 20, 5, 0x000000, 0.25).setDepth(police.y - 1);
+                police.sprite = this.add.text(police.x, police.y, '👮', {
+                    fontSize: '32px'
+                }).setOrigin(0.5).setDepth(police.y);
+                police.isEmoji = true;
+            } else {
+                police.shadow = this.add.ellipse(police.x, police.y + 10, 20, 5, 0x000000, 0.25).setDepth(police.y - 1);
+                police.sprite = this.add.image(police.x, police.y, police.textureDown)
+                    .setDisplaySize(UNIFORM_SIZE, UNIFORM_SIZE)
+                    .setDepth(police.y);
+            }
+            
+            const targetX = this.waitress.x;
+            const targetY = this.waitress.y;
+            const waypoints = [
+                { x: ENTRANCE_X, y: ENTRANCE_Y },
+                { x: 240, y: 500 },
+                { x: targetX, y: targetY }
+            ];
+            
+            police.movementData = {
+                waypoints: waypoints,
+                currentWaypoint: 1,
+                destination: waypoints[1],
+                movementComplete: false
+            };
+            
+            this.policeNPC = police;
+            
+            this.showFloatingText(400, 300, '🚔 La Polizia è arrivata!', '#ff0000');
+            triggerSfx('alert');
+        }
+
+        arrestWaitress() {
+            if (!this.policeNPC || !this.waitress) {
+                this.policeNPC = this.policeNPC || { isEmoji: true, sprite: null };
+            }
+            
+            if (this.waitress && this.waitress.setTint) {
+                this.waitress.setTint(0x888888);
+            }
+            if (this.policeNPC && this.policeNPC.sprite && !this.policeNPC.isEmoji && this.policeNPC.textureDown) {
+                this.policeNPC.sprite.setTexture(this.policeNPC.textureDown);
+            }
+            
+            this.time.paused = true;
+            this.physics.pause();
+            
+            const arrestText = this.add.text(400, 300, 
+                "PROCURA DELLA REPUBBLICA DI PALERMO\n\n" +
+                "Mandato di Arresto Esecutivo\n\n" +
+                "La S.V. è in arresto per il reato di\n" +
+                "Frode Informatica e Alterazione di Dati.\n\n" +
+                "Le sue azioni sono state registrate.\n" +
+                "Ogni tentativo di manomissione è punito\n" +
+                "ai sensi dell'Art. 615-ter C.P.\n\n" +
+                "La cameriera è in stato di fermo.", 
+                {
+                    fontSize: '15px',
+                    color: '#ffffff',
+                    align: 'center',
+                    fontFamily: 'Fredoka',
+                    lineSpacing: 6,
+                    backgroundColor: '#000000',
+                    padding: { x: 20, y: 20 }
+                }
+            ).setOrigin(0.5).setDepth(5000).setAlpha(0);
+
+            this.tweens.add({
+                targets: arrestText,
+                alpha: 1,
+                duration: 800,
+                ease: 'Power2'
+            });
+
+            triggerSfx('alert');
+
+            this.time.delayedCall(6000, () => {
+                localStorage.removeItem('waitress_save_data');
+                localStorage.removeItem('waitress_tutorial_done');
+                localStorage.removeItem('waitress_cheater_flag');
+                if (window.HOUSE_STATE) window.HOUSE_STATE.purchased = [];
+                window.location.reload();
+            });
+        }
+
+        updatePoliceMovement(delta) {
+            if (!this.policeNPC || !this.policeNPC.movementData || !this.policeNPC.sprite) return;
+            
+            const data = this.policeNPC.movementData;
+            if (data.movementComplete) return;
+            
+            const dx = data.destination.x - this.policeNPC.sprite.x;
+            const dy = data.destination.y - this.policeNPC.sprite.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance <= 4) {
+                this.policeNPC.sprite.x = data.destination.x;
+                this.policeNPC.sprite.y = data.destination.y;
+                
+                if (data.waypoints && data.currentWaypoint < data.waypoints.length - 1) {
+                    data.currentWaypoint++;
+                    data.destination = data.waypoints[data.currentWaypoint];
+                    return;
+                }
+                
+                data.movementComplete = true;
+                this.arrestWaitress();
+                return;
+            }
+            
+            const speed = this.policeNPC.speed || 70;
+            const step = Math.min(distance, speed * (delta / 1000));
+            const ratio = step / distance;
+            
+            this.policeNPC.sprite.x += dx * ratio;
+            this.policeNPC.sprite.y += dy * ratio;
+            this.policeNPC.sprite.setDepth(this.policeNPC.sprite.y);
+            
+            if (this.policeNPC.shadow) {
+                this.policeNPC.shadow.x = this.policeNPC.sprite.x;
+                this.policeNPC.shadow.y = this.policeNPC.sprite.y + 10;
+            }
+            
+            if (!this.policeNPC.isEmoji) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    this.policeNPC.sprite.setTexture(dx > 0 ? this.policeNPC.textureRight : this.policeNPC.textureLeft);
+                } else {
+                    this.policeNPC.sprite.setTexture(dy > 0 ? this.policeNPC.textureDown : this.policeNPC.textureUp);
+                }
+            }
+        }
+
+        playCallCenterAudio() {
+            if (!GAME.settings.soundEnabled) return;
+
+            const runPlayback = () => {
+                if (this.callCenterSound && this.sound.get('npc_call_center')) {
+                    if (this.callCenterSound.isPlaying) {
+                        this.callCenterSound.stop();
+                    }
+                    try {
+                        this.callCenterSound.play();
+                    } catch (e) {
+                        triggerSfx('click');
+                    }
+                } else {
+                    triggerSfx('click');
+                }
+            };
+
+            if (this.sound && this.sound.context) {
+                if (this.sound.context.state === 'suspended') {
+                    this.sound.context.resume().then(runPlayback).catch(runPlayback);
+                    return;
+                }
+            }
+            runPlayback();
         }
 
         fixKitchenScales() {
@@ -861,6 +1279,12 @@
                 table.setStrokeStyle(2, 0xd27d2d);
                 table.setDepth(pos.y);
                 
+                this.physics.add.existing(table, true);
+                if (table.body) {
+                    table.body.setSize(70, 45);
+                    table.body.setOffset((table.width - 70) / 2, (table.height - 45) / 2);
+                }
+                
                 const labelTable = t('TABLE_SHORT') !== 'TABLE_SHORT' ? t('TABLE_SHORT') : 'Tav.';
                 this.add.text(pos.x, pos.y - 30, `${labelTable} ${pos.id}`, {
                     fontSize: '11px',
@@ -874,8 +1298,12 @@
                     x: pos.x,
                     y: pos.y,
                     occupied: false,
+                    reserved: false,
                     customer: null,
+                    _seatedCustomer: null,
+                    _activeOrder: null,
                     status: 'libero',
+                    dirty: false,
                     graphic: table,
                     dirtyLabel: null,
                     dirtySprite: null
@@ -883,7 +1311,6 @@
                 
                 table.setInteractive({ useHandCursor: true });
                 
-                // --- BLOCCA IL CLICK DIRETTO SUI TAVOLI ---
                 table.on('pointerdown', () => {
                     if (this.isPhoneActive) {
                         return;
@@ -916,7 +1343,6 @@
             passZone.setDepth(6);
             passZone.setInteractive({ useHandCursor: true });
             
-            // --- BLOCCA IL CLICK SUL BANCONE ---
             passZone.on('pointerdown', () => {
                 if (this.isPhoneActive) {
                     return;
@@ -939,7 +1365,6 @@
             this.passPiattiZone.setRectangleDropZone(60, 80);
             this.passPiattiZone.setInteractive({ useHandCursor: true });
             
-            // --- BLOCCA IL CLICK SUL PASS PIATTI ---
             this.passPiattiZone.on('pointerdown', () => {
                 if (this.isPhoneActive) {
                     return;
@@ -1038,24 +1463,52 @@
         }
         
         createSink() {
-            this.sinkSprite = this.add.image(122.5, 540, 'Lavello_vuoto').setDepth(2);
+            this.sinkSprite = this.add.image(
+                122.5,
+                540,
+                'Lavello_vuoto'
+            ).setDepth(2);
+
             this.sinkSprite.setDisplaySize(95, 45);
-            
-            this.sinkSprite.setInteractive({ useHandCursor: true });
-            
-            // --- BLOCCA IL CLICK SUL LAVELLO ---
+
+            this.sinkCollider = this.add.rectangle(
+                122.5,
+                540,
+                88,
+                38,
+                0xff0000,
+                0
+            );
+
+            this.physics.add.existing(
+                this.sinkCollider,
+                true
+            );
+
+            this.sinkCollider.body.setSize(88, 38);
+            this.sinkCollider.body.setOffset(0, 0);
+
+            this.sinkCollider.setVisible(false);
+
+            this.sinkSprite.setInteractive({
+                useHandCursor: true
+            });
+
             this.sinkSprite.on('pointerdown', () => {
                 if (this.isPhoneActive) {
                     return;
                 }
-                
+
                 const dist = Phaser.Math.Distance.Between(
                     this.waitress.x,
                     this.waitress.y,
                     100,
                     540
                 );
-                if (dist <= CONFIG.waitress.interactRange) {
+
+                if (
+                    dist <= CONFIG.waitress.interactRange
+                ) {
                     this.washDishes();
                 } else {
                     this.showFloatingText(
@@ -1201,26 +1654,7 @@
             }
         }
 
-        // ============================================================
-        // BLOCCO GAMEPLAY DURANTE IL TELEFONO
-        // ============================================================
-        //
-        // IMPORTANTE:
-        // questo metodo NON mette in pausa Phaser.
-        // NON ferma i timer.
-        // NON ferma la pazienza dei clienti.
-        //
-        // Blocca esclusivamente:
-        // - movimento cameriera
-        // - click sui tavoli
-        // - click sui clienti
-        // - click sul lavello
-        // - click sul pass piatti
-        //
-        // ============================================================
-
         setPhoneGameplayLock(locked) {
-
             this.isPhoneActive = !!locked;
 
             if (!this._phoneInputStates) {
@@ -1229,146 +1663,45 @@
 
             const interactiveObjects = [];
 
-            // --------------------------------------------------------
-            // LAVELLO
-            // --------------------------------------------------------
-
-            if (this.sinkSprite) {
-                interactiveObjects.push(
-                    this.sinkSprite
-                );
-            }
-
-            // --------------------------------------------------------
-            // PASS PIATTI
-            // --------------------------------------------------------
-
-            if (this.passPiattiZone) {
-                interactiveObjects.push(
-                    this.passPiattiZone
-                );
-            }
-
-            // --------------------------------------------------------
-            // TAVOLI
-            // --------------------------------------------------------
-
+            if (this.sinkSprite) interactiveObjects.push(this.sinkSprite);
+            if (this.passPiattiZone) interactiveObjects.push(this.passPiattiZone);
+            
             if (Array.isArray(this.tables)) {
-
                 this.tables.forEach(table => {
-
-                    if (
-                        table &&
-                        table.graphic
-                    ) {
-
-                        interactiveObjects.push(
-                            table.graphic
-                        );
-                    }
+                    if (table && table.graphic) interactiveObjects.push(table.graphic);
                 });
             }
 
-            // --------------------------------------------------------
-            // CLIENTI
-            // --------------------------------------------------------
-
             if (Array.isArray(this.customers)) {
-
                 this.customers.forEach(customer => {
-
-                    if (!customer) {
-                        return;
-                    }
-
-                    [
-                        'emoji',
-                        'sprite',
-                        'orderBubble',
-                        'chatBubble'
-                    ].forEach(key => {
-
-                        if (customer[key]) {
-
-                            interactiveObjects.push(
-                                customer[key]
-                            );
-                        }
+                    if (!customer) return;
+                    ['emoji', 'sprite', 'bubble'].forEach(key => {
+                        if (customer[key]) interactiveObjects.push(customer[key]);
                     });
                 });
             }
 
-            // --------------------------------------------------------
-            // BLOCCA
-            // --------------------------------------------------------
-
             if (locked) {
-
                 interactiveObjects.forEach(obj => {
-
-                    if (
-                        !obj ||
-                        !obj.input
-                    ) {
-                        return;
+                    if (!obj || !obj.input) return;
+                    if (!this._phoneInputStates.has(obj)) {
+                        this._phoneInputStates.set(obj, obj.input.enabled !== false);
                     }
-
-                    if (
-                        !this._phoneInputStates.has(obj)
-                    ) {
-
-                        this._phoneInputStates.set(
-                            obj,
-                            obj.input.enabled !== false
-                        );
-                    }
-
                     obj.input.enabled = false;
                 });
 
-                // ----------------------------------------------------
-                // STOP IMMEDIATO CAMERIERA
-                // ----------------------------------------------------
-
-                if (
-                    this.waitress &&
-                    this.waitress.body
-                ) {
-
-                    this.waitress.body.setVelocity(
-                        0,
-                        0
-                    );
-
-                    if (
-                        typeof this.waitress.body.stop ===
-                        'function'
-                    ) {
-
+                if (this.waitress && this.waitress.body) {
+                    this.waitress.body.setVelocity(0, 0);
+                    if (typeof this.waitress.body.stop === 'function') {
                         this.waitress.body.stop();
                     }
                 }
-
             } else {
-
-                // ----------------------------------------------------
-                // RIPRISTINA INPUT
-                // ----------------------------------------------------
-
-                this._phoneInputStates.forEach(
-                    (wasEnabled, obj) => {
-
-                        if (
-                            obj &&
-                            obj.input
-                        ) {
-
-                            obj.input.enabled =
-                                wasEnabled;
-                        }
+                this._phoneInputStates.forEach((wasEnabled, obj) => {
+                    if (obj && obj.input) {
+                        obj.input.enabled = wasEnabled;
                     }
-                );
-
+                });
                 this._phoneInputStates.clear();
             }
         }
@@ -1390,8 +1723,108 @@
                 right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
                 space: Phaser.Input.Keyboard.KeyCodes.SPACE,
                 esc: Phaser.Input.Keyboard.KeyCodes.ESC,
-                p: Phaser.Input.Keyboard.KeyCodes.P
+                p: Phaser.Input.Keyboard.KeyCodes.P,
+                one: Phaser.Input.Keyboard.KeyCodes.ONE,
+                two: Phaser.Input.Keyboard.KeyCodes.TWO,
+                three: Phaser.Input.Keyboard.KeyCodes.THREE,
+                four: Phaser.Input.Keyboard.KeyCodes.FOUR,
+                five: Phaser.Input.Keyboard.KeyCodes.FIVE,
+                six: Phaser.Input.Keyboard.KeyCodes.SIX,
+                seven: Phaser.Input.Keyboard.KeyCodes.SEVEN,
+                eight: Phaser.Input.Keyboard.KeyCodes.EIGHT,
+                nine: Phaser.Input.Keyboard.KeyCodes.NINE,
+                zero: Phaser.Input.Keyboard.KeyCodes.ZERO,
+                numpad1: Phaser.Input.Keyboard.KeyCodes.NUMPAD_ONE,
+                numpad2: Phaser.Input.Keyboard.KeyCodes.NUMPAD_TWO,
+                numpad3: Phaser.Input.Keyboard.KeyCodes.NUMPAD_THREE,
+                numpad4: Phaser.Input.Keyboard.KeyCodes.NUMPAD_FOUR,
+                numpad5: Phaser.Input.Keyboard.KeyCodes.NUMPAD_FIVE,
+                numpad6: Phaser.Input.Keyboard.KeyCodes.NUMPAD_SIX,
+                numpad7: Phaser.Input.Keyboard.KeyCodes.NUMPAD_SEVEN,
+                numpad8: Phaser.Input.Keyboard.KeyCodes.NUMPAD_EIGHT,
+                numpad9: Phaser.Input.Keyboard.KeyCodes.NUMPAD_NINE,
+                numpad0: Phaser.Input.Keyboard.KeyCodes.NUMPAD_ZERO
             });
+        }
+
+        handleDayJumpCheat() {
+            if (!this.keys.shift.isDown) return false;
+            if (!this.keys.d.isDown) return false;
+
+            const dayMap = [
+                { keys: ['one', 'numpad1'], day: 1 },
+                { keys: ['two', 'numpad2'], day: 2 },
+                { keys: ['three', 'numpad3'], day: 3 },
+                { keys: ['four', 'numpad4'], day: 4 },
+                { keys: ['five', 'numpad5'], day: 5 },
+                { keys: ['six', 'numpad6'], day: 6 },
+                { keys: ['seven', 'numpad7'], day: 7 },
+                { keys: ['eight', 'numpad8'], day: 8 },
+                { keys: ['nine', 'numpad9'], day: 9 },
+                { keys: ['zero', 'numpad0'], day: 10 }
+            ];
+
+            for (const entry of dayMap) {
+                for (const keyName of entry.keys) {
+                    const key = this.keys[keyName];
+                    if (key && Phaser.Input.Keyboard.JustDown(key)) {
+                        this.jumpToDay(entry.day);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        jumpToDay(targetDay) {
+            if (!targetDay || targetDay < 1) return;
+
+            if (this.spawnEvent) {
+                this.spawnEvent.remove();
+                this.spawnEvent = null;
+            }
+
+            this.cleanupCustomers();
+
+            this.tables.forEach(t => {
+                t.occupied = false;
+                t.reserved = false;
+                t.customer = null;
+                t._seatedCustomer = null;
+                t._activeOrder = null;
+                if (!t.dirty) t.status = 'libero';
+            });
+
+            GAME.level = targetDay;
+            GAME.customersServed = 0;
+            GAME.customersTarget = 6 + (GAME.level * 4);
+            GAME.carriedOrder = null;
+            GAME.dirtyPlates = 0;
+
+            this.ordersTaken = 0;
+            this.maxOrders = 1 + notebookLevel;
+            this.updateNotepadUI(false);
+            this.updateHUD();
+
+            this.startSpawning();
+
+            this.showFloatingText(400, 300, `🔧 SALTO AL GIORNO ${targetDay}!`, '#ffd700');
+            triggerSfx('coin');
+
+            const saveData = {
+                score: GAME.score,
+                level: GAME.level,
+                customersServed: 0,
+                lives: 3,
+                dirtyPlates: 0,
+                isCheater: GAME.isCheater || false,
+                settings: GAME.settings,
+                housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
+            };
+            localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
+            if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
+                window.SaveManager.saveGame(saveData);
+            }
         }
 
         togglePause() {
@@ -1402,26 +1835,62 @@
                 this.physics.pause();
                 this.time.paused = true;
 
-                this.pauseBg = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.7).setDepth(200);
-                this.pauseBg.setInteractive();
+                this.pauseBg = this.add.rectangle(
+                    this.cameras.main.centerX,
+                    this.cameras.main.centerY,
+                    800,
+                    600,
+                    0x000000,
+                    0.7
+                )
+                .setScrollFactor(0)
+                .setDepth(3000)
+                .setInteractive();
 
-                this.pauseTitle = this.add.text(400, 220, '⏸️ PAUSA', {
-                    fontSize: '48px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
-                }).setOrigin(0.5).setDepth(201);
+                this.pauseTitle = this.add.text(
+                    this.cameras.main.centerX,
+                    this.cameras.main.centerY - 80,
+                    '⏸️ PAUSA',
+                    {
+                        fontSize: '48px',
+                        color: '#ffd700',
+                        fontStyle: 'bold',
+                        fontFamily: 'Fredoka'
+                    }
+                )
+                .setScrollFactor(0)
+                .setOrigin(0.5)
+                .setDepth(3001);
 
-                this.createPauseButton(400, 300, 'RIPRENDI', '#2ecc71', () => {
-                    this.togglePause();
-                });
+                this.createPauseButton(
+                    this.cameras.main.centerX,
+                    this.cameras.main.centerY,
+                    'RIPRENDI',
+                    '#2ecc71',
+                    () => { this.togglePause(); }
+                );
 
-                this.createPauseButton(400, 360, 'RICOMINCIA LIVELLO', '#e67e22', () => {
-                    this.togglePause();
-                    this.scene.restart();
-                });
+                this.createPauseButton(
+                    this.cameras.main.centerX,
+                    this.cameras.main.centerY + 60,
+                    'RICOMINCIA LIVELLO',
+                    '#e67e22',
+                    () => {
+                        this.togglePause();
+                        this.scene.restart();
+                    }
+                );
 
-                this.createPauseButton(400, 420, 'TORNA AL MENU', '#e74c3c', () => {
-                    this.togglePause();
-                    this.scene.start('Menu');
-                });
+                this.createPauseButton(
+                    this.cameras.main.centerX,
+                    this.cameras.main.centerY + 120,
+                    'TORNA AL MENU',
+                    '#e74c3c',
+                    () => {
+                        this.togglePause();
+                        this.scene.start('Menu');
+                    }
+                );
             } else {
                 this.gameActive = true;
                 this.physics.resume();
@@ -1438,12 +1907,19 @@
 
         createPauseButton(x, y, text, color, callback) {
             if (!this.pauseButtonContainer) {
-                this.pauseButtonContainer = this.add.container(0, 0).setDepth(201);
+                this.pauseButtonContainer = this.add.container(0, 0)
+                    .setScrollFactor(0)
+                    .setDepth(3001);
             }
             
-            const bg = this.add.rectangle(x, y, 280, 40, 0x000000).setStrokeStyle(2, color);
+            const bg = this.add.rectangle(x, y, 280, 40, 0x000000)
+                .setStrokeStyle(2, color);
+            
             const txt = this.add.text(x, y, text, {
-                fontSize: '16px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka'
+                fontSize: '16px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
             }).setOrigin(0.5);
             
             bg.setInteractive({ useHandCursor: true });
@@ -1486,75 +1962,428 @@
             this.updateSinkSprite();
         }
         
-        // ============================================================
-        // MODIFICATO: spawnCustomer() usa NPCManager
-        // ============================================================
         spawnCustomer() {
-            if (this.customers.length >= this.tables.length) return;
+            if (this.isCheater) return;
+            if (this.tutorialActive) return;
+            
+            const activeCustomers = this.customers.filter(c => !c.isDead);
+            if (activeCustomers.length >= this.tables.length) return;
 
-            let freeTable = this.tables.find(t => !t.occupied && t.status === 'libero');
+            let freeTable = this.tables.find(
+                t => !t.occupied && !t.reserved && !t.customer && t.status === 'libero'
+            );
+
             if (!freeTable) {
-                freeTable = this.tables.find(t => !t.occupied && t.status === 'piatto_sporco');
+                freeTable = this.tables.find(
+                    t => !t.occupied && !t.reserved && !t.customer && t.dirty === true
+                );
             }
+
             if (!freeTable) return;
 
-            if (freeTable.occupied === true) return;
-
+            freeTable.reserved = true;
             freeTable.occupied = true;
+            freeTable._seatedCustomer = null;
+            freeTable._activeOrder = null;
+            freeTable.status = 'in_arrivo';
 
-            // Usa il NPCManager per generare il cliente
             let customer = null;
-            if (this.npcManager && typeof this.npcManager.spawnCustomer === 'function') {
-                customer = this.npcManager.spawnCustomer();
+            try {
+                if (this.npcManager && typeof this.npcManager.spawnCustomer === 'function') {
+                    customer = this.npcManager.spawnCustomer();
+                }
+                if (!customer) {
+                    customer = this.generateFallbackCustomer();
+                }
+            } catch (e) {
+                console.warn('Errore spawn cliente:', e);
             }
-            
-            // Fallback se NPCManager non disponibile
+
             if (!customer) {
-                customer = this.generateFallbackCustomer();
-            }
-            
-            if (!customer) {
+                freeTable.reserved = false;
                 freeTable.occupied = false;
+                freeTable.status = 'libero';
                 return;
             }
 
-            // Se il customer ha già un ordine ma ha anche una lista di piatti preferiti
-            // e l'ordine non è stato impostato, usa il primo piatto della lista
             if (!customer.order && customer.favoriteFoods && customer.favoriteFoods.length > 0) {
                 customer.order = customer.favoriteFoods[Phaser.Math.Between(0, customer.favoriteFoods.length - 1)];
             }
-            
-            // Se ancora non ha un ordine, usa un piatto casuale dalla lista completa
             if (!customer.order) {
                 const foods = Object.keys(FOOD_TEXTURES);
                 customer.order = foods[Phaser.Math.Between(0, foods.length - 1)];
             }
 
             customer.table = freeTable;
-            customer.x = freeTable.x;
-            customer.y = freeTable.y;
-            
-            freeTable.customer = customer;
-            freeTable.status = 'ordinazione_pronta';
+            customer.x = ENTRANCE_X;
+            customer.y = ENTRANCE_Y;
+            customer.isDead = false;
 
-            if (freeTable.dirtySprite) {
-                freeTable.dirtySprite.destroy();
-                freeTable.dirtySprite = null;
-            }
-            if (freeTable.dirtyLabel) {
-                freeTable.dirtyLabel.destroy();
-                freeTable.dirtyLabel = null;
-            }
-            
+            freeTable.customer = customer;
+
             this.createCustomerGraphics(customer);
             this.customers.push(customer);
+
+            this.moveCustomerToTable(customer);
         }
 
-        // ============================================================
-        // NUOVO: generateFallbackCustomer() per emergenza
-        // ============================================================
+        moveCustomerToTable(customer) {
+            if (!customer || !customer.table) return;
+
+            const table = customer.table;
+            const startX = ENTRANCE_X;
+            const startY = ENTRANCE_Y;
+
+            const SEATS = {
+                1: { x: 180, y: 270 },
+                2: { x: 400, y: 270 },
+                3: { x: 180, y: 470 },
+                4: { x: 400, y: 470 }
+            };
+
+            const seat = SEATS[table.id] || { x: table.x, y: table.y + 55 };
+            let waypoints = [];
+
+            if (table.id === 1) {
+                waypoints = [
+                    { x: startX, y: startY },
+                    { x: 240, y: 540 },
+                    { x: 200, y: 540 },
+                    { x: 180, y: 520 },
+                    { x: 180, y: seat.y }
+                ];
+            } else if (table.id === 2) {
+                waypoints = [
+                    { x: startX, y: startY },
+                    { x: 240, y: 540 },
+                    { x: 350, y: 540 },
+                    { x: 400, y: 530 },
+                    { x: 400, y: seat.y }
+                ];
+            } else if (table.id === 3) {
+                waypoints = [
+                    { x: startX, y: startY },
+                    { x: 240, y: 540 },
+                    { x: 200, y: 540 },
+                    { x: 180, y: 500 },
+                    { x: 180, y: seat.y }
+                ];
+            } else if (table.id === 4) {
+                waypoints = [
+                    { x: startX, y: startY },
+                    { x: 240, y: 540 },
+                    { x: 350, y: 540 },
+                    { x: 400, y: 530 },
+                    { x: 400, y: seat.y }
+                ];
+            }
+
+            if (waypoints.length === 0) {
+                waypoints = [
+                    { x: startX, y: startY },
+                    { x: 240, y: 540 },
+                    { x: seat.x, y: seat.y }
+                ];
+            }
+
+            if (customer.sprite) {
+                customer.sprite.x = startX;
+                customer.sprite.y = startY;
+            }
+
+            if (customer.emoji) {
+                customer.emoji.x = startX;
+                customer.emoji.y = startY;
+            }
+
+            if (customer.shadow) {
+                customer.shadow.x = startX;
+                customer.shadow.y = startY + 10;
+            }
+
+            if (customer.bubble) {
+                customer.bubble.x = startX;
+                customer.bubble.y = startY - 30;
+                customer.bubble.setVisible(false);
+            }
+
+            if (customer.childGraphic) {
+                customer.childGraphic.x = startX + 15;
+                customer.childGraphic.y = startY + 15;
+            }
+
+            customer.x = startX;
+            customer.y = startY;
+
+            customer.movementData = {
+                waypoints: waypoints,
+                currentWaypoint: 1,
+                destination: waypoints[1],
+                movementComplete: false
+            };
+
+            customer.speed = 55;
+            customer._lastPos = null;
+            customer._arrivalCheckStart = null;
+            
+            if (customer.movementTimeout) {
+                customer.movementTimeout.remove();
+            }
+            customer.movementTimeout = this.time.delayedCall(8000, () => {
+                if (customer.movementData && !customer.movementData.movementComplete && !customer.isDead) {
+                    const seat = customer.movementData.waypoints[customer.movementData.waypoints.length - 1];
+                    if (customer.sprite) {
+                        customer.sprite.x = seat.x;
+                        customer.sprite.y = seat.y;
+                    }
+                    if (customer.emoji) {
+                        customer.emoji.x = seat.x;
+                        customer.emoji.y = seat.y;
+                    }
+                    customer.x = seat.x;
+                    customer.y = seat.y;
+                    customer.movementData.movementComplete = true;
+                    this.onCustomerArrived(customer);
+                }
+            });
+        }
+
+        updateCustomerMovement(customer, delta) {
+            if (!customer || !customer.movementData || !customer.sprite) {
+                return;
+            }
+
+            if (!customer.sprite.active) {
+                customer.movementData.movementComplete = true;
+                return;
+            }
+
+            const data = customer.movementData;
+
+            if (data.movementComplete || !data.destination) {
+                return;
+            }
+
+            if (!customer._lastPos) {
+                customer._lastPos = { x: customer.sprite.x, y: customer.sprite.y, t: 0 };
+            }
+            customer._lastPos.t += delta;
+            if (customer._lastPos.t > 1000) {
+                const moved = Phaser.Math.Distance.Between(
+                    customer._lastPos.x, customer._lastPos.y,
+                    customer.sprite.x, customer.sprite.y
+                );
+                if (moved < 2) {
+                    customer.sprite.x = data.destination.x;
+                    customer.sprite.y = data.destination.y;
+                    customer.x = data.destination.x;
+                    customer.y = data.destination.y;
+                    data.movementComplete = true;
+                    this.onCustomerArrived(customer);
+                    return;
+                }
+                customer._lastPos = { x: customer.sprite.x, y: customer.sprite.y, t: 0 };
+            }
+
+            const dx = data.destination.x - customer.sprite.x;
+            const dy = data.destination.y - customer.sprite.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 500) {
+                customer.sprite.x = data.destination.x;
+                customer.sprite.y = data.destination.y;
+                customer.x = data.destination.x;
+                customer.y = data.destination.y;
+                data.movementComplete = true;
+                if (typeof this.onCustomerArrived === 'function') {
+                    this.onCustomerArrived(customer);
+                }
+                return;
+            }
+
+            if (distance <= 4) {
+                customer.sprite.x = data.destination.x;
+                customer.sprite.y = data.destination.y;
+                customer.x = customer.sprite.x;
+                customer.y = customer.sprite.y;
+
+                if (data.waypoints && data.currentWaypoint < data.waypoints.length - 1) {
+                    data.currentWaypoint++;
+                    data.destination = data.waypoints[data.currentWaypoint];
+                    return;
+                }
+
+                data.movementComplete = true;
+                customer.x = data.destination.x;
+                customer.y = data.destination.y;
+
+                if (typeof this.onCustomerArrived === 'function') {
+                    this.onCustomerArrived(customer);
+                }
+                return;
+            }
+
+            const speed = customer.speed || 55;
+            const step = Math.min(distance, speed * (delta / 1000));
+            const ratio = step / distance;
+
+            customer.sprite.x += dx * ratio;
+            customer.sprite.y += dy * ratio;
+            customer.x = customer.sprite.x;
+            customer.y = customer.sprite.y;
+            customer.sprite.setDepth(customer.y);
+
+            if (customer.hasDirectionalTextures && customer.sprite) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    customer.sprite.setTexture(
+                        dx > 0 ? customer.textureRight : customer.textureLeft
+                    );
+                } else {
+                    customer.sprite.setTexture(
+                        dy > 0 ? customer.textureDown : customer.textureUp
+                    );
+                }
+                customer.sprite.setDisplaySize(UNIFORM_SIZE, UNIFORM_SIZE);
+            }
+
+            if (customer.shadow) {
+                customer.shadow.x = customer.sprite.x;
+                customer.shadow.y = customer.sprite.y + 10;
+            }
+
+            if (customer.bubble) {
+                customer.bubble.x = customer.sprite.x;
+                customer.bubble.y = customer.sprite.y - 30;
+            }
+
+            if (customer.childGraphic) {
+                customer.childGraphic.x = customer.sprite.x + 15;
+                customer.childGraphic.y = customer.sprite.y + 15;
+            }
+        }
+
+        onCustomerArrived(customer) {
+            if (!customer || !customer.table || customer.isDead) return;
+
+            const table = customer.table;
+
+            if (!customer.movementData || !customer.movementData.movementComplete) {
+                return;
+            }
+
+            table.reserved = false;
+            table.occupied = true;
+            table.customer = customer;
+
+            if (table._seatedCustomer && table._seatedCustomer !== customer) {
+                this.removeCustomer(customer);
+                return;
+            }
+            table._seatedCustomer = customer;
+
+            const hadDirtyPlate = table.dirty === true && !customer._dirtyPlateCleared;
+
+            table.status = 'ordinazione_pronta';
+
+            if (customer.bubble && customer.bubble.active) {
+                customer.bubble.setTexture('bubble_order');
+                customer.bubble.setVisible(true);
+            }
+
+            customer.patienceBg = this.add.rectangle(
+                table.x,
+                table.y - 28,
+                50,
+                4,
+                0x333333
+            );
+
+            customer.patienceBg.setDepth(table.y - 1);
+
+            customer.patienceBar = this.add.rectangle(
+                table.x - 25,
+                table.y - 28,
+                50,
+                4,
+                0x2ecc71
+            );
+
+            customer.patienceBar.setOrigin(0, 0.5);
+            customer.patienceBar.setDepth(table.y);
+
+            if (hadDirtyPlate) {
+                customer.patience = 50;
+                customer.patienceBar.setScale(0.5, 1);
+                customer.patienceBar.setFillStyle(0xf39c12);
+            } else {
+                customer.patience = 100;
+            }
+            customer._dirtyPlateCleared = false;
+
+            customer.timerEvent = this.time.addEvent({
+                delay: 100,
+
+                callback: () => {
+                    if (
+                        !this.gameActive ||
+                        customer.isDead ||
+                        this.tutorialActive
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        !customer.table ||
+                        customer.table.customer !== customer ||
+                        customer.table.status !== 'ordinazione_pronta'
+                    ) {
+                        return;
+                    }
+
+                    const baseDecay =
+                        100 / (CONFIG.customers.patienceDuration / 100);
+
+                    const decayAmount =
+                        baseDecay * customer.patienceMultiplier;
+
+                    customer.patience -= decayAmount;
+
+                    if (
+                        customer.patienceBar &&
+                        customer.patienceBar.active
+                    ) {
+                        const scale = Math.max(
+                            0,
+                            customer.patience / 100
+                        );
+
+                        customer.patienceBar.setScale(scale, 1);
+
+                        if (customer.patience < 40) {
+                            customer.patienceBar.setFillStyle(0xf39c12);
+                        }
+
+                        if (customer.patience < 20) {
+                            customer.patienceBar.setFillStyle(0xe74c3c);
+                            
+                            if (customer.bubble && customer.bubble.active && 
+                                customer.bubble.texture.key === 'bubble_order') {
+                                customer.bubble.setTexture('bubble_angry');
+                            }
+                        }
+                    }
+
+                    if (customer.patience <= 0) {
+                        this.angryLeave(customer);
+                    }
+                },
+
+                loop: true,
+                paused: false
+            });
+        }
+
         generateFallbackCustomer() {
-            // Metodo di emergenza se NPCManager non è disponibile
             const fallbackNames = ['Elena', 'Maria', 'Francesco', 'Rosa'];
             const foods = Object.keys(FOOD_TEXTURES);
             const name = fallbackNames[Phaser.Math.Between(0, fallbackNames.length - 1)];
@@ -1577,18 +2406,28 @@
                 emojiChar: npcConfig.emojiChar || '👩',
                 hasTilesheet: npcConfig.hasTilesheet || false,
                 tilesheetKey: npcConfig.key || null,
+                hasDirectionalTextures: npcConfig.hasDirectionalTextures || false,
+                textureUp: npcConfig.textureUp || null,
+                textureDown: npcConfig.textureDown || null,
+                textureLeft: npcConfig.textureLeft || null,
+                textureRight: npcConfig.textureRight || null,
                 x: 0,
                 y: 0,
-                orderBubble: null,
-                chatBubble: null,
+                bubble: null,
                 childGraphic: null,
                 patienceBar: null,
                 patienceBg: null,
                 emoji: null,
                 sprite: null,
                 timerEvent: null,
+                movementTimeout: null,
+                _lastPos: null,
+                _arrivalCheckStart: null,
+                _dirtyPlateCleared: false,
                 noTip: npcConfig.noTip || false,
                 tipMultiplier: npcConfig.tipMultiplier || 1.0,
+                movementData: null,
+                speed: 55,
                 serve: () => {
                     this.time.delayedCall(CONFIG.customers.eatingDuration, () => {
                         this.finishMeal(this.customers[this.customers.length - 1]);
@@ -1598,45 +2437,51 @@
         }
         
         createCustomerGraphics(customer) {
-            const table = customer.table;
+            const startX = customer.x;
+            const startY = customer.y;
             
-            customer.shadow = this.add.ellipse(table.x, table.y + 35, 40, 10, 0x000000, 0.25);
-            customer.shadow.setDepth(table.y - 1);
+            customer.shadow = this.add.ellipse(startX, startY + 10, 20, 5, 0x000000, 0.25);
+            customer.shadow.setDepth(startY - 1);
             
-            if (customer.hasTilesheet && customer.tilesheetKey && this.textures.exists(customer.tilesheetKey)) {
-                customer.sprite = this.add.sprite(table.x, table.y + 10, customer.tilesheetKey, 0);
-                customer.sprite.setScale(1.2);
-                customer.sprite.setDepth(table.y);
+            if (customer.hasDirectionalTextures && this.textures.exists(customer.textureDown)) {
+                customer.sprite = this.add.image(startX, startY, customer.textureDown);
+                customer.sprite.setDisplaySize(UNIFORM_SIZE, UNIFORM_SIZE);
+                customer.sprite.setDepth(startY);
+                customer.sprite.setInteractive({ useHandCursor: true });
+            } else if (customer.hasDirectionalTextures && this.textures.exists(customer.textureUp)) {
+                customer.sprite = this.add.image(startX, startY, customer.textureUp);
+                customer.sprite.setDisplaySize(UNIFORM_SIZE, UNIFORM_SIZE);
+                customer.sprite.setDepth(startY);
+                customer.sprite.setInteractive({ useHandCursor: true });
+            } else if (customer.hasTilesheet && customer.tilesheetKey && this.textures.exists(customer.tilesheetKey)) {
+                customer.sprite = this.add.sprite(startX, startY, customer.tilesheetKey, 0);
+                customer.sprite.setDisplaySize(UNIFORM_SIZE, UNIFORM_SIZE);
+                customer.sprite.setDepth(startY);
                 customer.sprite.setInteractive({ useHandCursor: true });
                 
                 if (this.anims.exists(`${customer.tilesheetKey}_idle_0`)) {
                     customer.sprite.play(`${customer.tilesheetKey}_idle_0`);
                 }
             } else {
-                customer.emoji = this.add.text(table.x, table.y + 10, customer.emojiChar, {
-                    fontSize: '36px'
-                }).setOrigin(0.5).setDepth(table.y).setInteractive({ useHandCursor: true });
+                customer.emoji = this.add.text(startX, startY, customer.emojiChar, {
+                    fontSize: '24px'
+                }).setOrigin(0.5).setDepth(startY).setInteractive({ useHandCursor: true });
             }
 
             if (customer.bringsChild) {
-                customer.childGraphic = this.add.text(table.x + 24, table.y + 24, '👶', {
-                    fontSize: '16px'
-                }).setOrigin(0.5).setDepth(table.y);
+                customer.childGraphic = this.add.text(startX + 15, startY + 15, '👶', {
+                    fontSize: '12px'
+                }).setOrigin(0.5).setDepth(startY);
             }
 
-            customer.orderBubble = this.add.text(table.x - 18, table.y - 15, '📝 ?', {
-                fontSize: '11px',
-                color: '#ffffff',
-                backgroundColor: '#110906',
-                padding: { x: 4, y: 3 }
-            }).setOrigin(0.5).setDepth(table.y + 2).setInteractive({ useHandCursor: true });
-
-            customer.chatBubble = this.add.text(table.x + 22, table.y - 15, '💬', {
-                fontSize: '12px',
-                color: '#ffffff',
-                backgroundColor: '#27ae60',
-                padding: { x: 4, y: 3 }
-            }).setOrigin(0.5).setDepth(table.y + 2).setInteractive({ useHandCursor: true });
+            customer.bubble = this.add.image(startX, startY - 30, 'bubble_order')
+                .setDisplaySize(24, 24)
+                .setOrigin(0.5)
+                .setDepth(startY + 2)
+                .setInteractive({ useHandCursor: true });
+            customer.bubble.setVisible(false);
+            
+            const table = customer.table;
             
             const handleTableClick = () => {
                 if (this.isPhoneActive) return;
@@ -1649,19 +2494,36 @@
                 }
             };
 
-            const handleChatClick = (pointer, localX, localY, event) => {
+            const handleBubbleClick = (pointer, localX, localY, event) => {
                 if (event && typeof event.stopPropagation === 'function') {
                     event.stopPropagation();
                 } else if (pointer && pointer.event && typeof pointer.event.stopPropagation === 'function') {
                     pointer.event.stopPropagation();
                 }
-                
+
                 if (this.isPhoneActive) return;
-                
-                this.currentCustomer = customer;
-                if (this.aiManager) {
-                    this.aiManager.openChat(customer);
+
+                if (customer.bubble && customer.bubble.texture && 
+                    customer.bubble.texture.key === 'bubble_talk') {
+                    
+                    if (
+                        !customer.movementData ||
+                        !customer.movementData.movementComplete ||
+                        !customer.table ||
+                        customer.table.customer !== customer
+                    ) {
+                        return;
+                    }
+
+                    this.currentCustomer = customer;
+
+                    if (this.aiManager) {
+                        this.aiManager.openChat(customer);
+                    }
+                    return;
                 }
+
+                handleTableClick();
             };
             
             if (customer.emoji) {
@@ -1671,50 +2533,7 @@
                 customer.sprite.on('pointerdown', handleTableClick);
             }
             
-            customer.orderBubble.on('pointerdown', handleTableClick);
-            customer.chatBubble.on('pointerdown', handleChatClick);
-            
-            const npcConfig = NPC_REGISTRY[customer.name] || {};
-            const isElderly = npcConfig.age && npcConfig.age >= 60;
-            let patienceBonus = 0;
-            
-            if (isElderly && cardsLevel > 0) {
-                patienceBonus = cardsLevel * 5;
-                customer.patienceMultiplier = Math.max(0.5, customer.patienceMultiplier - (patienceBonus / 100));
-                console.log(`🃏 Mazzo di carte livello ${cardsLevel}: anziano ${customer.name} pazienza +${patienceBonus}%`);
-            }
-            
-            customer.patienceBg = this.add.rectangle(table.x, table.y - 28, 50, 4, 0x333333);
-            customer.patienceBg.setDepth(table.y - 1);
-            
-            customer.patienceBar = this.add.rectangle(table.x - 25, table.y - 28, 50, 4, 0x2ecc71);
-            customer.patienceBar.setOrigin(0, 0.5);
-            customer.patienceBar.setDepth(table.y);
-            
-            customer.timerEvent = this.time.addEvent({
-                delay: 100,
-                callback: () => {
-                    if (!this.gameActive || customer.isDead || this.tutorialActive) return;
-                    
-                    const baseDecay = 100 / (CONFIG.customers.patienceDuration / 100);
-                    const decayAmount = baseDecay * customer.patienceMultiplier;
-                    customer.patience -= decayAmount;
-                    
-                    if (customer.patienceBar && customer.patienceBar.active) {
-                        const scale = Math.max(0, customer.patience / 100);
-                        customer.patienceBar.setScale(scale, 1);
-                        
-                        if (customer.patience < 40) customer.patienceBar.setFillStyle(0xf39c12);
-                        if (customer.patience < 20) customer.patienceBar.setFillStyle(0xe74c3c);
-                    }
-                    
-                    if (customer.patience <= 0) {
-                        this.angryLeave(customer);
-                    }
-                },
-                loop: true,
-                paused: false
-            });
+            customer.bubble.on('pointerdown', handleBubbleClick);
         }
         
         angryLeave(customer) {
@@ -1729,16 +2548,12 @@
             }
         }
         
-        // ============================================================
-        // MODIFICATO: finishMeal() - CONSUMA CIBO
-        // ============================================================
         finishMeal(customer) {
             let basePay = 14;
             if (this.priceSystem) {
                 basePay = this.priceSystem.getFoodPrice(customer.order);
             }
             
-            // Considera il moltiplicatore mancia specifico dell'NPC
             const customerConfig = NPC_REGISTRY[customer.name] || {};
             const tipMultiplier = customerConfig.tipMultiplier || customer.tipMultiplier || 1.0;
             const noTip = customerConfig.noTip || customer.noTip || false;
@@ -1746,33 +2561,49 @@
             let multiplier = customer.patience > 50 ? 1.3 : (customer.patience < 20 ? 0.8 : 1.0);
             let tip = Math.floor(basePay * multiplier);
             
-            // Marco non lascia mance
             if (noTip) {
                 tip = 0;
             } else {
                 tip = Math.floor(tip * tipMultiplier);
             }
             
+            this.levelEarnings += tip;
             GAME.score += tip;
             GAME.customersServed++;
             this.updateHUD();
+            
+            const playerNickname = localStorage.getItem('waitress_nickname') || 'Cameriera';
+            const customerRelation = this.npcManager ? this.npcManager.getRelationship(customer.name) : 50;
+            
+            if (customerRelation >= 80) {
+                this.showFloatingText(
+                    customer.table.x,
+                    customer.table.y - 60,
+                    `"Grazie ${playerNickname}!"`,
+                    '#ffd700'
+                );
+                const bonusTip = Math.floor(tip * 0.2);
+                this.levelEarnings += bonusTip;
+                GAME.score += bonusTip;
+                this.showFloatingText(
+                    customer.table.x,
+                    customer.table.y - 80,
+                    `💖 Bonus sintonia: +${bonusTip}€`,
+                    '#ff6b6b'
+                );
+            }
             
             this.showFloatingText(customer.table.x, customer.table.y - 40, 
                 noTip ? `💰 +${tip}€ (niente mancia)` : `+${tip}€ 💵`, '#2ecc71');
             triggerSfx('coin');
             
-            // ============================================================
-            // CONSUMA CIBO DALLE SCORTE
-            // ============================================================
-            if (this.supplier && typeof this.supplier.consumeFood === 'function') {
-                const consumed = this.supplier.consumeFood(1);
-                if (!consumed) {
-                    // Se non c'è cibo, non dovrebbe succedere, ma logghiamo
-                    console.warn('⚠️ Scorte esaurite! Il cliente ha mangiato ma le scorte sono a 0!');
-                }
+            if (customer.bubble && customer.bubble.active) {
+                customer.bubble.setTexture('bubble_cash');
+                customer.bubble.setVisible(true);
             }
             
             customer.table.status = 'piatto_sporco';
+            customer.table.dirty = true;
             
             if (this.textures.exists('Piatto Sporco')) {
                 customer.table.dirtySprite = this.add.image(customer.table.x, customer.table.y + 15, 'Piatto Sporco')
@@ -1787,7 +2618,6 @@
                 }).setOrigin(0.5).setDepth(customer.table.y + 1);
             }
             
-            // FERMA IL TIMER DEL CLIENTE PRIMA DI RIMUOVERLO
             if (customer.timerEvent) {
                 customer.timerEvent.remove();
                 customer.timerEvent = null;
@@ -1800,30 +2630,55 @@
             }
         }
         
-        // ============================================================
-        // MODIFICATO: removeCustomer() - CON FERMO TIMER
-        // ============================================================
         removeCustomer(customer) {
             if (!customer) return;
             
             customer.isDead = true;
             
-            // FERMA IL TIMER
+            if (customer.movementData) {
+                customer.movementData.movementComplete = true;
+                customer.movementData = null;
+            }
+            
             if (customer.timerEvent) {
                 customer.timerEvent.remove();
                 customer.timerEvent = null;
             }
+
+            if (customer.movementTimeout) {
+                customer.movementTimeout.remove();
+                customer.movementTimeout = null;
+            }
             
             if (customer.table) {
+                const tableId = customer.table.id;
+
                 customer.table.occupied = false;
+                customer.table.reserved = false;
                 customer.table.customer = null;
-                if (customer.table.status !== 'piatto_sporco') {
+                customer.table._seatedCustomer = null;
+                customer.table._activeOrder = null;
+
+                if (!customer.table.dirty) {
+                    customer.table.status = 'libero';
+                } else {
                     customer.table.status = 'piatto_sporco';
+                }
+
+                if (
+                    GAME.carriedOrder &&
+                    GAME.carriedOrder.tableId === tableId
+                ) {
+                    GAME.carriedOrder = null;
+                    this.waitressHasOrder = false;
+                    this.currentOrder = null;
+                    this.updateNotepadUI(true);
+                    this.updateHUD();
                 }
             }
             
             const toDestroy = [
-                'emoji', 'sprite', 'childGraphic', 'orderBubble', 'chatBubble',
+                'emoji', 'sprite', 'childGraphic', 'bubble',
                 'bubbleIcon', 'shadow', 'patienceBar', 'patienceBg'
             ];
             
@@ -1831,9 +2686,7 @@
                 if (customer[key]) {
                     try {
                         customer[key].destroy();
-                    } catch(e) {
-                        // Ignora errori di distruzione
-                    }
+                    } catch(e) {}
                     customer[key] = null;
                 }
             });
@@ -1860,11 +2713,9 @@
             }
         }
         
-        // ============================================================
-        // interactWithTable() - con blocco telefono
-        // ============================================================
         interactWithTable(table) {
             if (this.isPhoneActive) return;
+            if (this.isCheater) return;
             
             if (!table) return;
             
@@ -1894,7 +2745,36 @@
                 return;
             }
 
-            if (table.status === 'ordinazione_pronta' && table.customer) {
+            if (
+                table.status === 'in_arrivo' &&
+                table.customer &&
+                !table.customer.isDead
+            ) {
+                if (table.dirty === true) {
+                } else {
+                    const customer = table.customer;
+                    if (customer.movementData && !customer.movementData.movementComplete) {
+                        this.showFloatingText(
+                            table.x,
+                            table.y - 40,
+                            '🚶 Il cliente sta arrivando...',
+                            '#f39c12'
+                        );
+                        triggerSfx('click');
+                        return;
+                    } else {
+                        table.status = 'ordinazione_pronta';
+                    }
+                }
+            }
+
+            if (
+                table.status === 'ordinazione_pronta' &&
+                table.customer &&
+                !table.customer.isDead &&
+                table.customer.movementData &&
+                table.customer.movementData.movementComplete
+            ) {
                 if (this.ordersTaken >= this.maxOrders) {
                     this.showFloatingText(this.waitress.x, this.waitress.y - 30, 
                         `📓 Taccuino pieno! Massimo ${this.maxOrders} comande.`, '#ff4444');
@@ -1902,26 +2782,35 @@
                     return;
                 }
                 
-                if (GAME.carriedOrder) {
-                    this.showFloatingText(this.waitress.x, this.waitress.y - 30, t('ERR_ALREADY_ORDER'), '#ff4444');
-                    triggerSfx('click');
-                    return;
+                if (this.ordersTaken > 0) {
+                    if (GAME.carriedOrder && GAME.carriedOrder.tableId !== table.id) {
+                        this.showFloatingText(this.waitress.x, this.waitress.y - 30, 
+                            `📝 Hai già la comanda di un altro tavolo nel taccuino! Portala al Pass Piatti.`, '#ff4444');
+                        triggerSfx('click');
+                        return;
+                    }
                 }
                 
                 triggerSfx('pickup');
                 
                 this.ordersTaken++;
-                
+
+                const orderedFood = String(table.customer.order || '').trim();
+
                 GAME.carriedOrder = {
                     tableId: table.id,
-                    foodName: table.customer.order
+                    foodName: orderedFood
                 };
-                
+
+                table._activeOrder = {
+                    tableId: table.id,
+                    foodName: orderedFood
+                };
+
                 table.status = 'attesa_cibo';
                 
-                if (table.customer.orderBubble && table.customer.orderBubble.active) {
-                    table.customer.orderBubble.setText('⏳ Cibo');
-                    table.customer.orderBubble.setColor('#ffd700');
+                if (table.customer.bubble && table.customer.bubble.active) {
+                    table.customer.bubble.setVisible(false);
                 }
                 
                 this.updateNotepadUI(true);
@@ -1934,25 +2823,70 @@
             }
             
             if (table.status === 'attesa_cibo' && table.customer) {
-                const foodIndex = this.waitressState.tray.findIndex(
-                    f => f.food.toLowerCase() === table.customer.order.toLowerCase()
-                );
+
+                const activeOrder =
+                    table._activeOrder &&
+                    table._activeOrder.tableId === table.id
+                        ? table._activeOrder
+                        : null;
+
+                if (!activeOrder || !activeOrder.foodName) {
+                    const fallbackFood = String(table.customer.order || '').trim();
+
+                    if (!fallbackFood) {
+                        this.showFloatingText(
+                            table.x,
+                            table.y - 40,
+                            '❌ Ordine non valido',
+                            '#ff4444'
+                        );
+                        return;
+                    }
+
+                    table._activeOrder = {
+                        tableId: table.id,
+                        foodName: fallbackFood
+                    };
+
+                    return;
+                }
+
+                const expectedFood = String(
+                    activeOrder.foodName
+                ).trim().toLowerCase();
+
+                const foodIndex = this.waitressState.tray.findIndex(item => {
+                    if (!item || !item.food) return false;
+
+                    return String(item.food)
+                        .trim()
+                        .toLowerCase() === expectedFood;
+                });
                 
                 if (foodIndex > -1) {
                     triggerSfx('serve');
-                    
+
                     this.waitressState.tray.splice(foodIndex, 1);
-                    
+
+                    const servedTableId = table.id;
+
+                    if (
+                        GAME.carriedOrder &&
+                        GAME.carriedOrder.tableId === servedTableId
+                    ) {
+                        GAME.carriedOrder = null;
+                        this.waitressHasOrder = false;
+                        this.currentOrder = null;
+                        this.ordersTaken = 0;
+                    }
+
+                    table._activeOrder = null;
+
                     this.ensureTrayIndicator();
                     this.updateTrayGraphics();
                     this.updateHUD();
+                    this.updateNotepadUI(true);
                     
-                    this.ordersTaken = Math.max(0, this.ordersTaken - 1);
-                    this.updateHUD();
-                    
-                    // ============================================================
-                    // FASE MANGIA - GESTIONE CORRETTA DEL TIMER
-                    // ============================================================
                     const eatingCustomer = table.customer;
 
                     if (eatingCustomer.timerEvent) {
@@ -1979,18 +2913,28 @@
                         }
                     );
 
-                    if (table.customer.orderBubble && table.customer.orderBubble.active) {
-                        table.customer.orderBubble.setText('🍽️ Mmm!');
+                    const servedCustomer = table.customer;
+                    if (servedCustomer.bubble && servedCustomer.bubble.active) {
+                        servedCustomer.bubble.setTexture('bubble_happy');
+                        servedCustomer.bubble.setVisible(true);
+                        
+                        this.time.delayedCall(2000, () => {
+                            if (servedCustomer.bubble && servedCustomer.bubble.active && 
+                                !servedCustomer.isDead && servedCustomer.table && 
+                                servedCustomer.table.status === 'mangia') {
+                                servedCustomer.bubble.setTexture('bubble_talk');
+                            }
+                        });
                     }
 
                     this.showFloatingText(table.x, table.y - 40, t('MSG_SERVED'), '#2ecc71');
                 } else {
-                    this.showFloatingText(table.x, table.y - 40, `⏳ Vuole: ${table.customer.order}`, '#f39c12');
+                    this.showFloatingText(table.x, table.y - 40, `⏳ Vuole: ${activeOrder.foodName}`, '#f39c12');
                 }
                 return;
             }
             
-            if (table.status === 'piatto_sporco') {
+            if (table.dirty === true) {
                 if (this.waitressState.tray.length >= CONFIG.tray.maxTotal) {
                     this.showFloatingText(this.waitress.x, this.waitress.y - 40, 'Vassoio pieno!', '#ff4444');
                     triggerSfx('alert');
@@ -2003,7 +2947,17 @@
                 }
                 
                 triggerSfx('pickup');
-                table.status = 'libero';
+                
+                table.dirty = false;
+                
+                if (table.customer && table.customer.patience !== undefined) {
+                    table.customer.patience = 100;
+                    table.customer._dirtyPlateCleared = true;
+                }
+                
+                if (!table.customer || table.customer.isDead) {
+                    table.status = 'libero';
+                }
                 
                 this.waitressState.tray.push({ food: 'piatto_sporco' });
                 
@@ -2029,9 +2983,6 @@
             }
         }
         
-        // ============================================================
-        // interactWithBancone() - con blocco telefono
-        // ============================================================
         interactWithBancone() {
             if (this.isPhoneActive) return;
             
@@ -2078,16 +3029,27 @@
             }
         }
         
-        // ============================================================
-        // handleCounterInteraction() - decrementa ordersTaken
-        // ============================================================
         handleCounterInteraction() {
             if (GAME.carriedOrder) {
+
                 const order = GAME.carriedOrder;
-                const foodName = order.foodName;
+
+                const foodName = String(order.foodName || '').trim();
                 const tableId = order.tableId;
 
-                const normalizedFood = String(foodName || '')
+                if (!foodName || tableId === undefined || tableId === null) {
+                    GAME.carriedOrder = null;
+                    this.waitressHasOrder = false;
+                    this.currentOrder = null;
+                    this.ordersTaken = 0;
+
+                    this.updateNotepadUI(true);
+                    this.updateHUD();
+
+                    return;
+                }
+
+                const normalizedFood = foodName
                     .toLowerCase()
                     .normalize('NFD')
                     .replace(/[\u0300-\u036f]/g, '')
@@ -2116,33 +3078,105 @@
                 const stationKey = foodStationMap[normalizedFood];
 
                 if (!stationKey) {
-                    this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
-                        '❌ Nessuna stazione per questo cibo!', '#ff0000');
-                    console.warn('Nessuna stazione per foodName:', foodName, 'normalizzato:', normalizedFood);
+                    this.showFloatingText(
+                        this.waitress.x,
+                        this.waitress.y - 40,
+                        `❌ Nessuna stazione per ${foodName}!`,
+                        '#ff0000'
+                    );
                     return;
                 }
 
-                if (this.kitchen && typeof this.kitchen.addOrder === 'function') {
-                    const added = this.kitchen.addOrder(stationKey, foodName, tableId);
-                    if (added) {
-                        this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
-                            `📝 ${t('ORDER_SENT')}`, '#00ff00');
-                        triggerSfx('cook');
-                        
-                        // DECREMENTA ordersTaken quando l'ordine viene consegnato al cuoco
-                        this.ordersTaken = Math.max(0, this.ordersTaken - 1);
-                        
-                        GAME.carriedOrder = null;
-                        this.waitressHasOrder = false;
-                        this.currentOrder = null;
-                        this.updateNotepadUI(true);
-                        this.updateHUD();
-                        return;
-                    }
-                    this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
-                        '⚠️ Il cuoco non può prendere l\'ordine!', '#ffaa00');
+                if (!this.kitchen || typeof this.kitchen.addOrder !== 'function') {
+                    this.showFloatingText(
+                        this.waitress.x,
+                        this.waitress.y - 40,
+                        '❌ Cucina non disponibile!',
+                        '#ff0000'
+                    );
                     return;
                 }
+
+                const table = this.tables.find(t => t.id === tableId);
+
+                if (!table || !table.customer || table.customer.isDead) {
+                    GAME.carriedOrder = null;
+                    this.waitressHasOrder = false;
+                    this.currentOrder = null;
+                    this.ordersTaken = 0;
+
+                    this.updateNotepadUI(true);
+                    this.updateHUD();
+
+                    return;
+                }
+
+                table._activeOrder = {
+                    tableId: tableId,
+                    foodName: foodName
+                };
+
+                const added = this.kitchen.addOrder(
+                    stationKey,
+                    foodName,
+                    tableId
+                );
+
+                if (added) {
+                    this.showFloatingText(
+                        this.waitress.x,
+                        this.waitress.y - 40,
+                        `📝 ${t('ORDER_SENT')}`,
+                        '#00ff00'
+                    );
+
+                    triggerSfx('cook');
+
+                    GAME.carriedOrder = null;
+                    this.waitressHasOrder = false;
+                    this.currentOrder = null;
+
+                    this.ordersTaken = 0;
+
+                    this.updateNotepadUI(true);
+                    this.updateHUD();
+
+                    return;
+                }
+
+                this.showFloatingText(
+                    this.waitress.x,
+                    this.waitress.y - 40,
+                    '⚠️ Il cuoco non può prendere l\'ordine!',
+                    '#ffaa00'
+                );
+
+                triggerSfx('alert');
+
+                const failedTable = this.tables.find(
+                    t => t.id === tableId
+                );
+
+                if (failedTable && failedTable.customer && !failedTable.customer.isDead) {
+                    failedTable.status = 'ordinazione_pronta';
+
+                    if (
+                        failedTable.customer.bubble &&
+                        failedTable.customer.bubble.active
+                    ) {
+                        failedTable.customer.bubble.setVisible(true);
+                    }
+                }
+
+                GAME.carriedOrder = null;
+                this.waitressHasOrder = false;
+                this.currentOrder = null;
+
+                this.ordersTaken = 0;
+
+                this.updateNotepadUI(true);
+                this.updateHUD();
+
                 return;
             }
 
@@ -2154,7 +3188,6 @@
 
             if (this.kitchen.counterSlots) {
                 const occupiedSlots = this.kitchen.counterSlots.filter(slot => slot.occupied);
-                console.log(`🔍 Slot occupati nel pass: ${occupiedSlots.length}`, occupiedSlots);
                 
                 if (occupiedSlots.length === 0) {
                     this.showFloatingText(this.waitress.x, this.waitress.y - 40, 
@@ -2177,7 +3210,6 @@
                         `${emoji} ${food} ${t('FOOD_TAKEN')}`, '#2ecc71');
                     triggerSfx('pickup');
                     
-                    console.log(`✅ Cibo preso dal pass: ${food}`);
                     return;
                 }
             }
@@ -2211,11 +3243,9 @@
             }
         }
         
-        // ============================================================
-        // interactWithClosest() - con blocco telefono
-        // ============================================================
         interactWithClosest() {
             if (!this.gameActive || this.isPaused || this.isPhoneActive) return;
+            if (this.isCheater) return;
 
             const passDist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 595, 420);
             if (passDist <= CONFIG.waitress.interactRange + 30) {
@@ -2242,11 +3272,9 @@
             this.showFloatingText(this.waitress.x, this.waitress.y - 30, 'Niente da fare qui', '#999999');
         }
         
-        // ============================================================
-        // washDishes() - con blocco telefono
-        // ============================================================
         washDishes() {
             if (this.isPhoneActive) return;
+            if (this.isCheater) return;
             
             if (this.tutorialActive && this.tutorialStepTarget === 'wash_sink') {
                 this.tutorial.progressStep();
@@ -2321,18 +3349,30 @@
             });
         }
         
-        // ============================================================
-        // MODIFICATO: update() - CON BLOCO ALL'INIZIO
-        // ============================================================
         update(time, delta) {
+            if (this.isCheater && this.policeNPC) {
+                this.updatePoliceMovement(delta);
+            }
+
+            if (this.isCheater && this.gameActive && !this.arrestTriggered) {
+                return;
+            }
+            
             if (!this.gameActive && !this.isPaused) return;
             if (this.isPaused) return;
 
-            // ============================================================
-            // BLOCCA TUTTO SE IL TELEFONO È ATTIVO
-            // ============================================================
+            if (this.crime && this.crime.hasClanSheet) {
+                if (GAME.level > this.crime.clanSheetExpiry) {
+                    this.crime.hasClanSheet = false;
+                    this.crime.inventory = this.crime.inventory.filter(i => i !== 'clan_sheet');
+                    this.crime.saveCrimeData();
+                    this.showFloatingText(400, 250, '📄 Il foglio del clan è scaduto.', '#ff4444');
+                }
+            }
+
+            this.checkPoliceInspection();
+
             if (this.isPhoneActive) {
-                // Ferma la cameriera
                 if (this.waitress && this.waitress.body) {
                     this.waitress.body.setVelocity(0, 0);
                     if (typeof this.waitress.body.stop === 'function') {
@@ -2340,20 +3380,17 @@
                     }
                 }
                 
-                // Blocca il movimento
                 this.waitress.x = Phaser.Math.Clamp(this.waitress.x, 40, 560);
                 this.waitress.y = Phaser.Math.Clamp(this.waitress.y, 70, 560);
                 
-                // Non processare altro
                 return;
             }
-            // ============================================================
 
-            // +++ PULISCI I CLIENTI MORTI +++
             this.customers = this.customers.filter(c => {
                 if (c.isDead) {
                     if (c.table) {
                         c.table.occupied = false;
+                        c.table.reserved = false;
                         c.table.customer = null;
                     }
                     return false;
@@ -2361,14 +3398,182 @@
                 return true;
             });
 
-            // I timer dei clienti CONTINUANO anche durante il telefono
-            // (non fermiamo i customer.timerEvent)
-
-            // Aggiorna sistemi che devono continuare
             if (!this.tutorialActive) {
                 if (this.kitchen && typeof this.kitchen.update === 'function') this.kitchen.update();
                 if (this.bathroom && typeof this.bathroom.update === 'function') this.bathroom.update(time, delta);
                 if (this.phone && typeof this.phone.update === 'function') this.phone.update(time, delta);
+            }
+
+            if (this.customers) {
+                this.customers.forEach(customer => {
+                    if (customer.movementData && !customer.movementData.movementComplete) {
+                        this.updateCustomerMovement(customer, delta);
+                    }
+                });
+            }
+
+            this.customers.forEach(customer => {
+                if (customer.isDead) return;
+                
+                if (customer.bubble && customer.bubble.active && customer.sprite) {
+                    customer.bubble.x = customer.sprite.x;
+                    customer.bubble.y = customer.sprite.y - 30;
+                }
+                if (customer.emoji && customer.bubble && customer.bubble.active) {
+                    customer.bubble.x = customer.emoji.x;
+                    customer.bubble.y = customer.emoji.y - 30;
+                }
+                if (customer.childGraphic && customer.sprite) {
+                    customer.childGraphic.x = customer.sprite.x + 15;
+                    customer.childGraphic.y = customer.sprite.y + 15;
+                }
+                if (customer.shadow && customer.sprite) {
+                    customer.shadow.x = customer.sprite.x;
+                    customer.shadow.y = customer.sprite.y + 10;
+                }
+            });
+
+            this.customers.forEach(customer => {
+                if (customer.isDead) return;
+                if (!customer.table) return;
+                if (customer.table.status !== 'in_arrivo') return;
+                
+                if (!customer._arrivalCheckStart) {
+                    customer._arrivalCheckStart = time;
+                }
+                if (time - customer._arrivalCheckStart > 10000) {
+                    if (customer.movementData && !customer.movementData.movementComplete) {
+                        const seat = customer.movementData.waypoints[customer.movementData.waypoints.length - 1];
+                        if (customer.sprite) {
+                            customer.sprite.x = seat.x;
+                            customer.sprite.y = seat.y;
+                        }
+                        if (customer.emoji) {
+                            customer.emoji.x = seat.x;
+                            customer.emoji.y = seat.y;
+                        }
+                        customer.x = seat.x;
+                        customer.y = seat.y;
+                        customer.movementData.movementComplete = true;
+                        this.onCustomerArrived(customer);
+                    }
+                    customer._arrivalCheckStart = null;
+                }
+            });
+
+            if (this.supplier && this.supplier.packageSprite && this.supplier.packageSprite.active) {
+                this.supplier.packageSprite.setDisplaySize(55, 55);
+                
+                if (!this.supplier.packageGlow) {
+                    this.supplier.packageGlow = this.add.circle(
+                        this.supplier.packageSprite.x,
+                        this.supplier.packageSprite.y,
+                        35, 0xffd700, 0.15
+                    ).setDepth(4);
+                }
+                if (this.supplier.packageGlow) {
+                    this.supplier.packageGlow.x = this.supplier.packageSprite.x;
+                    this.supplier.packageGlow.y = this.supplier.packageSprite.y;
+                }
+            }
+            
+            if (this.supplier && this.supplier.packageSpawned && this.supplier.packageSprite) {
+                if (this.supplier.packageGlow) {
+                    this.supplier.packageGlow.x = this.supplier.packageSprite.x;
+                    this.supplier.packageGlow.y = this.supplier.packageSprite.y;
+                }
+                
+                if (!this.packageClickZone && this.supplier.packageSprite.active) {
+                    const pkg = this.supplier.packageSprite;
+                    this.packageClickZone = this.add.zone(pkg.x, pkg.y, 60, 60)
+                        .setRectangleDropZone(60, 60)
+                        .setInteractive({ useHandCursor: true })
+                        .setDepth(pkg.depth + 1);
+                    
+                    this.packageTooltip = this.add.text(pkg.x, pkg.y - 45, '📦 CLICCA PER RITIRARE!', {
+                        fontSize: '11px',
+                        color: '#ffd700',
+                        fontStyle: 'bold',
+                        fontFamily: 'Fredoka',
+                        backgroundColor: '#000000aa',
+                        padding: { x: 6, y: 3 }
+                    }).setOrigin(0.5).setDepth(pkg.depth + 2);
+                    
+                    this.packageClickZone.on('pointerdown', () => {
+                        if (this.isPhoneActive || this.isPaused) return;
+                        
+                        const dist = Phaser.Math.Distance.Between(
+                            this.waitress.x, this.waitress.y,
+                            this.supplier.packageSprite.x, this.supplier.packageSprite.y
+                        );
+                        
+                        if (dist <= 80) {
+                            this.supplier.pickUpPackage();
+                            this.showFloatingText(
+                                this.supplier.packageSprite.x,
+                                this.supplier.packageSprite.y - 30,
+                                '📦 PACCO RITIRATO!',
+                                '#2ecc71'
+                            );
+                            triggerSfx('coin');
+                            
+                            if (this.packageClickZone) {
+                                this.packageClickZone.destroy();
+                                this.packageClickZone = null;
+                            }
+                            if (this.packageTooltip) {
+                                this.packageTooltip.destroy();
+                                this.packageTooltip = null;
+                            }
+                            if (this.supplier.packageGlow) {
+                                this.supplier.packageGlow.destroy();
+                                this.supplier.packageGlow = null;
+                            }
+                        } else {
+                            this.showFloatingText(
+                                this.waitress.x,
+                                this.waitress.y - 30,
+                                '📦 Avvicinati al pacco!',
+                                '#ffd700'
+                            );
+                        }
+                    });
+                }
+                
+                if (this.packageClickZone && this.supplier.packageSprite.active) {
+                    this.packageClickZone.x = this.supplier.packageSprite.x;
+                    this.packageClickZone.y = this.supplier.packageSprite.y;
+                    if (this.packageTooltip) {
+                        this.packageTooltip.x = this.supplier.packageSprite.x;
+                        this.packageTooltip.y = this.supplier.packageSprite.y - 45;
+                    }
+                }
+            } else if (this.packageClickZone) {
+                this.packageClickZone.destroy();
+                this.packageClickZone = null;
+                if (this.packageTooltip) {
+                    this.packageTooltip.destroy();
+                    this.packageTooltip = null;
+                }
+                if (this.supplier && this.supplier.packageGlow) {
+                    this.supplier.packageGlow.destroy();
+                    this.supplier.packageGlow = null;
+                }
+            }
+
+            if (!this.supplier || !this.supplier.packageSpawned) {
+                if (this.packageClickZone) {
+                    this.packageClickZone.destroy();
+                    this.packageClickZone = null;
+                }
+                if (this.packageTooltip) {
+                    this.packageTooltip.destroy();
+                    this.packageTooltip = null;
+                }
+                if (this.supplier && this.supplier.packageGlow) {
+                    this.supplier.packageGlow.destroy();
+                    this.supplier.packageGlow = null;
+                }
             }
 
             if (this.quest && typeof this.quest.update === 'function') {
@@ -2379,11 +3584,8 @@
                 this.crime.update(time, delta);
             }
 
-            if (this.supplier && this.supplier.packageSpawned && this.waitress) {
-                const dist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 100, 480);
-                if (dist <= 50) {
-                    this.supplier.pickUpPackage();
-                }
+            if (this.radio && typeof this.radio.update === 'function') {
+                this.radio.update();
             }
 
             if (this.supplier && this.supplier.foodStock <= 0) {
@@ -2417,6 +3619,12 @@
                         this.story.storyState.elenaAdoptionQuest = true;
                         this.story.saveStoryData();
                     }
+
+                    if (elena.bubble) {
+                        elena.bubble.setTexture('bubble_mission');
+                        elena.bubble.setVisible(true);
+                        elena.bubble.setTint(0xffd700);
+                    }
                 } else {
                     this.showFloatingText(400, 250, '❌ Elena non è nel locale.', '#ff4444');
                 }
@@ -2435,196 +3643,87 @@
                 return;
             }
 
-            // --- BLOCCA H / ESC / P DURANTE LA CHIAMATA ---
-            if (
-                !this.isPhoneActive &&
-                Phaser.Input.Keyboard.JustDown(this.keys.h)
-            ) {
+            if (!this.isPhoneActive && this.handleDayJumpCheat()) {
+                return;
+            }
+
+            if (!this.isPhoneActive && Phaser.Input.Keyboard.JustDown(this.keys.h)) {
                 this.goToHouse();
                 return;
             }
 
-            if (
-                !this.isPhoneActive &&
-                (
-                    Phaser.Input.Keyboard.JustDown(
-                        this.keys.esc
-                    ) ||
-                    Phaser.Input.Keyboard.JustDown(
-                        this.keys.p
-                    )
-                )
-            ) {
+            if (!this.isPhoneActive && (
+                Phaser.Input.Keyboard.JustDown(this.keys.esc) ||
+                Phaser.Input.Keyboard.JustDown(this.keys.p)
+            )) {
                 this.togglePause();
                 return;
             }
 
-            // ===========================================================
-            // MOVIMENTO CAMERIERA
-            // ===========================================================
-
             let moveX = 0;
             let moveY = 0;
 
-            // Durante il telefono NON leggiamo WASD/frecce.
             if (!this.isPhoneActive) {
-
-                const controls =
-                    GAME.settings.controls || 'wasd';
+                const controls = GAME.settings.controls || 'wasd';
 
                 if (controls === 'wasd') {
-
-                    if (this.keys.w?.isDown) {
-                        moveY = -1;
-                    }
-
-                    if (this.keys.s?.isDown) {
-                        moveY = 1;
-                    }
-
-                    if (this.keys.a?.isDown) {
-                        moveX = -1;
-                    }
-
-                    if (this.keys.d?.isDown) {
-                        moveX = 1;
-                    }
-
+                    if (this.keys.w?.isDown) moveY = -1;
+                    if (this.keys.s?.isDown) moveY = 1;
+                    if (this.keys.a?.isDown) moveX = -1;
+                    if (this.keys.d?.isDown) moveX = 1;
                 } else {
-
-                    if (this.keys.up?.isDown) {
-                        moveY = -1;
-                    }
-
-                    if (this.keys.down?.isDown) {
-                        moveY = 1;
-                    }
-
-                    if (this.keys.left?.isDown) {
-                        moveX = -1;
-                    }
-
-                    if (this.keys.right?.isDown) {
-                        moveX = 1;
-                    }
+                    if (this.keys.up?.isDown) moveY = -1;
+                    if (this.keys.down?.isDown) moveY = 1;
+                    if (this.keys.left?.isDown) moveX = -1;
+                    if (this.keys.right?.isDown) moveX = 1;
                 }
             }
 
-            // Movimento diagonale
-            if (
-                moveX !== 0 &&
-                moveY !== 0
-            ) {
+            if (moveX !== 0 && moveY !== 0) {
                 moveX *= 0.7071;
                 moveY *= 0.7071;
             }
 
-            // ===========================================================
-            // VELOCITÀ
-            // ===========================================================
-
             if (this.waitress.body) {
-
                 if (this.isPhoneActive) {
-
-                    // BLOCCO ASSOLUTO
-                    this.waitress.body.setVelocity(
-                        0,
-                        0
-                    );
-
-                    // Cancella anche eventuale velocità residua
-                    if (
-                        typeof this.waitress.body.stop ===
-                        'function'
-                    ) {
+                    this.waitress.body.setVelocity(0, 0);
+                    if (typeof this.waitress.body.stop === 'function') {
                         this.waitress.body.stop();
                     }
-
                 } else {
-
-                    if (
-                        moveX !== 0 ||
-                        moveY !== 0
-                    ) {
+                    if (moveX !== 0 || moveY !== 0) {
                         this.waitress.body.setVelocity(
                             moveX * CONFIG.waitress.speed,
                             moveY * CONFIG.waitress.speed
                         );
                     } else {
-                        this.waitress.body.setVelocity(
-                            0,
-                            0
-                        );
+                        this.waitress.body.setVelocity(0, 0);
                     }
                 }
             }
 
-            // ===========================================================
-            // ANIMAZIONE / DIREZIONE
-            // ===========================================================
-
-            if (
-                !this.isPhoneActive &&
-                this.waitress &&
-                typeof this.waitress.setTexture ===
-                    'function'
-            ) {
-
+            if (!this.isPhoneActive && this.waitress && typeof this.waitress.setTexture === 'function') {
                 if (moveX > 0) {
-
-                    this.waitress.setTexture(
-                        'cameriera_destra'
-                    );
-
-                    this.waitress.setScale(
-                        WAITRESS_SCALE
-                    );
-
+                    this.waitress.setTexture('cameriera_destra');
+                    this.waitress.setScale(WAITRESS_SCALE);
                 } else if (moveX < 0) {
-
-                    this.waitress.setTexture(
-                        'cameriera_sinistra'
-                    );
-
-                    this.waitress.setScale(
-                        WAITRESS_SCALE
-                    );
-
+                    this.waitress.setTexture('cameriera_sinistra');
+                    this.waitress.setScale(WAITRESS_SCALE);
                 } else if (moveY < 0) {
-
-                    this.waitress.setTexture(
-                        'cameriera_dietro'
-                    );
-
-                    this.waitress.setScale(
-                        WAITRESS_SCALE
-                    );
-
+                    this.waitress.setTexture('cameriera_dietro');
+                    this.waitress.setScale(WAITRESS_SCALE);
                 } else if (moveY > 0) {
-
-                    this.waitress.setTexture(
-                        'cameriera_avanti'
-                    );
-
-                    this.waitress.setScale(
-                        WAITRESS_SCALE
-                    );
+                    this.waitress.setTexture('cameriera_avanti');
+                    this.waitress.setScale(WAITRESS_SCALE);
+                } else {
+                    this.waitress.setTexture('cameriera_avanti');
+                    this.waitress.setScale(WAITRESS_SCALE);
                 }
             }
 
             if (this.waitress.body) {
-                this.waitress.x = Phaser.Math.Clamp(
-                    this.waitress.x,
-                    40,
-                    560
-                );
-
-                this.waitress.y = Phaser.Math.Clamp(
-                    this.waitress.y,
-                    70,
-                    560
-                );
+                this.waitress.x = Phaser.Math.Clamp(this.waitress.x, 40, 560);
+                this.waitress.y = Phaser.Math.Clamp(this.waitress.y, 70, 560);
             }
 
             this.waitress.setDepth(this.waitress.y);
@@ -2639,24 +3738,15 @@
                 this.trayIndicator.y = this.waitress.y - 30;
             }
 
-            // SPACE = interazione.
-            // Durante il telefono NON deve funzionare.
-            if (
-                !this.isPhoneActive &&
-                Phaser.Input.Keyboard.JustDown(this.keys.space)
-            ) {
+            if (!this.isPhoneActive && Phaser.Input.Keyboard.JustDown(this.keys.space)) {
                 this.interactWithClosest();
             }
         }
         
-        // ============================================================
-        // MODIFICATO: updateRelationship() usa sentiment-based
-        // ============================================================
         updateRelationship(delta, feedback) {
             if (!this.currentCustomer) return;
             
             if (this.npcManager && typeof this.npcManager.updateRelationshipFromMessage === 'function') {
-                // Usa il NPCManager per gestire la relazione
                 const result = this.npcManager.updateRelationshipFromMessage(
                     this.currentCustomer.name,
                     feedback
@@ -2681,7 +3771,6 @@
                     );
                 }
                 
-                // Gestisci eventi speciali
                 if (result.specialEvent === 'BREAKUP') {
                     this.gameOver();
                 } else if (result.specialEvent === 'ADOPTION_READY') {
@@ -2690,7 +3779,6 @@
                     }
                 }
             } else {
-                // Fallback: metodo originale
                 if (typeof this.currentCustomer.relationScore !== "number") {
                     this.currentCustomer.relationScore = 50;
                 }
@@ -2722,7 +3810,6 @@
                         const alreadyCompleted = this.quest.completedQuests && this.quest.completedQuests.includes('elena_adoption');
                         
                         if (!alreadyActive && !alreadyCompleted) {
-                            console.log("Hai raggiunto il massimo della sintonia con Elena.");
                             this.quest.startElenaAdoptionQuest();
                         }
                     }
@@ -2732,12 +3819,19 @@
 
         levelComplete() {
             this.gameActive = false;
+            
+            if (this.spawnEvent) {
+                this.spawnEvent.remove();
+                this.spawnEvent = null;
+            }
+            
+            this.cleanupCustomers();
+            
             this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
             triggerSfx('coin');
             
             if (this.priceSystem) {
                 this.priceSystem.updateInflation(GAME.level);
-                console.log(`📈 Inflazione aggiornata al giorno ${GAME.level}`);
             }
             
             if (GAME.score >= 15000) {
@@ -2749,12 +3843,17 @@
                 this.story.onDayComplete(GAME.level);
             }
 
+            const rent = 50;
+            const net = Math.max(0, this.levelEarnings - rent);
+            GAME.score = net;
+
             const saveData = {
                 score: GAME.score,
                 level: GAME.level + 1,
                 customersServed: 0,
                 lives: 3,
                 dirtyPlates: 0,
+                isCheater: GAME.isCheater || false,
                 settings: GAME.settings,
                 housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
             };
@@ -2762,11 +3861,7 @@
             localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
             
             if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
-                window.SaveManager.saveGame(saveData).then(() => {
-                    console.log("💾 Backup IndexedDB aggiornato!");
-                }).catch(err => {
-                    console.error("Errore backup IndexedDB:", err);
-                });
+                window.SaveManager.saveGame(saveData);
             }
             
             this.time.delayedCall(1200, () => {
@@ -2777,6 +3872,9 @@
                 if (this.scene.get('LevelSummary')) {
                     this.scene.start('LevelSummary', {
                         score: GAME.score,
+                        earned: this.levelEarnings,
+                        rent: rent,
+                        net: net,
                         served: GAME.customersServed,
                         target: GAME.customersTarget,
                         lives: GAME.lives,
@@ -2805,7 +3903,6 @@
         }
     }
 
-    // ==================== MENU SCENE ====================
     class MenuScene extends Phaser.Scene {
         constructor() {
             super('Menu');
@@ -2815,6 +3912,22 @@
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
             this.menuButtons = [];
+
+            const unlockAudio = () => {
+                try {
+                    if (this.sound && this.sound.context && this.sound.context.state === 'suspended') {
+                        this.sound.context.resume();
+                    }
+                    unlockAudioContext();
+                    SYNTH.unlock();
+                } catch (e) {}
+            };
+            this.input.on('pointerdown', unlockAudio);
+            this.input.on('keydown', unlockAudio);
+            this.events.once('shutdown', () => {
+                this.input.off('pointerdown', unlockAudio);
+                this.input.off('keydown', unlockAudio);
+            });
             
             const bg = this.add.graphics();
             bg.fillStyle(0x2c1a11, 0.35);
@@ -2964,7 +4077,6 @@
         }
     }
 
-    // ==================== GAME OVER SCENE ====================
     class GameOverScene extends Phaser.Scene {
         constructor() {
             super('GameOver');
@@ -2973,7 +4085,12 @@
         create() {
             this.cameras.main.setBackgroundColor('#1a0202');
 
-            const card = this.add.rectangle(400, 300, 520, 450, 0x110202, 0.95);
+            const card = this.add.rectangle(
+                400, 300,
+                520, 450,
+                0x110202,
+                0.95
+            );
             card.setStrokeStyle(2, 0xe74c3c);
 
             this.add.text(400, 120, t('DAY_FAILED'), {
@@ -2989,155 +4106,179 @@
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
 
-            const statsBox = this.add.rectangle(400, 275, 420, 100, 0x221111);
+            const statsBox = this.add.rectangle(
+                400, 275,
+                420, 100,
+                0x221111
+            );
             statsBox.setStrokeStyle(1, 0x442222);
 
-            this.add.text(230, 245, t('SAVINGS_LEFT'), { fontSize: '13px', color: '#ffd700', fontFamily: 'Fredoka' });
-            this.add.text(530, 245, `${GAME.score} €`, { fontSize: '13px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(1, 0);
+            this.add.text(
+                230, 245,
+                t('SAVINGS_LEFT'),
+                {
+                    fontSize: '13px',
+                    color: '#ffd700',
+                    fontFamily: 'Fredoka'
+                }
+            );
 
-            this.add.text(230, 275, t('DAYS_WORKED'), { fontSize: '13px', color: '#ffd700', fontFamily: 'Fredoka' });
-            this.add.text(530, 275, `${GAME.level}`, { fontSize: '13px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(1, 0);
+            this.add.text(
+                530, 245,
+                `${GAME.score} €`,
+                {
+                    fontSize: '13px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(1, 0);
 
-            this.add.text(230, 305, t('FURNITURE_BOUGHT'), { fontSize: '13px', color: '#ffd700', fontFamily: 'Fredoka' });
-            
+            this.add.text(
+                230, 275,
+                t('DAYS_WORKED'),
+                {
+                    fontSize: '13px',
+                    color: '#ffd700',
+                    fontFamily: 'Fredoka'
+                }
+            );
+
+            this.add.text(
+                530, 275,
+                `${GAME.level}`,
+                {
+                    fontSize: '13px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(1, 0);
+
+            this.add.text(
+                230, 305,
+                t('FURNITURE_BOUGHT'),
+                {
+                    fontSize: '13px',
+                    color: '#ffd700',
+                    fontFamily: 'Fredoka'
+                }
+            );
+
             let purchasedCount = 0;
-            const savedHouseData = localStorage.getItem('waitress_house_data');
+
+            const savedHouseData =
+                localStorage.getItem('waitress_house_data');
+
             if (savedHouseData) {
                 try {
                     const parsed = JSON.parse(savedHouseData);
                     purchasedCount = (parsed.purchased || []).length;
                 } catch(e) {}
             }
-            this.add.text(530, 305, `${purchasedCount} / ${HOUSE_STATE.items.length}`, { fontSize: '13px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(1, 0);
 
-            const houseBtn = this.add.rectangle(400, 375, 300, 44, 0x3498db);
+            this.add.text(
+                530, 305,
+                `${purchasedCount} / ${HOUSE_STATE.items.length}`,
+                {
+                    fontSize: '13px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(1, 0);
+
+            const houseBtn = this.add.rectangle(
+                400, 380,
+                300, 44,
+                0x3498db
+            );
+
             houseBtn.setStrokeStyle(1.5, 0xffffff);
             houseBtn.setInteractive({ useHandCursor: true });
 
-            this.add.text(400, 375, t('VAI A CASA'), {
-                fontSize: '14px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
+            this.add.text(
+                400, 380,
+                t('VAI A CASA'),
+                {
+                    fontSize: '14px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
 
             houseBtn.on('pointerdown', () => {
                 triggerSfx('click');
+
                 if (window.HouseScene && !this.scene.get('House')) {
                     this.scene.add('House', window.HouseScene, true);
                 } else {
                     this.scene.start('House');
                 }
             });
-            houseBtn.on('pointerover', () => { houseBtn.setFillStyle(0x2980b9); });
-            houseBtn.on('pointerout', () => { houseBtn.setFillStyle(0x3498db); });
 
-            this.add.text(400, 340, t('LANGUAGE_SELECT'), {
-                fontSize: '14px',
-                color: '#ffffff',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-
-            const langs = getLanguages();
-            const langKeys = Object.keys(langs);
-            const currentLangCode = getCurrentLang();
-            let langIndex = langKeys.indexOf(currentLangCode);
-            if (langIndex === -1) langIndex = 0;
-
-            const currentLangData = langs[currentLangCode] || langs['it'];
-
-            const langBox = this.add.rectangle(400, 370, 200, 30, 0x2c1a11);
-            langBox.setStrokeStyle(1, 0xd27d2d);
-
-            const langTxt = this.add.text(400, 370, `${currentLangData.flag} ${currentLangData.name}`, {
-                fontSize: '13px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-
-            const prevBtn = this.add.rectangle(270, 370, 40, 30, 0xd27d2d);
-            prevBtn.setStrokeStyle(1, 0xffd700);
-            prevBtn.setInteractive({ useHandCursor: true });
-            
-            this.add.text(270, 370, '◀', {
-                fontSize: '16px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-
-            prevBtn.on('pointerover', () => prevBtn.setFillStyle(0xe59866));
-            prevBtn.on('pointerout', () => prevBtn.setFillStyle(0xd27d2d));
-            prevBtn.on('pointerdown', () => {
-                langIndex = (langIndex - 1 + langKeys.length) % langKeys.length;
-                triggerSfx('click');
-                switchLanguage(langKeys[langIndex]);
-                this.scene.restart();
+            houseBtn.on('pointerover', () => {
+                houseBtn.setFillStyle(0x2980b9);
             });
 
-            const nextBtn = this.add.rectangle(530, 370, 40, 30, 0xd27d2d);
-            nextBtn.setStrokeStyle(1, 0xffd700);
-            nextBtn.setInteractive({ useHandCursor: true });
-
-            this.add.text(530, 370, '▶', {
-                fontSize: '16px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-
-            nextBtn.on('pointerover', () => nextBtn.setFillStyle(0xe59866));
-            nextBtn.on('pointerout', () => nextBtn.setFillStyle(0xd27d2d));
-            nextBtn.on('pointerdown', () => {
-                langIndex = (langIndex + 1) % langKeys.length;
-                triggerSfx('click');
-                switchLanguage(langKeys[langIndex]);
-                this.scene.restart();
+            houseBtn.on('pointerout', () => {
+                houseBtn.setFillStyle(0x3498db);
             });
 
-            this.add.text(400, 415, t('INTELLIGENZA ARTIFICIALE'), {
-                fontSize: '14px',
-                color: '#ffffff',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
+            const settingsBtn = this.add.rectangle(
+                400, 440,
+                300, 44,
+                0xd27d2d
+            );
 
-            const aiBtn = this.add.rectangle(400, 445, 240, 30, GAME.settings.aiEnabled ? 0x27ae60 : 0xe74c3c);
-            aiBtn.setStrokeStyle(1, 0xffffff);
-            aiBtn.setInteractive({ useHandCursor: true });
+            settingsBtn.setStrokeStyle(1.5, 0xffd700);
+            settingsBtn.setInteractive({ useHandCursor: true });
 
-            const aiTxt = this.add.text(400, 445, GAME.settings.aiEnabled ? 'INTELLIGENZA ARTIFICIALE: ON' : 'INTELLIGENZA ARTIFICIALE: OFF', {
-                fontSize: '12px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
+            this.add.text(
+                400, 440,
+                t('IMPOSTAZIONI'),
+                {
+                    fontSize: '14px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
 
-            aiBtn.on('pointerdown', () => {
-                GAME.settings.aiEnabled = !GAME.settings.aiEnabled;
+            settingsBtn.on('pointerdown', () => {
                 triggerSfx('click');
-                aiBtn.setFillStyle(GAME.settings.aiEnabled ? 0x27ae60 : 0xe74c3c);
-                aiTxt.setText(GAME.settings.aiEnabled ? 'INTELLIGENZA ARTIFICIALE: ON' : 'INTELLIGENZA ARTIFICIALE: OFF');
-                
-                try {
-                    const raw = localStorage.getItem('waitress_save_data');
-                    let data = raw ? JSON.parse(raw) : {};
-                    data.settings = GAME.settings;
-                    localStorage.setItem('waitress_save_data', JSON.stringify(data));
-                } catch(e) {}
+                this.scene.start('Settings');
             });
 
-            const backBtn = this.add.rectangle(400, 500, 260, 36, 0xd27d2d);
-            backBtn.setStrokeStyle(2, 0xffd700);
+            settingsBtn.on('pointerover', () => {
+                settingsBtn.setFillStyle(0xe59866);
+            });
+
+            settingsBtn.on('pointerout', () => {
+                settingsBtn.setFillStyle(0xd27d2d);
+            });
+
+            const backBtn = this.add.rectangle(
+                400, 500,
+                260, 36,
+                0x7f1d1d
+            );
+
+            backBtn.setStrokeStyle(2, 0xe74c3c);
             backBtn.setInteractive({ useHandCursor: true });
-            
-            this.add.text(400, 500, t('TORNA'), {
-                fontSize: '14px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
+
+            this.add.text(
+                400, 500,
+                t('TORNA'),
+                {
+                    fontSize: '14px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
+
             backBtn.on('pointerdown', () => {
                 triggerSfx('click');
                 this.scene.start('Menu');
@@ -3145,7 +4286,477 @@
         }
     }
 
-    // ==================== CREDITS SCENE ====================
+    class SettingsScene extends Phaser.Scene {
+        constructor() {
+            super('Settings');
+        }
+
+        create() {
+            this.cameras.main.setBackgroundColor('#1a0a04');
+
+            const card = this.add.rectangle(
+                400, 300,
+                560, 500,
+                0x110906,
+                0.97
+            );
+
+            card.setStrokeStyle(2, 0xd27d2d);
+
+            this.add.text(400, 55, '⚙️ IMPOSTAZIONI', {
+                fontSize: '30px',
+                color: '#ffd700',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            this.add.text(400, 115, '🔊 SUONO', {
+                fontSize: '16px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            const soundBtn = this.add.rectangle(
+                400,
+                150,
+                260,
+                38,
+                GAME.settings.soundEnabled
+                    ? 0x27ae60
+                    : 0xe74c3c
+            );
+
+            soundBtn.setStrokeStyle(1, 0xffffff);
+            soundBtn.setInteractive({ useHandCursor: true });
+
+            const soundTxt = this.add.text(
+                400,
+                150,
+                GAME.settings.soundEnabled
+                    ? '🔊 SUONO: ON'
+                    : '🔇 SUONO: OFF',
+                {
+                    fontSize: '13px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
+
+            soundBtn.on('pointerdown', () => {
+                GAME.settings.soundEnabled =
+                    !GAME.settings.soundEnabled;
+
+                soundBtn.setFillStyle(
+                    GAME.settings.soundEnabled
+                        ? 0x27ae60
+                        : 0xe74c3c
+                );
+
+                soundTxt.setText(
+                    GAME.settings.soundEnabled
+                        ? '🔊 SUONO: ON'
+                        : '🔇 SUONO: OFF'
+                );
+
+                this.saveSettings();
+
+                if (GAME.settings.soundEnabled) {
+                    triggerSfx('click');
+                }
+            });
+
+            this.add.text(400, 205, '🎮 DIFFICOLTÀ', {
+                fontSize: '16px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            const difficulties = [
+                {
+                    key: 'facile',
+                    label: 'FACILE'
+                },
+                {
+                    key: 'normale',
+                    label: 'MEDIA'
+                },
+                {
+                    key: 'difficile',
+                    label: 'DIFFICILE'
+                }
+            ];
+
+            const difficultyButtons = [];
+
+            difficulties.forEach((difficulty, index) => {
+                const x = 250 + index * 150;
+                const selected =
+                    GAME.settings.difficulty === difficulty.key;
+
+                const btn = this.add.rectangle(
+                    x,
+                    250,
+                    125,
+                    38,
+                    selected
+                        ? 0x27ae60
+                        : 0xd27d2d
+                );
+
+                btn.setStrokeStyle(
+                    selected ? 2 : 1,
+                    selected ? 0xffffff : 0xffd700
+                );
+
+                btn.setInteractive({
+                    useHandCursor: true
+                });
+
+                const txt = this.add.text(
+                    x,
+                    250,
+                    difficulty.label,
+                    {
+                        fontSize: '12px',
+                        color: '#ffffff',
+                        fontStyle: 'bold',
+                        fontFamily: 'Fredoka'
+                    }
+                ).setOrigin(0.5);
+
+                difficultyButtons.push({
+                    btn: btn,
+                    txt: txt,
+                    key: difficulty.key
+                });
+
+                btn.on('pointerdown', () => {
+                    GAME.settings.difficulty =
+                        difficulty.key;
+
+                    triggerSfx('click');
+
+                    difficultyButtons.forEach(item => {
+                        const active =
+                            item.key === GAME.settings.difficulty;
+
+                        item.btn.setFillStyle(
+                            active
+                                ? 0x27ae60
+                                : 0xd27d2d
+                        );
+
+                        item.btn.setStrokeStyle(
+                            active ? 2 : 1,
+                            active
+                                ? 0xffffff
+                                : 0xffd700
+                        );
+                    });
+
+                    this.saveSettings();
+                });
+            });
+
+            this.difficultyDescription =
+                this.add.text(
+                    400,
+                    290,
+                    this.getDifficultyDescription(),
+                    {
+                        fontSize: '11px',
+                        color: '#e0d5c1',
+                        fontFamily: 'Fredoka',
+                        align: 'center'
+                    }
+                ).setOrigin(0.5);
+
+            this.add.text(400, 335, '🌐 LINGUA / LANGUAGE', {
+                fontSize: '16px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            const langs = getLanguages();
+            const langKeys = Object.keys(langs);
+
+            let langIndex =
+                langKeys.indexOf(getCurrentLang());
+
+            if (langIndex === -1) {
+                langIndex = 0;
+            }
+
+            const langBox = this.add.rectangle(
+                400,
+                375,
+                210,
+                36,
+                0x2c1a11
+            );
+
+            langBox.setStrokeStyle(
+                1,
+                0xd27d2d
+            );
+
+            const langTxt = this.add.text(
+                400,
+                375,
+                this.getLanguageText(
+                    langs,
+                    langKeys,
+                    langIndex
+                ),
+                {
+                    fontSize: '13px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
+
+            const prevBtn = this.add.rectangle(
+                270,
+                375,
+                40,
+                36,
+                0xd27d2d
+            );
+
+            prevBtn.setStrokeStyle(
+                1,
+                0xffd700
+            );
+
+            prevBtn.setInteractive({
+                useHandCursor: true
+            });
+
+            this.add.text(
+                270,
+                375,
+                '◀',
+                {
+                    fontSize: '16px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
+
+            const nextBtn = this.add.rectangle(
+                530,
+                375,
+                40,
+                36,
+                0xd27d2d
+            );
+
+            nextBtn.setStrokeStyle(
+                1,
+                0xffd700
+            );
+
+            nextBtn.setInteractive({
+                useHandCursor: true
+            });
+
+            this.add.text(
+                530,
+                375,
+                '▶',
+                {
+                    fontSize: '16px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
+
+            prevBtn.on('pointerdown', () => {
+                langIndex =
+                    (langIndex - 1 + langKeys.length)
+                    % langKeys.length;
+
+                triggerSfx('click');
+
+                switchLanguage(
+                    langKeys[langIndex]
+                );
+            });
+
+            nextBtn.on('pointerdown', () => {
+                langIndex =
+                    (langIndex + 1)
+                    % langKeys.length;
+
+                triggerSfx('click');
+
+                switchLanguage(
+                    langKeys[langIndex]
+                );
+            });
+
+            this.add.text(
+                400,
+                425,
+                '🧠 INTELLIGENZA ARTIFICIALE',
+                {
+                    fontSize: '15px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
+
+            const aiBtn = this.add.rectangle(
+                400,
+                460,
+                260,
+                38,
+                GAME.settings.aiEnabled
+                    ? 0x27ae60
+                    : 0xe74c3c
+            );
+
+            aiBtn.setStrokeStyle(
+                1,
+                0xffffff
+            );
+
+            aiBtn.setInteractive({
+                useHandCursor: true
+            });
+
+            const aiTxt = this.add.text(
+                400,
+                460,
+                GAME.settings.aiEnabled
+                    ? '🧠 IA: ON'
+                    : '🧠 IA: OFF',
+                {
+                    fontSize: '13px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
+
+            aiBtn.on('pointerdown', () => {
+                GAME.settings.aiEnabled =
+                    !GAME.settings.aiEnabled;
+
+                triggerSfx('click');
+
+                aiBtn.setFillStyle(
+                    GAME.settings.aiEnabled
+                        ? 0x27ae60
+                        : 0xe74c3c
+                );
+
+                aiTxt.setText(
+                    GAME.settings.aiEnabled
+                        ? '🧠 IA: ON'
+                        : '🧠 IA: OFF'
+                );
+
+                this.saveSettings();
+            });
+
+            const backBtn = this.add.rectangle(
+                400,
+                525,
+                260,
+                38,
+                0xd27d2d
+            );
+
+            backBtn.setStrokeStyle(
+                2,
+                0xffd700
+            );
+
+            backBtn.setInteractive({
+                useHandCursor: true
+            });
+
+            this.add.text(
+                400,
+                525,
+                '↩ TORNA AL MENU',
+                {
+                    fontSize: '13px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    fontFamily: 'Fredoka'
+                }
+            ).setOrigin(0.5);
+
+            backBtn.on('pointerdown', () => {
+                triggerSfx('click');
+                this.scene.start('Menu');
+            });
+        }
+
+        saveSettings() {
+            try {
+                const raw =
+                    localStorage.getItem(
+                        'waitress_save_data'
+                    );
+
+                let data = raw
+                    ? JSON.parse(raw)
+                    : {};
+
+                data.settings = {
+                    ...GAME.settings
+                };
+
+                localStorage.setItem(
+                    'waitress_save_data',
+                    JSON.stringify(data)
+                );
+
+            } catch (e) {
+                console.warn(
+                    'Errore salvataggio impostazioni',
+                    e
+                );
+            }
+        }
+
+        getDifficultyDescription() {
+            switch (GAME.settings.difficulty) {
+                case 'facile':
+                    return 'I clienti arrivano più lentamente';
+                case 'difficile':
+                    return 'I clienti arrivano più velocemente';
+                default:
+                    return 'Velocità normale dei clienti';
+            }
+        }
+
+        getLanguageText(
+            langs,
+            langKeys,
+            langIndex
+        ) {
+            const code =
+                langKeys[langIndex];
+
+            const data =
+                langs[code];
+
+            return `${data.flag} ${data.name}`;
+        }
+    }
+
     class CreditsScene extends Phaser.Scene {
         constructor() {
             super('Credits');
@@ -3206,51 +4817,6 @@
         }
     }
 
-    // Nota: La classe SettingsScene deve essere definita altrove o commentata se non presente
-    // Per ora la lascio come placeholder
-    class SettingsScene extends Phaser.Scene {
-        constructor() {
-            super('Settings');
-        }
-        
-        create() {
-            this.cameras.main.setBackgroundColor('#1a0a04');
-            
-            const card = this.add.rectangle(400, 300, 500, 400, 0x110906, 0.9);
-            card.setStrokeStyle(2, 0xd27d2d);
-            
-            this.add.text(400, 80, 'IMPOSTAZIONI', {
-                fontSize: '28px',
-                color: '#ffd700',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            this.add.text(400, 150, 'Impostazioni in sviluppo...', {
-                fontSize: '16px',
-                color: '#e0d5c1',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            const backBtn = this.add.rectangle(400, 350, 240, 40, 0xd27d2d);
-            backBtn.setStrokeStyle(1.5, 0xffffff);
-            backBtn.setInteractive({ useHandCursor: true });
-            
-            this.add.text(400, 350, 'TORNA AL MENU', {
-                fontSize: '14px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            backBtn.on('pointerdown', () => {
-                triggerSfx('click');
-                this.scene.start('Menu');
-            });
-        }
-    }
-
-    // ==================== CONFIGURAZIONE PHASER ====================
     const scenesList = [PreloadScene, MenuScene, SettingsScene, CreditsScene, GameScene, GameOverScene];
     
     if (window.HouseScene) {
@@ -3276,10 +4842,13 @@
             pixelArt: true,
             antialias: false,
             roundPixels: true
+        },
+        audio: {
+            disableWebAudio: false,
+            noAudio: false
         }
     };
 
-    // ==================== AVVIO GIOCO ====================
     window.addEventListener('load', () => {
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) {
@@ -3288,8 +4857,25 @@
                 loadingScreen.style.display = 'none';
             }, 500);
         }
-        
+
         const game = new Phaser.Game(config);
         window.game = game;
+
+        const globalUnlock = () => {
+            try {
+                if (game && game.sound && game.sound.context && game.sound.context.state === 'suspended') {
+                    game.sound.context.resume();
+                }
+                unlockAudioContext();
+                SYNTH.unlock();
+            } catch (e) {}
+        };
+
+        window.addEventListener('pointerdown', globalUnlock, { once: true });
+        window.addEventListener('touchstart', globalUnlock, { once: true, passive: true });
+        window.addEventListener('touchend', globalUnlock, { once: true, passive: true });
+        window.addEventListener('mousedown', globalUnlock, { once: true });
+        window.addEventListener('click', globalUnlock, { once: true });
+        window.addEventListener('keydown', globalUnlock, { once: true });
     });
 })();

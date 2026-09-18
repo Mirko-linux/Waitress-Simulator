@@ -84,48 +84,58 @@ class SupplierSystem {
             return false;
         }
 
-        // Posizione dell'entrata (in basso a sinistra)
-        const entryX = 140;
-        const entryY = 540;
+        // ============================================================
+        // POSIZIONE DEL PACCO
+        // ============================================================
+        const entryX = 150;
+        const entryY = 500;
+        // ============================================================
 
         // ============================================================
-        // CREA IL PACCO CON DIMENSIONE RIDOTTA
+        // CREA IL PACCO CON DIMENSIONE ADEGUATA (VERAMENTE GRANDE)
         // ============================================================
         if (this.scene.textures.exists('pacco')) {
             this.packageSprite = this.scene.add.image(entryX, entryY, 'pacco')
                 .setDepth(20)
-                .setDisplaySize(28, 28);  // RIDOTTO: 28x28 invece di 40x40
+                .setDisplaySize(80, 80);  // ✅ INGRANDITO: da 50x50 a 80x80
         } else {
-            // Fallback: emoji più piccola
+            // Fallback: emoji
             this.packageSprite = this.scene.add.text(entryX, entryY, '📦', {
-                fontSize: '28px'  // RIDOTTO: da 40px a 28px
+                fontSize: '64px'  // ✅ INGRANDITO: da 48px a 64px
             }).setOrigin(0.5).setDepth(20);
         }
+        // ============================================================
 
-        // Crea una zona interattiva per il pacco (più piccola)
-        this.packageInteractZone = this.scene.add.zone(entryX, entryY, 32, 32)  // RIDOTTO: da 50x50 a 32x32
+        // ============================================================
+        // ZONA INTERATTIVA PER IL CLIC (ingrandita)
+        // ============================================================
+        this.packageInteractZone = this.scene.add.zone(entryX, entryY, 90, 90)  // ✅ INGRANDITO: da 60x60 a 90x90
             .setDepth(19)
             .setInteractive({ useHandCursor: true });
 
         this.packageInteractZone.on('pointerdown', () => {
+            // ✅ RICHIEDE IL CLIC
             const dist = Phaser.Math.Distance.Between(
                 this.scene.waitress.x,
                 this.scene.waitress.y,
                 entryX,
                 entryY
             );
-            if (dist <= 80) {
+            if (dist <= 120) {  // ✅ RAGGIO AUMENTATO: da 100 a 120
                 this.pickUpPackage();
             } else {
-                this.scene.showFloatingText(entryX, entryY - 40, 'Avvicinati al pacco!', '#ffd700');
+                this.scene.showFloatingText(entryX, entryY - 50, 'Avvicinati al pacco e clicca!', '#ffd700');
             }
         });
+        // ============================================================
 
-        // Glow più piccolo
+        // ============================================================
+        // GLOW PIÙ VISIBILE
+        // ============================================================
         this.packageGlow = this.scene.add.graphics()
             .setDepth(18)
-            .fillStyle(0x3498db, 0.15)
-            .fillCircle(entryX, entryY, 22);  // RIDOTTO: da 30 a 22
+            .fillStyle(0x3498db, 0.25)
+            .fillCircle(entryX, entryY, 60);  // ✅ INGRANDITO: da 40 a 60
 
         this.scene.tweens.add({
             targets: this.packageGlow,
@@ -134,8 +144,11 @@ class SupplierSystem {
             yoyo: true,
             repeat: -1
         });
+        // ============================================================
 
-        // Anima il pacco (entra dalla porta)
+        // ============================================================
+        // ANIMAZIONE DI ENTRATA
+        // ============================================================
         this.packageSprite.setScale(0.3);
         this.packageSprite.y = 580;
 
@@ -147,11 +160,12 @@ class SupplierSystem {
             duration: 500,
             ease: 'Back.easeOut'
         });
+        // ============================================================
 
         this.packageSpawned = true;
 
         if (this.scene.showFloatingText) {
-            this.scene.showFloatingText(entryX, entryY - 50, '📦 Pacco consegnato!', '#3498db');
+            this.scene.showFloatingText(entryX, entryY - 50, '📦 Pacco consegnato! Clicca per ritirare', '#3498db');
         }
 
         return true;
@@ -181,10 +195,22 @@ class SupplierSystem {
             }
         }
 
+        // ✅ ANIMAZIONE DI RACCOLTA
         if (this.packageSprite) {
-            this.packageSprite.destroy();
-            this.packageSprite = null;
+            this.scene.tweens.add({
+                targets: this.packageSprite,
+                scaleX: 0,
+                scaleY: 0,
+                alpha: 0,
+                duration: 300,
+                ease: 'Back.easeIn',
+                onComplete: () => {
+                    this.packageSprite.destroy();
+                    this.packageSprite = null;
+                }
+            });
         }
+
         if (this.packageInteractZone) {
             this.packageInteractZone.destroy();
             this.packageInteractZone = null;
@@ -211,6 +237,7 @@ class SupplierSystem {
     }
 
     update() {
+        // ✅ MOSTRA L'HINT QUANDO IL GIOCATORE È VICINO AL PACCO
         if (this.packageSpawned && this.packageInteractZone && this.scene.waitress) {
             const dist = Phaser.Math.Distance.Between(
                 this.scene.waitress.x,
@@ -218,17 +245,15 @@ class SupplierSystem {
                 this.packageInteractZone.x,
                 this.packageInteractZone.y
             );
-            if (dist <= 50) {
-                if (!this._hintShown) {
-                    this.scene.showFloatingText(
-                        this.packageInteractZone.x,
-                        this.packageInteractZone.y - 50,
-                        '📦 Clicca per raccogliere!',
-                        '#3498db'
-                    );
-                    this._hintShown = true;
-                }
-            } else {
+            if (dist <= 100 && !this._hintShown) {
+                this.scene.showFloatingText(
+                    this.packageInteractZone.x,
+                    this.packageInteractZone.y - 70,
+                    '👆 CLICCA SUL PACCO per ritirarlo!',
+                    '#3498db'
+                );
+                this._hintShown = true;
+            } else if (dist > 100) {
                 this._hintShown = false;
             }
         } else {

@@ -1,4 +1,27 @@
 const NPC_CONFIG = {
+    'Poliziotto': {
+        hasTilesheet: false,
+        emojiChar: '👮',
+        age: 40,
+        gender: 'male',
+        bio: 'Agente di Polizia in servizio. Non è qui per mangiare.',
+        patienceMultiplier: 99.0,
+        tipMultiplier: 0,
+        orderPreference: ['Acqua'],
+        personality: 'Sei un agente di Polizia. Sei qui per eseguire un mandato di arresto. Parla in modo formale e diretto.',
+        sensitiveTopics: ['arresto', 'mandato', 'legge'],
+        dialogueStyles: {
+            greeting: 'Buongiorno. Sono l\'Agente di Polizia. Ho un mandato per lei.',
+            order: 'Non sono qui per mangiare.',
+            happy: 'La procedura è conclusa.',
+            angry: 'Non peggiori la sua posizione.',
+            farewell: 'La seguirò in centrale.'
+        },
+        textureUp: 'Poliziotto_Dietro.png',
+        textureDown: 'Poliziotto_Avanti.png',
+        textureLeft: 'Poliziotto_Sinistra.png',
+        textureRight: 'Poliziotto_Destra.png'
+    },
     'Elena': {
         hasTilesheet: false,
         emojiChar: '👩‍🎓',
@@ -18,7 +41,6 @@ const NPC_CONFIG = {
             angry: 'Oh no, sto morendo di fame qui!',
             farewell: 'A dopo! Devo andare a studiare.'
         },
-        // TEXTURE DIREZIONALI
         textureUp: 'Elena_Dietro.png',
         textureDown: 'Elena_Avanti.png',
         textureLeft: 'Elena_Sinistra.png',
@@ -42,7 +64,6 @@ const NPC_CONFIG = {
             angry: 'Ho fame, mi serve il cibo!',
             farewell: 'Devo andare, ho un altro giro in programma!'
         },
-        // TEXTURE DIREZIONALI
         textureUp: 'Maria_Dietro.png',
         textureDown: 'Maria_Avanti.png',
         textureLeft: 'Maria_Sinistra.png',
@@ -66,7 +87,6 @@ const NPC_CONFIG = {
             angry: 'Aspetto da tanto, tesoro...',
             farewell: 'Arrivederci, splendore! Ci vediamo presto!'
         },
-        // TEXTURE DIREZIONALI
         textureUp: 'Francesco_Dietro.png',
         textureDown: 'Francesco_Avanti.png',
         textureLeft: 'Francesco_Sinistra.png',
@@ -90,7 +110,6 @@ const NPC_CONFIG = {
             angry: 'Sono vecchia, non farmi aspettare troppo!',
             farewell: 'A presto, cara! Ti racconterò di nuovo la storia del mio gatto!'
         },
-        // TEXTURE DIREZIONALI
         textureUp: 'Rosa_Dietro.png',
         textureDown: 'Rosa_Avanti.png',
         textureLeft: 'Rosa_Sinistra.png',
@@ -114,7 +133,6 @@ const NPC_CONFIG = {
             angry: 'Questo è inaccettabile! Voglio parlare con il direttore!',
             farewell: 'Spero di non dover tornare in un posto così... o forse sì.'
         },
-        // TEXTURE DIREZIONALI
         textureUp: 'Sofia_Dietro.png',
         textureDown: 'Sofia_Avanti.png',
         textureLeft: 'Sofia_Sinistra.png',
@@ -138,7 +156,6 @@ const NPC_CONFIG = {
             angry: 'Mi dispiace ma devo tornare a lavorare!',
             farewell: 'Arrivederci! Domani ho una riunione con i genitori.'
         },
-        // TEXTURE DIREZIONALI
         textureUp: 'Chiara_Dietro.png',
         textureDown: 'Chiara_Avanti.png',
         textureLeft: 'Chiara_Sinistra.png',
@@ -162,7 +179,6 @@ const NPC_CONFIG = {
             angry: 'Perché ci metti così tanto? Al cantiere sarei già andato via!',
             farewell: 'Vabbè, a dopo. Se il cibo era buono, tornerò.'
         },
-        // TEXTURE DIREZIONALI
         textureUp: 'Massimo_Dietro.png',
         textureDown: 'Massimo_Avanti.png',
         textureLeft: 'Massimo_Sinistra.png',
@@ -186,7 +202,6 @@ const NPC_CONFIG = {
             angry: 'Il tempo di caricamento è troppo lungo... come il mio debug!',
             farewell: 'A dopo! Devo ottimizzare il codice di un progetto.'
         },
-        // TEXTURE DIREZIONALI
         textureUp: 'Andrea_Dietro.png',
         textureDown: 'Andrea_Avanti.png',
         textureLeft: 'Andrea_Sinistra.png',
@@ -212,7 +227,6 @@ const NPC_CONFIG = {
             angry: 'Tesoro, stai impiegando troppo tempo...',
             farewell: 'Ci vediamo a casa! Ti aspetto per cena!'
         },
-        // TEXTURE DIREZIONALI
         textureUp: 'Marco_Dietro.png',
         textureDown: 'Marco_Avanti.png',
         textureLeft: 'Marco_Sinistra.png',
@@ -263,7 +277,8 @@ class SentimentAnalyzer {
             'Chiara': ['scuola', 'studenti', 'figli', 'insegnamento'],
             'Massimo': ['lavoro', 'cantieri', 'edilizia', 'cemento'],
             'Andrea': ['computer', 'coding', 'programmazione', 'tech', 'app'],
-            'Marco': ['amore', 'relazione', 'fidanzamento', 'casa']
+            'Marco': ['amore', 'relazione', 'fidanzamento', 'casa'],
+            'Poliziotto': ['arresto', 'mandato', 'legge', 'polizia']
         };
     }
 
@@ -444,6 +459,8 @@ class NPCManager {
 
     getAvailableNPCs() {
         return Object.keys(NPC_CONFIG).filter(npc => {
+            // Il Poliziotto non deve mai essere spawnato casualmente
+            if (npc === 'Poliziotto') return false;
             if (npc === 'Marco' && !this.scene.story?.storyState?.metMarco) return false;
             if (npc === 'Andrea' && this.scene.level < 3) return false; // Andrea appare dal livello 3
             return true;
@@ -522,7 +539,7 @@ class NPCManager {
             }
         };
 
-        // AGGIUNGI QUESTE RIGHE PER SUPPORTO TEXTURE DIREZIONALI
+        // Supporto texture direzionali
         if (config.textureUp && config.textureDown && config.textureLeft && config.textureRight) {
             customer.hasDirectionalTextures = true;
             customer.textureUp = config.textureUp;
@@ -536,7 +553,7 @@ class NPCManager {
         return customer;
     }
 
-    // NUOVO METODO: Aggiorna relazione basandosi sul sentiment
+    // Aggiorna relazione basandosi sul sentiment
     updateRelationshipFromMessage(npcName, userMessage) {
         const npcConfig = NPC_CONFIG[npcName];
         if (!npcConfig) return { delta: 0, sentiment: 'neutral', message: '' };
@@ -610,7 +627,7 @@ class NPCManager {
         localStorage.removeItem('waitress_npc_relationships');
     }
     
-    // NUOVO METODO: Aggiorna la direzione del cliente
+    // Aggiorna la direzione del cliente
     updateNPCDirection(customer, direction) {
         if (!customer || !customer.sprite) return;
         
@@ -1091,7 +1108,7 @@ class AIDialogueManager {
         if (!this.currentCustomer) return;
 
         try {
-            // --- CONTESTO AGGIORNATO: INFLazione, prezzo benzina, data, notizie ---
+            // --- CONTESTO AGGIORNATO: Inflazione, prezzo benzina, data, notizie ---
             const dynamicContext = `Oggi è ${this.currentDate.toLocaleDateString('it-IT')}. ${this.currentContext}`;
             // -------------------------------------------------------------
 
@@ -1134,7 +1151,7 @@ Regole ASSOLUTE:
             this.chatHistory.push({ role: "assistant", content: cleanReply });
             this.appendMessage("customer", cleanReply);
             
-            // AGGIORNATO: Usa il sentiment per aggiornare la relazione
+            // Usa il sentiment per aggiornare la relazione
             this.updateRelationshipFromSentiment(userMessage);
             
         } catch (err) {
@@ -1164,6 +1181,12 @@ Regole ASSOLUTE:
 
         // Risposte specifiche per NPC
         const specificReplies = {
+            'Poliziotto': [
+                'Non sono qui per chiacchierare. Ho un mandato da eseguire.',
+                'La prego di non opporre resistenza. È per il suo bene.',
+                'Tutto ciò che dirà potrà essere usato contro di lei.',
+                'La procedura è chiara: la seguirò in centrale.'
+            ],
             'Elena': [
                 `Scusa, stavo pensando ai miei esami... ${userMessage}?`,
                 `Sai, con l'inflazione al ${inflazione}% non so come farò con le tasse universitarie!`,
@@ -1224,12 +1247,12 @@ Regole ASSOLUTE:
         if (this.isChatOpen) {
             this.appendMessage("customer", randomReply);
             
-            // AGGIORNATO: Usa il sentiment per aggiornare la relazione
+            // Usa il sentiment per aggiornare la relazione
             this.updateRelationshipFromSentiment(userMessage);
         }
     }
 
-    // NUOVO METODO: Aggiorna relazione basandosi sul sentiment del messaggio
+    // Aggiorna relazione basandosi sul sentiment del messaggio
     updateRelationshipFromSentiment(userMessage) {
         if (!this.currentCustomer) return;
         

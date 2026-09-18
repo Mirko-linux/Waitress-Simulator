@@ -1,5 +1,3 @@
-// story.js - Sistema di Trama Principale e Dialoghi
-
 class StorySystem {
     constructor(scene) {
         this.scene = scene;
@@ -7,10 +5,17 @@ class StorySystem {
             day: 0,
             isRestaurantForSale: false,
             hasMetThugs: false,
-            thugAngerLevel: 0, // 0-100. Se arriva a 100, game over diverso
+            thugAngerLevel: 0,
             moneySaved: 0,
-            elenaAdoptionQuest: false, // Diventa true quando sintonia Elena = 100
-            ludovicaAdopted: false
+            elenaAdoptionQuest: false,
+            ludovicaAdopted: false,
+            clanCallReceived: false,
+            clanCallDay: 0,
+            clanMissionAccepted: false,
+            clanMissionCompleted: false,
+            clanSecondTaskOffered: false,
+            clanSecondTaskAccepted: false,
+            clanBetrayed: false
         };
         
         this.loadStoryData();
@@ -30,25 +35,26 @@ class StorySystem {
         localStorage.setItem('waitress_story_data', JSON.stringify(this.storyState));
     }
 
-    // Aggiorna i soldi salvati nella storia (li prende dal GAME.score)
     updateMoney() {
         this.storyState.moneySaved = window.GAME.score || 0;
         this.saveStoryData();
     }
 
-    // CHIAMATA DALLA FINE DEL GIORNO
     onDayComplete(levelCompleted) {
         this.storyState.day = levelCompleted;
         this.updateMoney();
 
-        // 1. Controllo se il locale è in vendita (es. dal giorno 3 in poi)
         if (levelCompleted >= 3 && !this.storyState.isRestaurantForSale) {
             this.triggerSaleEvent();
         }
 
-        // 2. Controllo se Elena è al 100% di sintonia e la quest non è ancora partita
+        if (levelCompleted >= 5 && !this.storyState.clanCallReceived) {
+            this.storyState.clanCallReceived = true;
+            this.storyState.clanCallDay = levelCompleted;
+            this.saveStoryData();
+        }
+
         if (this.storyState.elenaAdoptionQuest && !this.storyState.ludovicaAdopted) {
-            // La missione è già attiva, non serve rifarla
         }
 
         this.saveStoryData();
@@ -56,16 +62,13 @@ class StorySystem {
 
     triggerSaleEvent() {
         this.storyState.isRestaurantForSale = true;
-        // Mostra un messaggio a schermo quando finisce il giorno
         this.scene.showFloatingText(400, 300, "📜 IL PROPRIETARIO HA VENDUTO IL LOCALE!", '#ffd700');
         this.scene.time.delayedCall(2000, () => {
             this.scene.showFloatingText(400, 250, "💰 Devi guadagnare 15.000€ per riacquistarlo!", '#e74c3c');
         });
     }
 
-    // --- GESTIONE DEGLI UOMINI D'AFFARI (Thugs) ---
     triggerRandomThugCheck() {
-        // Vengono ogni tanto (es. 30% di probabilità se il livello è alto)
         if (Phaser.Math.Between(0, 100) > 30) return;
 
         this.storyState.thugAngerLevel += Phaser.Math.Between(5, 15);
@@ -85,6 +88,23 @@ class StorySystem {
             this.scene.time.delayedCall(2000, () => {
                 this.scene.scene.start('GameOver');
             });
+        }
+    }
+
+    canTriggerClanMission(currentLevel) {
+        if (this.storyState.clanMissionCompleted) return false;
+        if (this.storyState.clanBetrayed) return false;
+        if (this.storyState.clanMissionAccepted) return false;
+        if (currentLevel < 5) return false;
+        if (this.storyState.clanCallReceived) return false;
+        return true;
+    }
+
+    triggerClanCall() {
+        this.storyState.clanCallReceived = true;
+        this.saveStoryData();
+        if (this.scene.crime) {
+            this.scene.crime.triggerClanCall();
         }
     }
 }
