@@ -4,7 +4,7 @@ const NPC_CONFIG = {
         emojiChar: '👮',
         age: 40,
         gender: 'male',
-        bio: 'Agente di Polizia in servizio. Non è qui per mangiare.',
+        bio: 'Agente di Polizia in servizio.',
         patienceMultiplier: 99.0,
         tipMultiplier: 0,
         orderPreference: ['Acqua'],
@@ -27,12 +27,12 @@ const NPC_CONFIG = {
         emojiChar: '👩‍🎓',
         age: 20,
         gender: 'female',
-        bio: 'Studentessa universitaria sui 20 anni. Gentile ma incasinata con gli studi.',
+        bio: 'Studentessa universitaria sui 20 anni.',
         adoptTrigger: true,
         patienceMultiplier: 1.0,
         tipMultiplier: 1.0,
         orderPreference: ['Pizza', 'Patatine', 'Caffè'],
-        personality: 'Sei una studentessa universitaria gentile e amichevole. Parli dei tuoi studi e dei tuoi problemi finanziari.',
+        personality: 'Sei una studentessa universitaria gentile e amichevole.',
         sensitiveTopics: ['studi', 'esami', 'soldi', 'tasse'],
         dialogueStyles: {
             greeting: 'Ciao! Come vanno gli studi?',
@@ -55,7 +55,7 @@ const NPC_CONFIG = {
         patienceMultiplier: 1.2,
         tipMultiplier: 1.1,
         orderPreference: ['Panino', 'Acqua', 'Arancina'],
-        personality: 'Sei una donna attiva che ama la bicicletta. Parli dei tuoi giri in bici e della tua passione per lo sport.',
+        personality: 'Sei una donna attiva che ama la bicicletta.',
         sensitiveTopics: ['bici', 'sport', 'velocità'],
         dialogueStyles: {
             greeting: 'Ciao! Ho appena finito un giro in bici!',
@@ -74,11 +74,11 @@ const NPC_CONFIG = {
         emojiChar: '👱‍♂️',
         age: 25,
         gender: 'male',
-        bio: 'Ragazzo innamorato della cameriera che cerca di corteggiarla.',
+        bio: 'Ragazzo innamorato della cameriera.',
         patienceMultiplier: 0.5,
         tipMultiplier: 1.5,
         orderPreference: ['Caffè', 'Cannolo', 'Ginseng'],
-        personality: 'Sei un ragazzo elegante e affascinante innamorato della cameriera. Cerca di far colpo con complimenti e attenzioni romantiche.',
+        personality: 'Sei un ragazzo elegante e affascinante innamorato della cameriera.',
         sensitiveTopics: ['amore', 'bellezza', 'relazione'],
         dialogueStyles: {
             greeting: 'Ciao bellissima! Sei ancora più bella oggi!',
@@ -97,11 +97,11 @@ const NPC_CONFIG = {
         emojiChar: '👵',
         age: 80,
         gender: 'female',
-        bio: 'Anziana signora di 80 anni, molto gentile e prodiga di consigli.',
+        bio: 'Anziana signora di 80 anni.',
         patienceMultiplier: 1.3,
         tipMultiplier: 0.8,
         orderPreference: ['Cassata', 'Caffè', 'Cannolo'],
-        personality: 'Sei un\'anziana signora di 80 anni. Racconti storie strane e ripetitive. A volte dimentichi di aver già detto le cose. Parli delle tue soap opera e dei tuoi giochi di carte.',
+        personality: 'Sei un\'anziana signora di 80 anni. Racconti storie strane e ripetitive.',
         sensitiveTopics: ['età', 'memoria', 'vecchiaia'],
         dialogueStyles: {
             greeting: 'Oh, cara! Come stai oggi? Sai, ai miei tempi...',
@@ -120,11 +120,11 @@ const NPC_CONFIG = {
         emojiChar: '👩‍💼',
         age: 30,
         gender: 'female',
-        bio: 'Ricchissima imprenditrice milanese, snob e altezzosa ma molto esigente.',
+        bio: 'Ricchissima imprenditrice milanese, snob e altezzosa.',
         patienceMultiplier: 0.7,
         tipMultiplier: 2.0,
         orderPreference: ['Risotto', 'Birra', 'Fritto Misto'],
-        personality: 'Sei una ricchissima imprenditrice milanese, snob e altezzosa. Ti lamenti dei prezzi ma paghi bene. Sei molto esigente sulla qualità.',
+        personality: 'Sei una ricchissima imprenditrice milanese, snob e altezzosa.',
         sensitiveTopics: ['prezzi', 'qualità', 'lusso'],
         dialogueStyles: {
             greeting: 'Spero che il servizio sia all\'altezza della mia posizione.',
@@ -147,7 +147,7 @@ const NPC_CONFIG = {
         patienceMultiplier: 1.1,
         tipMultiplier: 1.0,
         orderPreference: ['Pizza', 'Cola', 'Panino'],
-        personality: 'Sei una madre di famiglia che lavora come insegnante. Parli dei tuoi studenti e dei tuoi figli.',
+        personality: 'Sei una madre di famiglia che lavora come insegnante.',
         sensitiveTopics: ['scuola', 'figli', 'lavoro'],
         dialogueStyles: {
             greeting: 'Buongiorno! Ho appena finito di correggere compiti.',
@@ -170,7 +170,7 @@ const NPC_CONFIG = {
         patienceMultiplier: 0.9,
         tipMultiplier: 0.9,
         orderPreference: ['Birra', 'Panino', 'Patatine'],
-        personality: 'Sei un ingegnere edile di mezza età, scorbutico e cinico. Parli di lavoro, cemento, e ti lamenti dei giovani d\'oggi.',
+        personality: 'Sei un ingegnere edile di mezza età, scorbutico e cinico.',
         sensitiveTopics: ['lavoro', 'giovani', 'politica'],
         dialogueStyles: {
             greeting: 'Boh, speriamo che il servizio sia decente.',
@@ -189,11 +189,11 @@ const NPC_CONFIG = {
         emojiChar: '👨‍💻',
         age: 35,
         gender: 'male',
-        bio: 'Programmatore informatico, esperto di tecnologia. Se raggiungi alta sintonia, darà consigli utili.',
+        bio: 'Programmatore informatico esperto.',
         patienceMultiplier: 1.0,
         tipMultiplier: 1.2,
         orderPreference: ['Caffè', 'Risotto', 'Cola'],
-        personality: 'Sei un programmatore informatico esperto. Parli di tecnologia, coding, IA. Sei appassionato e parli con entusiasmo.',
+        personality: 'Sei un programmatore informatico esperto.',
         sensitiveTopics: ['tecnologia', 'coding', 'IA'],
         dialogueStyles: {
             greeting: 'Ciao! Stavo facendo debugging di un\'app, ho bisogno di carburante.',
@@ -212,13 +212,13 @@ const NPC_CONFIG = {
         emojiChar: '🤵',
         age: 28,
         gender: 'male',
-        bio: 'Il tuo fidanzato. Non lascia mance. Se la sintonia scende a 0, game over.',
+        bio: 'Il tuo fidanzato.',
         isBoyfriend: true,
         noTip: true,
         patienceMultiplier: 1.5,
         tipMultiplier: 0,
         orderPreference: ['Pizza', 'Birra', 'Patatine'],
-        personality: 'Sei il fidanzato della cameriera. Sei affettuoso ma distratto. Non lasci mance perché è il conto cointestato.',
+        personality: 'Sei il fidanzato della cameriera. Sei affettuoso ma distratto.',
         sensitiveTopics: ['relazione', 'amore', 'tradimento'],
         dialogueStyles: {
             greeting: 'Ciao amore! Come è andata la giornata?',
@@ -234,12 +234,8 @@ const NPC_CONFIG = {
     }
 };
 
-// ============================================================
-// SENTIMENT ANALYZER - Analizza il tono dei messaggi
-// ============================================================
 class SentimentAnalyzer {
     constructor() {
-        // Parole positive
         this.positiveWords = [
             'grazie', 'brava', 'ottimo', 'perfetto', 'amore', 'gentile', 'bello',
             'buono', 'fantastico', 'meraviglioso', 'adoro', 'piaci', 'carino',
@@ -249,7 +245,6 @@ class SentimentAnalyzer {
             'aiuto', 'per favore', 'ti prego', 'vorrei', 'desidero', 'posso'
         ];
         
-        // Parole negative
         this.negativeWords = [
             'stronzo', 'merda', 'cazzo', 'idiota', 'brutto', 'pessimo', 'schifo',
             'odio', 'detesto', 'insopportabile', 'fastidioso', 'lento', 'incapace',
@@ -260,14 +255,12 @@ class SentimentAnalyzer {
             'taci', 'zitto', 'brutta', 'pessima', 'odiare', 'spreco', 'inutile'
         ];
         
-        // Parole neutre/domande
         this.neutralPhrases = [
             'come', 'cosa', 'quanto', 'dove', 'quando', 'perché', 'perche',
             'chi', 'quale', 'puoi', 'potresti', 'vorrei sapere', 'mi chiedo',
             'che ne pensi', 'sai', 'dimmi', 'raccontami', 'spiegami'
         ];
         
-        // Domande specifiche per NPC
         this.contextPhrases = {
             'Elena': ['studi', 'università', 'esami', 'prof', 'lezione'],
             'Maria': ['bici', 'bicicletta', 'ciclismo', 'mountain bike', 'pedalata'],
@@ -289,22 +282,18 @@ class SentimentAnalyzer {
         let negativeCount = 0;
         let neutralCount = 0;
         
-        // Conta parole positive
         this.positiveWords.forEach(word => {
             if (lowerText.includes(word)) positiveCount++;
         });
         
-        // Conta parole negative
         this.negativeWords.forEach(word => {
             if (lowerText.includes(word)) negativeCount++;
         });
         
-        // Conta frasi neutre
         this.neutralPhrases.forEach(phrase => {
             if (lowerText.includes(phrase)) neutralCount++;
         });
         
-        // Conta parole specifiche per NPC
         let npcContextCount = 0;
         if (npcName && this.contextPhrases[npcName]) {
             this.contextPhrases[npcName].forEach(phrase => {
@@ -312,14 +301,12 @@ class SentimentAnalyzer {
             });
         }
         
-        // Calcola punteggio
         let score = 0;
         score += positiveCount * 10;
         score -= negativeCount * 15;
         score += neutralCount * 2;
         score += npcContextCount * 8;
         
-        // Normalizza
         if (score > 50) score = 50;
         if (score < -50) score = -50;
         
@@ -365,73 +352,25 @@ class SentimentAnalyzer {
     }
 }
 
-// ============================================================
-// MODELLI WEBLLM DISPONIBILI
-// ============================================================
 const WEBLLM_MODELS = {
-    // Modelli piccoli e veloci
-    'Llama-3.2-1B-Instruct-q4f16_1-MLC': { 
-        label: 'Llama 3.2 1B (Piccolo e veloce)',
-        size: '~1GB'
-    },
-    'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC': { 
-        label: 'TinyLlama 1.1B (Molto veloce)',
-        size: '~0.8GB'
-    },
-    'Qwen2.5-0.5B-Instruct-q4f16_1-MLC': { 
-        label: 'Qwen2.5 0.5B (Ultra leggero)',
-        size: '~0.4GB'
-    },
-    'Phi-2.7-q4f16_1-MLC': { 
-        label: 'Phi 2.7 (Piccolo)',
-        size: '~1.5GB'
-    },
-    'SmolLM2-1.7B-Instruct-q4f16_1-MLC': { 
-        label: 'SmolLM2 1.7B (Piccolo)',
-        size: '~1.2GB'
-    },
-    'Llama-3.2-3B-Instruct-q4f16_1-MLC': { 
-        label: 'Llama 3.2 3B (Medio)',
-        size: '~2.5GB'
-    },
-    'Qwen2.5-1.5B-Instruct-q4f16_1-MLC': { 
-        label: 'Qwen2.5 1.5B (Medio-leggero)',
-        size: '~1.2GB'
-    },
-    // Modelli più grandi ma più intelligenti
-    'Qwen2.5-7B-Instruct-q4f16_1-MLC': { 
-        label: 'Qwen2.5 7B (Grande, consigliato)',
-        size: '~4.5GB'
-    },
-    'Mistral-7B-Instruct-v0.3-q4f16_1-MLC': { 
-        label: 'Mistral 7B (Grande e intelligente)',
-        size: '~4.5GB'
-    },
-    'Llama-3.1-8B-Instruct-q4f16_1-MLC': { 
-        label: 'Llama 3.1 8B (Grande, molto intelligente)',
-        size: '~5GB'
-    },
-    'Gemma-2-2b-it-q4f16_1-MLC': { 
-        label: 'Gemma 2 2B (Medio)',
-        size: '~1.5GB'
-    },
-    'Gemma-2-2B-Instruct-q4f16_1-MLC': { 
-        label: 'Gemma 2 2B Instruct (Medio)',
-        size: '~1.5GB'
-    }
+    'Qwen2.5-0.5B-Instruct-q4f16_1-MLC': { label: 'Qwen2.5 0.5B', size: '~0.4GB' },
+    'Llama-3.2-1B-Instruct-q4f16_1-MLC': { label: 'Llama 3.2 1B', size: '~1GB' },
+    'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC': { label: 'TinyLlama 1.1B', size: '~0.8GB' },
+    'SmolLM2-1.7B-Instruct-q4f16_1-MLC': { label: 'SmolLM2 1.7B', size: '~1.2GB' },
+    'Qwen2.5-1.5B-Instruct-q4f16_1-MLC': { label: 'Qwen2.5 1.5B', size: '~1.2GB' },
+    'Gemma-2-2B-Instruct-q4f16_1-MLC': { label: 'Gemma 2 2B', size: '~1.5GB' },
+    'Llama-3.2-3B-Instruct-q4f16_1-MLC': { label: 'Llama 3.2 3B', size: '~2.5GB' },
+    'Qwen2.5-7B-Instruct-q4f16_1-MLC': { label: 'Qwen2.5 7B', size: '~4.5GB' },
+    'Mistral-7B-Instruct-v0.3-q4f16_1-MLC': { label: 'Mistral 7B', size: '~4.5GB' },
+    'Llama-3.1-8B-Instruct-q4f16_1-MLC': { label: 'Llama 3.1 8B', size: '~5GB' }
 };
 
-// ============================================================
-// CLASSE NPC MANAGER
-// ============================================================
 class NPCManager {
     constructor(scene) {
         this.scene = scene;
         this.activeCustomers = [];
         this.relationshipScores = this.loadRelationships();
         this.sentimentAnalyzer = new SentimentAnalyzer();
-        
-        // Carica stato adozione Ludovica
         this.ludovicaAdopted = localStorage.getItem('waitress_ludovica_adopted') === 'true';
         this.marcoRelationship = this.relationshipScores['Marco'] || 50;
     }
@@ -459,10 +398,9 @@ class NPCManager {
 
     getAvailableNPCs() {
         return Object.keys(NPC_CONFIG).filter(npc => {
-            // Il Poliziotto non deve mai essere spawnato casualmente
             if (npc === 'Poliziotto') return false;
             if (npc === 'Marco' && !this.scene.story?.storyState?.metMarco) return false;
-            if (npc === 'Andrea' && this.scene.level < 3) return false; // Andrea appare dal livello 3
+            if (npc === 'Andrea' && this.scene.level < 3) return false;
             return true;
         });
     }
@@ -471,7 +409,6 @@ class NPCManager {
         const available = this.getAvailableNPCs();
         if (available.length === 0) return null;
 
-        // Pesi di spawn (NPC più comuni appaiono più spesso)
         const weights = {
             'Elena': 3, 'Maria': 2, 'Francesco': 2, 'Rosa': 2,
             'Sofia': 1, 'Chiara': 2, 'Massimo': 1, 'Andrea': 1, 'Marco': 1
@@ -496,13 +433,11 @@ class NPCManager {
         const config = NPC_CONFIG[npcName];
         if (!config) return null;
 
-        // Scegli un ordine preferito o casuale
         const allFoods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto', 'Cannolo', 'Ginseng', 'Fritto Misto', 'Pasta al Pesto', 'Panino con la Milza'];
         const order = config.orderPreference && config.orderPreference.length > 0 
             ? config.orderPreference[Math.floor(Math.random() * config.orderPreference.length)]
             : allFoods[Math.floor(Math.random() * allFoods.length)];
 
-        // Sintonia iniziale
         const initialRelation = this.relationshipScores[npcName] || 50;
 
         const customer = {
@@ -535,11 +470,9 @@ class NPCManager {
             emoji: null,
             sprite: null,
             timerEvent: null,
-            serve: () => {
-            }
+            serve: () => {}
         };
 
-        // Supporto texture direzionali
         if (config.textureUp && config.textureDown && config.textureLeft && config.textureRight) {
             customer.hasDirectionalTextures = true;
             customer.textureUp = config.textureUp;
@@ -553,25 +486,19 @@ class NPCManager {
         return customer;
     }
 
-    // Aggiorna relazione basandosi sul sentiment
     updateRelationshipFromMessage(npcName, userMessage) {
         const npcConfig = NPC_CONFIG[npcName];
         if (!npcConfig) return { delta: 0, sentiment: 'neutral', message: '' };
         
-        // Analizza il sentiment del messaggio
         const sentimentResult = this.sentimentAnalyzer.analyzeSentiment(userMessage, npcName);
-        
-        // Calcola il delta in base al sentiment
         const sentimentMultiplier = this.sentimentAnalyzer.getSentimentMultiplier(sentimentResult.sentiment);
         const baseDelta = 5;
         let delta = Math.round(baseDelta * sentimentMultiplier);
         
-        // Bonus per domande specifiche su argomenti sensibili
         if (sentimentResult.npcContextCount > 0) {
             delta += 3;
         }
         
-        // Penalità per parlare di argomenti sensibili in modo negativo
         const lowerMessage = userMessage.toLowerCase();
         if (npcConfig.sensitiveTopics && npcConfig.sensitiveTopics.some(topic => lowerMessage.includes(topic))) {
             if (sentimentResult.sentiment === 'negative' || sentimentResult.sentiment === 'very_negative') {
@@ -579,7 +506,6 @@ class NPCManager {
             }
         }
         
-        // Aggiorna relazione
         if (!this.relationshipScores[npcName]) {
             this.relationshipScores[npcName] = 50;
         }
@@ -590,7 +516,6 @@ class NPCManager {
         
         this.saveRelationships();
         
-        // Controlli speciali
         if (npcName === 'Marco' && this.relationshipScores[npcName] <= 0) {
             return { delta: delta, sentiment: sentimentResult.sentiment, specialEvent: 'BREAKUP' };
         }
@@ -617,9 +542,6 @@ class NPCManager {
     adoptLudovica() {
         this.ludovicaAdopted = true;
         localStorage.setItem('waitress_ludovica_adopted', 'true');
-        if (this.scene.scene) {
-            this.scene.scene.showFloatingText(400, 200, '👶 Ludovica è arrivata a casa!', '#2ecc71');
-        }
     }
 
     resetRelationships() {
@@ -627,28 +549,20 @@ class NPCManager {
         localStorage.removeItem('waitress_npc_relationships');
     }
     
-    // Aggiorna la direzione del cliente
     updateNPCDirection(customer, direction) {
         if (!customer || !customer.sprite) return;
         
-        // Se ha texture direzionali, cambia la texture
         if (customer.hasDirectionalTextures) {
             const textureKey = customer[`texture${direction}`];
             if (textureKey && this.scene.textures.exists(textureKey)) {
                 customer.sprite.setTexture(textureKey);
             }
-        }
-        
-        // Altrimenti, se ha uno sprite sheet, usa le animazioni
-        else if (customer.tilesheetKey && this.scene.anims.exists(`${customer.tilesheetKey}_${direction}`)) {
+        } else if (customer.tilesheetKey && this.scene.anims.exists(`${customer.tilesheetKey}_${direction}`)) {
             customer.sprite.play(`${customer.tilesheetKey}_${direction}`);
         }
     }
 }
 
-// ============================================================
-// CLASSE AI DIALOGUE MANAGER
-// ============================================================
 class AIDialogueManager {
     constructor(scene, enabled = true) {
         this.scene = scene;
@@ -663,43 +577,61 @@ class AIDialogueManager {
         this.loadingStarted = false;
         this.loadingComplete = false;
         this.selectedModel = null;
+        this.loadingAttempted = false;
         
-        // NPC Manager
         this.npcManager = new NPCManager(scene);
         
-        // --- SISTEMA DI CONTESTO TEMPORALE/ECONOMICO ---
         this.currentDate = new Date();
         this.currentContext = this.generateWorldContext();
-        // -------------------------------------------------
         
         this.injectChatStyles();
         this.createChatDOM();
         this.setupKeyboardFix();
         
         if (this.isAIActive) {
-            console.log("AI attivata. Inizializzazione in corso...");
-            this.initializeWebLLM();
+            this.setupLoadingTrigger();
         } else {
-            console.log("AI disattivata");
             this.useFallback = true;
             this.isModelReady = true;
-            this.appendMessage("system", "💬 Modalità dialogo classico attiva.");
         }
     }
 
-    // --- GENERA IL CONTESTO DEL MONDO (Notizie, inflazione, ecc) ---
+    setupLoadingTrigger() {
+        if (this.loadingAttempted) return;
+        
+        const startLoading = () => {
+            if (this.loadingAttempted) return;
+            this.loadingAttempted = true;
+            
+            document.removeEventListener('pointerdown', startLoading);
+            document.removeEventListener('keydown', startLoading);
+            document.removeEventListener('touchstart', startLoading);
+            
+            this.initializeWebLLM();
+        };
+        
+        document.addEventListener('pointerdown', startLoading);
+        document.addEventListener('keydown', startLoading);
+        document.addEventListener('touchstart', startLoading, { passive: true });
+        
+        setTimeout(() => {
+            if (!this.loadingAttempted) {
+                this.loadingAttempted = true;
+                document.removeEventListener('pointerdown', startLoading);
+                document.removeEventListener('keydown', startLoading);
+                document.removeEventListener('touchstart', startLoading);
+                this.initializeWebLLM();
+            }
+        }, 3000);
+    }
+
     generateWorldContext() {
         const now = new Date();
         const mese = now.toLocaleDateString('it-IT', { month: 'long' });
         const anno = now.getFullYear();
-        
-        // Inflazione simulata ma "realistica" per il periodo attuale
         const inflazione = (1.2 + (Math.sin(now.getDate() / 10) * 0.5)).toFixed(1);
-        
-        // Prezzo benzina simulato (fluttua ogni giorno)
         const prezzoBenzina = (1.65 + (Math.cos(now.getDate() / 5) * 0.08)).toFixed(2);
         
-        // Situazione geopolitica simulata
         const contestoMondiale = {
             'gennaio': "Inizio anno con tensioni commerciali globali.",
             'febbraio': "Sciopero dei trasporti in Europa.",
@@ -715,13 +647,12 @@ class AIDialogueManager {
             'dicembre': "Regali di Natale, cene fuori sempre più costose."
         };
         
-        let notiziaMese = contestoMondiale[mese] || "Situazione economica stabile.";
+        const notiziaMese = contestoMondiale[mese] || "Situazione economica stabile.";
         
-        // Simula un evento geopolitico importante (es. Stretto di Hormuz)
         const eventiGeopolitici = [
-            "Il transito nel Mar Rosso e nello Stretto di Hormuz è rallentato, facendo salire i costi del trasporto marittimo.",
+            "Il transito nel Mar Rosso e nello Stretto di Hormuz è rallentato.",
             "Le tensioni in Medio Oriente stanno facendo aumentare il prezzo del petrolio.",
-            "L'Unione Europea sta discutendo nuove sanzioni economiche, i prezzi dell'energia sono instabili.",
+            "L'Unione Europea sta discutendo nuove sanzioni economiche.",
             "La guerra in Ucraina continua a influenzare i prezzi del grano.",
             "La crisi del Mar Rosso sta causando ritardi nelle consegne."
         ];
@@ -730,7 +661,6 @@ class AIDialogueManager {
         
         return `${mese} ${anno} - Inflazione: ${inflazione}% - Benzina: ${prezzoBenzina}€/L - ${notiziaMese} - ${eventoCasuale}`;
     }
-    // -------------------------------------------------------------------------
 
     async initializeWebLLM() {
         if (this.loadingStarted) return;
@@ -739,82 +669,83 @@ class AIDialogueManager {
         try {
             this.isLoading = true;
             this.useFallback = false;
-            this.appendMessage("system", "⏳ Caricamento modello AI in corso...");
 
-            await new Promise(resolve => {
-                if (window.requestIdleCallback) {
-                    requestIdleCallback(resolve);
-                } else {
-                    setTimeout(resolve, 100);
+            if (!navigator.gpu) {
+                this.useFallback = true;
+                this.isModelReady = true;
+                this.isLoading = false;
+                this.updateLoadingStatus("WebGPU non disponibile. Modalità classica attiva.");
+                return;
+            }
+
+            try {
+                const adapter = await navigator.gpu.requestAdapter();
+                if (!adapter) {
+                    throw new Error("Nessun adattatore GPU");
                 }
-            });
+            } catch (gpuError) {
+                this.useFallback = true;
+                this.isModelReady = true;
+                this.isLoading = false;
+                this.updateLoadingStatus("GPU non compatibile. Modalità classica attiva.");
+                return;
+            }
 
             let webllm;
             try {
                 webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/+esm');
             } catch (importError) {
-                console.warn("⚠️ Import WebLLM fallito, uso fallback:", importError);
                 this.useFallback = true;
                 this.isModelReady = true;
                 this.isLoading = false;
-                this.appendMessage("system", "⚠️ Modalità classica attiva (import fallito).");
+                this.updateLoadingStatus("Import fallito. Modalità classica attiva.");
                 return;
             }
 
-            // Modello predefinito: TinyLlama è piccolo e veloce
-            const defaultModel = "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC";
-            
-            const loadTimeout = setTimeout(() => {
-                if (!this.engine) {
-                    console.warn("⏰ Timeout caricamento AI, attivo fallback");
-                    this.useFallback = true;
-                    this.isModelReady = true;
-                    this.isLoading = false;
-                    this.appendMessage("system", "⏰ Timeout caricamento. Modalità classica.");
-                }
-            }, 45000);
+            const modelsToTry = [
+                "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+                "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+                "TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC"
+            ];
 
-            try {
-                this.engine = await webllm.CreateMLCEngine(defaultModel, {
-                    initProgressCallback: (report) => {
-                        this.updateLoadingStatus(report.text);
-                    }
-                });
-            } catch (modelError) {
-                console.warn(`⚠️ Modello ${defaultModel} non disponibile, provo con Qwen2.5-0.5B...`, modelError);
-                
+            let engine = null;
+
+            for (const modelId of modelsToTry) {
                 try {
-                    this.engine = await webllm.CreateMLCEngine("Qwen2.5-0.5B-Instruct-q4f16_1-MLC", {
+                    this.updateLoadingStatus(`Caricamento ${modelId}...`);
+
+                    engine = await webllm.CreateMLCEngine(modelId, {
                         initProgressCallback: (report) => {
                             this.updateLoadingStatus(report.text);
                         }
                     });
-                } catch (modelError2) {
-                    console.warn(`⚠️ Modello Qwen2.5-0.5B non disponibile, provo con Llama-3.2-1B...`, modelError2);
-                    
-                    this.engine = await webllm.CreateMLCEngine("Llama-3.2-1B-Instruct-q4f16_1-MLC", {
-                        initProgressCallback: (report) => {
-                            this.updateLoadingStatus(report.text);
-                        }
-                    });
+                    this.selectedModel = modelId;
+                    break;
+                } catch (modelError) {
+                    engine = null;
                 }
             }
 
-            clearTimeout(loadTimeout);
+            if (!engine) {
+                this.useFallback = true;
+                this.isModelReady = true;
+                this.isLoading = false;
+                this.updateLoadingStatus("Nessun modello disponibile. Modalità classica attiva.");
+                return;
+            }
+
+            this.engine = engine;
             this.isModelReady = true;
             this.isLoading = false;
             this.loadingComplete = true;
             this.useFallback = false;
-            this.appendMessage("system", "✅ AI pronta! Puoi parlare con i clienti.");
-            console.log("✅ AI WebLLM caricata con successo!");
-            
+            this.updateLoadingStatus(`AI pronta! (${this.selectedModel})`);
+
         } catch (error) {
-            console.error("❌ Errore caricamento WebLLM:", error);
             this.useFallback = true;
             this.isModelReady = true;
             this.isLoading = false;
-            this.loadingStarted = false;
-            this.appendMessage("system", "⚠️ Impossibile caricare il modello AI. Attivata modalità classica.");
+            this.updateLoadingStatus("Errore caricamento. Modalità classica attiva.");
         }
     }
 
@@ -838,19 +769,19 @@ class AIDialogueManager {
         style.id = "ai-chat-styles";
         style.textContent = `
             #ai-chat-container {
-                position: absolute;
+                position: fixed;
                 bottom: 20px;
                 right: 20px;
-                width: 320px;
-                height: 400px;
-                background: rgba(20, 10, 5, 0.92);
+                width: 340px;
+                height: 420px;
+                background: rgba(20, 10, 5, 0.95);
                 border: 3px solid #eccc68;
                 border-radius: 12px;
                 display: none;
                 flex-direction: column;
                 font-family: 'Fredoka', 'Segoe UI', sans-serif;
                 box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-                z-index: 1000;
+                z-index: 99999;
                 overflow: hidden;
             }
             #ai-chat-header {
@@ -902,11 +833,6 @@ class AIDialogueManager {
             .ai-msg.system.system-loading {
                 background: rgba(46, 204, 113, 0.15);
                 color: #2ed573;
-                animation: pulse 1.5s infinite;
-            }
-            @keyframes pulse {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.5; }
             }
             #ai-chat-input-area {
                 display: flex;
@@ -984,8 +910,14 @@ class AIDialogueManager {
 
         document.body.appendChild(container);
 
-        document.getElementById("ai-chat-close").addEventListener("click", () => this.closeChat());
-        document.getElementById("ai-chat-send").addEventListener("click", () => this.sendMessage());
+        document.getElementById("ai-chat-close").addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.closeChat();
+        });
+        document.getElementById("ai-chat-send").addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.sendMessage();
+        });
     }
 
     setupKeyboardFix() {
@@ -1030,6 +962,7 @@ class AIDialogueManager {
 
         log.innerHTML = "";
         container.style.display = "flex";
+        container.style.zIndex = "99999";
         title.textContent = `💬 ${customer.name || "Cliente"}`;
         
         const score = typeof customer.relationScore === "number" ? customer.relationScore : 50;
@@ -1045,18 +978,15 @@ class AIDialogueManager {
 
         const config = NPC_CONFIG[customer.name] || {};
         const initialGreeting = config.dialogueStyles?.greeting || 
-            `Ciao! Sono ${customer.name}. Ho sentito parlare molto del vostro ${customer.order || "cibo"}.`;
+            `Ciao! Sono ${customer.name}.`;
         
         this.appendMessage("customer", initialGreeting);
         this.chatHistory.push({ role: "assistant", content: initialGreeting });
 
         if (input && sendBtn) {
-            const isAIReady = !this.isLoading && this.isModelReady && !this.useFallback;
-            input.disabled = !isAIReady && !this.useFallback;
-            sendBtn.disabled = !isAIReady && !this.useFallback;
-            if (isAIReady || this.useFallback) {
-                setTimeout(() => input.focus(), 200);
-            }
+            input.disabled = false;
+            sendBtn.disabled = false;
+            setTimeout(() => input.focus(), 200);
         }
     }
 
@@ -1094,7 +1024,6 @@ class AIDialogueManager {
                 await this.handleAIResponse(text);
             }
         } catch (e) {
-            console.error("Errore durante invio messaggio:", e);
             await this.handleFallbackResponse(text);
         } finally {
             input.disabled = false;
@@ -1108,13 +1037,11 @@ class AIDialogueManager {
         if (!this.currentCustomer) return;
 
         try {
-            // --- CONTESTO AGGIORNATO: Inflazione, prezzo benzina, data, notizie ---
             const dynamicContext = `Oggi è ${this.currentDate.toLocaleDateString('it-IT')}. ${this.currentContext}`;
-            // -------------------------------------------------------------
 
             const customerConfig = NPC_CONFIG[this.currentCustomer.name] || {};
             const personality = customerConfig.personality || 
-                "Sei un cliente normale di un ristorante. Parla in modo naturale.";
+                "Sei un cliente normale di un ristorante.";
 
             const systemPrompt = `Sei ${this.currentCustomer.name}, un cliente di un ristorante. 
 ${personality}
@@ -1123,10 +1050,9 @@ Regole ASSOLUTE:
 - Rispondi SEMPRE in italiano, in modo naturale e colloquiale.
 - Rispondi con MASSIMO 1 o 2 frasi brevi.
 - Non fare elenchi, non usare numeri, non usare asterischi.
-- Non spiegare cose, non fare da insegnante. Sii un semplice cliente che chiacchiera.
-- Se ti chiedono del cibo, rispondi che ti piace o che hai fame.
+- Non spiegare cose, non fare da insegnante.
 - Non parlare di te in terza persona. Usa "io".
-- **IMPORTANTE**: Se il cliente fa riferimento a temi di attualità (inflazione, benzina, economia), usa il seguente contesto per essere coerente: ${dynamicContext}`;
+- Contesto attuale: ${dynamicContext}`;
 
             const messages = [
                 { role: "system", content: systemPrompt },
@@ -1140,22 +1066,18 @@ Regole ASSOLUTE:
             });
 
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error("Timeout risposta AI")), 8000);
+                setTimeout(() => reject(new Error("Timeout")), 8000);
             });
 
             const response = await Promise.race([responsePromise, timeoutPromise]);
             const reply = response.choices[0].message.content.trim();
-            
             const cleanReply = reply.replace(/\*/g, '').replace(/[0-9]+\./g, '').trim();
             
             this.chatHistory.push({ role: "assistant", content: cleanReply });
             this.appendMessage("customer", cleanReply);
-            
-            // Usa il sentiment per aggiornare la relazione
             this.updateRelationshipFromSentiment(userMessage);
             
         } catch (err) {
-            console.warn("Errore generazione risposta AI:", err);
             await this.handleFallbackResponse(userMessage);
         }
     }
@@ -1163,33 +1085,22 @@ Regole ASSOLUTE:
     async handleFallbackResponse(userMessage) {
         if (!this.currentCustomer) return;
 
-        // --- FALLBACK CONTESTUALIZZATO ---
-        const config = NPC_CONFIG[this.currentCustomer.name] || {};
-        const styles = config.dialogueStyles || {};
-        
-        // Estrai valori dal contesto per risposte realistiche
         let inflazione = "3";
         let benzina = "1.70";
-        if (this.currentContext.includes('Inflazione')) {
-            const match = this.currentContext.match(/Inflazione: ([0-9.]+)%/);
-            if (match) inflazione = match[1];
-        }
-        if (this.currentContext.includes('Benzina')) {
-            const match = this.currentContext.match(/Benzina: ([0-9.]+)€/);
-            if (match) benzina = match[1];
-        }
+        const matchInf = this.currentContext.match(/Inflazione: ([0-9.]+)%/);
+        if (matchInf) inflazione = matchInf[1];
+        const matchBen = this.currentContext.match(/Benzina: ([0-9.]+)€/);
+        if (matchBen) benzina = matchBen[1];
 
-        // Risposte specifiche per NPC
         const specificReplies = {
             'Poliziotto': [
                 'Non sono qui per chiacchierare. Ho un mandato da eseguire.',
-                'La prego di non opporre resistenza. È per il suo bene.',
-                'Tutto ciò che dirà potrà essere usato contro di lei.',
+                'La prego di non opporre resistenza.',
                 'La procedura è chiara: la seguirò in centrale.'
             ],
             'Elena': [
                 `Scusa, stavo pensando ai miei esami... ${userMessage}?`,
-                `Sai, con l'inflazione al ${inflazione}% non so come farò con le tasse universitarie!`,
+                `Con l'inflazione al ${inflazione}% non so come farò con le tasse universitarie!`,
                 "Ho appena finito un esame, ho bisogno di carburante!"
             ],
             'Maria': [
@@ -1225,11 +1136,11 @@ Regole ASSOLUTE:
             'Andrea': [
                 `Stavo ottimizzando un algoritmo e ho avuto fame! ${userMessage}?`,
                 `Sai che l'IA può prevedere l'inflazione? ${inflazione}% oggi!`,
-                "Ho bisogno di caffeina per il debugging! Ho un bug da fixare."
+                "Ho bisogno di caffeina per il debugging!"
             ],
             'Marco': [
                 `Ciao amore! ${userMessage}?`,
-                "Tesoro, sai che non ti lasciare mai la mancia... è il conto cointestato!",
+                "Tesoro, sai che non ti lascio mai la mancia... è il conto cointestato!",
                 "Stasera ti porto fuori, okay? Ora però dammi da mangiare!"
             ]
         };
@@ -1237,7 +1148,7 @@ Regole ASSOLUTE:
         const replies = specificReplies[this.currentCustomer.name] || [
             `Mmmh, ${userMessage}? Con l'inflazione al ${inflazione}%, ormai si spende un occhio della testa!`,
             `Ho notato che la benzina è di nuovo salita a ${benzina}€... meno male che il cibo qui è ancora buono!`,
-            "Che ansia, il costo della vita aumenta ogni mese. Meno male che ci sono posti come questo."
+            "Che ansia, il costo della vita aumenta ogni mese."
         ];
         
         const randomReply = replies[Math.floor(Math.random() * replies.length)];
@@ -1246,26 +1157,20 @@ Regole ASSOLUTE:
         
         if (this.isChatOpen) {
             this.appendMessage("customer", randomReply);
-            
-            // Usa il sentiment per aggiornare la relazione
             this.updateRelationshipFromSentiment(userMessage);
         }
     }
 
-    // Aggiorna relazione basandosi sul sentiment del messaggio
     updateRelationshipFromSentiment(userMessage) {
         if (!this.currentCustomer) return;
         
-        // Usa il NPCManager per analizzare il sentiment
         const result = this.npcManager.updateRelationshipFromMessage(
             this.currentCustomer.name,
             userMessage
         );
         
         const delta = result.delta;
-        const sentiment = result.sentiment;
         
-        // Aggiorna relazione del cliente corrente
         if (typeof this.currentCustomer.relationScore !== "number") {
             this.currentCustomer.relationScore = 50;
         }
@@ -1279,12 +1184,10 @@ Regole ASSOLUTE:
             relationEl.textContent = `${Math.floor(this.currentCustomer.relationScore)}%`;
         }
 
-        // Mostra messaggio di sistema
         if (result.sentimentMessage) {
             this.appendMessage("system", result.sentimentMessage);
         }
         
-        // Mostra feedback
         if (delta > 0) {
             this.appendMessage("system", `❤️ +${delta} Sintonia`);
         } else if (delta < 0) {
@@ -1304,7 +1207,6 @@ Regole ASSOLUTE:
             );
         }
 
-        // Gestisci eventi speciali
         if (result.specialEvent === 'BREAKUP') {
             this.handleBreakup();
         } else if (result.specialEvent === 'ADOPTION_READY') {
@@ -1359,7 +1261,6 @@ Regole ASSOLUTE:
     }
 }
 
-// Esponi le classi globalmente
 window.NPCManager = NPCManager;
 window.NPC_CONFIG = NPC_CONFIG;
 window.WEBLLM_MODELS = WEBLLM_MODELS;

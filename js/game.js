@@ -88,8 +88,8 @@
             maxTotal: 4
         },
         customers: {
-            patienceDuration: 40000,
-            eatingDuration: 5500
+            patienceDuration: 25000,
+            eatingDuration: 12000
         },
         dishes: {
             maxDirty: 8,
@@ -184,14 +184,14 @@
 
     function applyUpgrades() {
         CONFIG.waitress.speed = 300;
-        CONFIG.customers.patienceDuration = 40000;
+        CONFIG.customers.patienceDuration = 25000;
         CONFIG.dishes.washDuration = 1200;
 
         if (HOUSE_STATE.purchased.includes('bed')) {
             CONFIG.waitress.speed = 360;
         }
         if (HOUSE_STATE.purchased.includes('tv')) {
-            CONFIG.customers.patienceDuration = 50000;
+            CONFIG.customers.patienceDuration = 32000;
         }
         if (HOUSE_STATE.purchased.includes('coffee')) {
             CONFIG.dishes.washDuration = 700;
@@ -352,7 +352,6 @@
             
             this.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
             this.load.audio('scarico', 'assets/audio/scarico.mp3');
-            this.load.audio('caffe', 'assets/audio/caffe.wav');
             this.load.audio('npc_call_center', 'assets/audio/Pubblicita/npc_call_center.mp3');
             this.load.audio('npc_call_center_1', 'assets/audio/Pubblicita/npc_call_center_1.mp3');
             this.load.audio('npc_call_center_2', 'assets/audio/Pubblicita/npc_call_center_2.mp3');
@@ -2475,12 +2474,13 @@
             }
 
             customer.bubble = this.add.image(startX, startY - 30, 'bubble_order')
-                .setDisplaySize(24, 24)
+                .setDisplaySize(32, 32)
                 .setOrigin(0.5)
-                .setDepth(startY + 2)
-                .setInteractive({ useHandCursor: true });
+                .setDepth(startY + 2);
+
+            customer.bubble.setInteractive({ useHandCursor: true });
             customer.bubble.setVisible(false);
-            
+
             const table = customer.table;
             
             const handleTableClick = () => {
@@ -2502,10 +2502,9 @@
                 }
 
                 if (this.isPhoneActive) return;
+                if (!customer.bubble || !customer.bubble.active || !customer.bubble.visible) return;
 
-                if (customer.bubble && customer.bubble.texture && 
-                    customer.bubble.texture.key === 'bubble_talk') {
-                    
+                if (customer.bubble.texture && customer.bubble.texture.key === 'bubble_talk') {
                     if (
                         !customer.movementData ||
                         !customer.movementData.movementComplete ||
@@ -2523,8 +2522,20 @@
                     return;
                 }
 
-                handleTableClick();
+                if (customer.table) {
+                    const dist = Phaser.Math.Distance.Between(
+                        this.waitress.x, this.waitress.y,
+                        customer.table.x, customer.table.y
+                    );
+                    if (dist <= CONFIG.waitress.interactRange) {
+                        this.interactWithTable(customer.table);
+                    } else {
+                        this.showFloatingText(customer.table.x, customer.table.y - 40, "Avvicinati con WASD!", '#ffd700');
+                    }
+                }
             };
+
+            customer.bubble.on('pointerdown', handleBubbleClick);
             
             if (customer.emoji) {
                 customer.emoji.on('pointerdown', handleTableClick);
@@ -2532,8 +2543,6 @@
             if (customer.sprite) {
                 customer.sprite.on('pointerdown', handleTableClick);
             }
-            
-            customer.bubble.on('pointerdown', handleBubbleClick);
         }
         
         angryLeave(customer) {
@@ -2917,12 +2926,15 @@
                     if (servedCustomer.bubble && servedCustomer.bubble.active) {
                         servedCustomer.bubble.setTexture('bubble_happy');
                         servedCustomer.bubble.setVisible(true);
+                        servedCustomer.bubble.setInteractive({ useHandCursor: true });
                         
                         this.time.delayedCall(2000, () => {
                             if (servedCustomer.bubble && servedCustomer.bubble.active && 
                                 !servedCustomer.isDead && servedCustomer.table && 
                                 servedCustomer.table.status === 'mangia') {
                                 servedCustomer.bubble.setTexture('bubble_talk');
+                                servedCustomer.bubble.setVisible(true);
+                                servedCustomer.bubble.setInteractive({ useHandCursor: true });
                             }
                         });
                     }
