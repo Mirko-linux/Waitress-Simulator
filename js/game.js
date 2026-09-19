@@ -2734,15 +2734,43 @@
                 return;
             }
             
-            if (this.tutorialActive && this.tutorialStepTarget) {
-                if (this.tutorialStepTarget === 'take_order' && table.customer === this.tutorial.fakeCustomer) {
-                    this.tutorial.progressStep();
-                } else if (this.tutorialStepTarget === 'serve_food' && table.customer === this.tutorial.fakeCustomer) {
-                    this.tutorial.progressStep();
-                } else if (this.tutorialStepTarget === 'clear_table' && table === this.tutorial.fakeCustomer.table) {
-                    this.tutorial.progressStep();
-                } else if (this.tutorialActive) {
+            if (this.tutorialActive && this.tutorialStepTarget && this.tutorial) {
+                const tc = this.tutorial.tutorialCustomer;
+                const stepTarget = this.tutorialStepTarget;
+
+                if (stepTarget === 'take_order') {
+                    if (tc && table.customer === tc && table.status === 'ordinazione_pronta') {
+                        this.tutorial.progressStep();
+                    } else {
+                        this.showFloatingText(table.x, table.y - 40, "⚠️ Clicca sul cliente del tutorial!", '#f39c12');
+                        triggerSfx('click');
+                        return;
+                    }
+                } else if (stepTarget === 'serve_food') {
+                    if (tc && table.customer === tc && table.status === 'attesa_cibo') {
+                        this.tutorial.progressStep();
+                    } else {
+                        this.showFloatingText(table.x, table.y - 40, "⚠️ Serve il cliente del tutorial!", '#f39c12');
+                        triggerSfx('click');
+                        return;
+                    }
+                } else if (stepTarget === 'clear_table') {
+                    const hasDirtyInTray = this.waitressState.tray.some(i => i.food === 'piatto_sporco');
+                    if (table.dirty === true && !hasDirtyInTray) {
+                    } else if (table.dirty === true && hasDirtyInTray) {
+                        this.showFloatingText(this.waitress.x, this.waitress.y - 40,
+                            "🚰 Porta il piatto al LAVELLO!", '#3498db');
+                        triggerSfx('click');
+                        return;
+                    } else {
+                        this.showFloatingText(table.x, table.y - 40,
+                            "🚰 Il piatto è già raccolto! Vai al LAVELLO.", '#3498db');
+                        triggerSfx('click');
+                        return;
+                    }
+                } else {
                     this.showFloatingText(table.x, table.y - 40, "⚠️ Segui le frecce del tutorial!", '#f39c12');
+                    triggerSfx('click');
                     return;
                 }
             }
@@ -2945,7 +2973,7 @@
                 }
                 return;
             }
-            
+
             if (table.dirty === true) {
                 if (this.waitressState.tray.length >= CONFIG.tray.maxTotal) {
                     this.showFloatingText(this.waitress.x, this.waitress.y - 40, 'Vassoio pieno!', '#ff4444');
@@ -3042,6 +3070,27 @@
         }
         
         handleCounterInteraction() {
+            if (this.tutorialActive && this.tutorialStepTarget && this.tutorial) {
+                const stepTarget = this.tutorialStepTarget;
+
+                if (stepTarget === 'counter_order') {
+                    if (!GAME.carriedOrder) {
+                        this.showFloatingText(this.waitress.x, this.waitress.y - 40,
+                            "⚠️ Prima prendi la comanda dal cliente!", '#f39c12');
+                        triggerSfx('click');
+                        return;
+                    }
+                    this.tutorial.progressStep();
+                } else if (stepTarget === 'counter_pickup') {
+                    this.tutorial.progressStep();
+                } else if (stepTarget === 'take_order' || stepTarget === 'serve_food' || stepTarget === 'clear_table') {
+                    this.showFloatingText(this.waitress.x, this.waitress.y - 40,
+                        "⚠️ Segui le frecce del tutorial!", '#f39c12');
+                    triggerSfx('click');
+                    return;
+                }
+            }
+
             if (GAME.carriedOrder) {
 
                 const order = GAME.carriedOrder;
@@ -3143,6 +3192,15 @@
                     );
 
                     triggerSfx('cook');
+
+                    if (this.tutorialActive && this.tutorial) {
+                        this.tutorial.forceKitchenComplete();
+                        this.time.delayedCall(500, () => {
+                            if (this.tutorialActive && this.tutorial) {
+                                this.tutorial.forceKitchenComplete();
+                            }
+                        });
+                    }
 
                     GAME.carriedOrder = null;
                     this.waitressHasOrder = false;
@@ -3287,13 +3345,37 @@
         washDishes() {
             if (this.isPhoneActive) return;
             if (this.isCheater) return;
-            
-            if (this.tutorialActive && this.tutorialStepTarget === 'wash_sink') {
-                this.tutorial.progressStep();
-                GAME.dirtyPlates = 0;
+
+            if (this.tutorialActive && this.tutorial && this.tutorialStepTarget === 'clear_table') {
+                const hasDirtyInTray = this.waitressState.tray.some(i => i.food === 'piatto_sporco');
+                if (!hasDirtyInTray) {
+                    this.showFloatingText(75, 510,
+                        "⚠️ Prima raccogli il piatto sporco dal tavolo!", '#f39c12');
+                    triggerSfx('click');
+                    return;
+                }
+
+                for (let i = this.waitressState.tray.length - 1; i >= 0; i--) {
+                    if (this.waitressState.tray[i].food === 'piatto_sporco') {
+                        this.waitressState.tray.splice(i, 1);
+                        GAME.dirtyPlates++;
+                        break;
+                    }
+                }
+
+                this.ensureTrayIndicator();
+                this.updateTrayGraphics();
                 this.updateHUD();
+
+                triggerSfx('wash');
+                this.showFloatingText(75, 510, '🧹 Piatto depositato!', '#3498db');
+
+                this.tutorial.progressStep();
                 return;
-            } else if (this.tutorialActive && this.tutorialStepTarget) {
+            }
+
+            if (this.tutorialActive && this.tutorialStepTarget &&
+                this.tutorialStepTarget !== 'clear_table') {
                 this.showFloatingText(75, 510, "⚠️ Segui le frecce del tutorial!", '#f39c12');
                 return;
             }
@@ -3314,7 +3396,6 @@
                         break;
                     }
                 }
-                
                 this.ensureTrayIndicator();
                 this.updateTrayGraphics();
                 this.updateHUD();
@@ -3327,7 +3408,6 @@
                 this.gameActive = false;
                 this.showFloatingText(75, 510, t('WASHING'), '#3498db');
                 triggerSfx('wash');
-                
                 this.time.delayedCall(CONFIG.dishes.washDuration, () => {
                     GAME.dirtyPlates = 0;
                     this.updateHUD();

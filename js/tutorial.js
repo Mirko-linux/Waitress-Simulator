@@ -1,385 +1,485 @@
-// phone.js - Sistema Telefono con Chiamata a Tecnici e Pompieri
+// ============================================
+// TUTORIAL SYSTEM - VERSIONE COMPLETA FUNZIONANTE
+// ============================================
 
-class PhoneSystem {
+class TutorialSystem {
     constructor(scene) {
         this.scene = scene;
-        this.isRinging = false;
-        this.isActive = false;
-        this.callCooldown = 0;
-        this.callTimer = null;
-        this.currentCallData = null;
-        this.uiContainer = null;
-        this.vibrationSound = null;
+        this.isActive = true;
+        this.tutorialCustomer = null;
+        this.tutorialStep = 0;
+        this.welcomeContainer = null;
+        this.welcomeBg = null;
+        this.tutorialPanel = null;
+        this.arrowGraphic = null;
+        this.finishTimer = null;
+        this.completed = false;
+        this._arrivalTimer = null;
 
-        this.loadBoyfriendData();
-        if (this.boyfriendAffection === null) {
-            this.boyfriendAffection = 100;
-            this.boyfriendName = 'Marco';
+        if (window._tutorialStarting) {
+            console.warn("⚠️ Tutorial già in avvio, skip");
+            this.skipTutorial();
+            return;
+        }
+        window._tutorialStarting = true;
+
+        this.scene.gameActive = true;
+        this.scene.tutorialActive = true;
+        if (this.scene.spawnEvent) {
+            this.scene.spawnEvent.remove();
+            this.scene.spawnEvent = null;
         }
 
-        this.phoneX = 598;
-        this.phoneY = 380;
-
-        this.createPhoneGraphics();
-        this.setupAudio();
+        this.createWelcomeScreen();
     }
 
-    loadBoyfriendData() {
-        const saved = localStorage.getItem('waitress_boyfriend_data');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                this.boyfriendAffection = data.affection;
-                this.boyfriendName = data.name || 'Marco';
-            } catch(e) {
-                this.boyfriendAffection = 100;
-                this.boyfriendName = 'Marco';
-            }
-        } else {
-            this.boyfriendAffection = 100;
-            this.boyfriendName = 'Marco';
-        }
-    }
-
-    saveBoyfriendData() {
-        localStorage.setItem('waitress_boyfriend_data', JSON.stringify({
-            affection: this.boyfriendAffection,
-            name: this.boyfriendName
-        }));
-    }
-
-    createPhoneGraphics() {
+    // ==========================================
+    // 1. SCHERMATA BENVENUTO
+    // ==========================================
+    createWelcomeScreen() {
         const scene = this.scene;
 
-        this.bg = scene.add.circle(this.phoneX, this.phoneY, 22, 0x000000, 0.8).setDepth(20);
-        this.bg.setStrokeStyle(2, 0xd27d2d);
+        this.welcomeBg = scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.85)
+            .setDepth(998)
+            .setInteractive();
 
-        if (scene.textures.exists('phone')) {
-            this.phoneSprite = scene.add.image(this.phoneX, this.phoneY, 'phone').setDepth(21);
-            this.phoneSprite.setDisplaySize(36, 36); 
-        } else {
-            this.phoneSprite = scene.add.text(this.phoneX, this.phoneY, '📞', {
-                fontSize: '32px'
-            }).setOrigin(0.5).setDepth(21);
-        }
+        this.welcomeContainer = scene.add.container(400, 300).setDepth(999);
 
-        this.phoneSprite.setInteractive({ useHandCursor: true });
-        this.phoneSprite.on('pointerdown', () => { this.onPhoneClick(); });
+        const bg = scene.add.rectangle(0, 0, 540, 340, 0x110906, 0.98);
+        bg.setStrokeStyle(2, 0xd27d2d);
 
-        this.idleGlow = scene.add.graphics().setDepth(19);
-        this.idleGlow.fillStyle(0xd27d2d, 0.2);
-        this.idleGlow.fillCircle(this.phoneX, this.phoneY, 26);
-        
-        scene.tweens.add({
-            targets: this.idleGlow, alpha: 0.2, duration: 1500, yoyo: true, repeat: -1
+        const title = scene.add.text(0, -115, '👋 NUOVA CAMERIERA!', {
+            fontSize: '26px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
+
+        const desc = scene.add.text(0, -40,
+            'Vuoi seguire il tutorial?\nSimuleremo una partita reale passo-passo.',
+            {
+                fontSize: '15px', color: '#ffffff', fontFamily: 'Fredoka',
+                align: 'center', wordWrap: { width: 460 }, lineSpacing: 6
+            }
+        ).setOrigin(0.5);
+
+        const btnYesBg = scene.add.rectangle(-95, 70, 170, 52, 0x2ecc71)
+            .setStrokeStyle(2, 0x27ae60).setInteractive({ useHandCursor: true });
+        const btnYesTxt = scene.add.text(-95, 70, '✅ SÌ', {
+            fontSize: '18px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
+
+        const btnNoBg = scene.add.rectangle(95, 70, 170, 52, 0xe74c3c)
+            .setStrokeStyle(2, 0xc0392b).setInteractive({ useHandCursor: true });
+        const btnNoTxt = scene.add.text(95, 70, '❌ NO', {
+            fontSize: '18px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
+
+        btnYesBg.on('pointerover', () => btnYesBg.setFillStyle(0x27ae60));
+        btnYesBg.on('pointerout', () => btnYesBg.setFillStyle(0x2ecc71));
+        btnNoBg.on('pointerover', () => btnNoBg.setFillStyle(0xc0392b));
+        btnNoBg.on('pointerout', () => btnNoBg.setFillStyle(0xe74c3c));
+
+        btnYesBg.on('pointerdown', () => {
+            triggerSfx('click');
+            this.destroyWelcomeScreen();
+            this.startTutorialGameplay();
         });
 
-        this.ringIndicator = scene.add.circle(this.phoneX + 20, this.phoneY - 20, 10, 0xe74c3c, 1).setDepth(22);
-        this.ringIndicator.setVisible(false);
-
-        scene.tweens.add({
-            targets: this.ringIndicator, scaleX: 1.4, scaleY: 1.4, duration: 400, yoyo: true, repeat: -1, paused: true 
+        btnNoBg.on('pointerdown', () => {
+            triggerSfx('click');
+            this.destroyWelcomeScreen();
+            this.skipTutorial();
         });
+
+        this.welcomeContainer.add([bg, title, desc, btnYesBg, btnYesTxt, btnNoBg, btnNoTxt]);
     }
 
-    setupAudio() {
-        if (this.scene.cache.audio.exists('vibrazione')) {
-            this.vibrationSound = this.scene.sound.add('vibrazione');
-        }
+    destroyWelcomeScreen() {
+        if (this.welcomeBg) { this.welcomeBg.destroy(); this.welcomeBg = null; }
+        if (this.welcomeContainer) { this.welcomeContainer.destroy(); this.welcomeContainer = null; }
+        window._tutorialStarting = false;
     }
 
-    update(time, delta) {
-        if (window.GAME && window.GAME.level <= 1) return;
-        if (!this.scene.gameActive || this.isActive) return;
-        if (this.callCooldown > 0) {
-            this.callCooldown -= delta;
+    // ==========================================
+    // 2. SKIP
+    // ==========================================
+    skipTutorial() {
+        localStorage.setItem('waitress_tutorial_done', 'true');
+        this.cleanup();
+        this.scene.tutorialActive = false;
+        this.scene.tutorial = null;
+        this.scene.tutorialStepTarget = null;
+
+        window.GAME.level = 1;
+        window.GAME.customersTarget = 6 + window.GAME.level * 4;
+        this.scene.gameActive = true;
+        this.scene.startSpawning();
+    }
+
+    // ==========================================
+    // 3. AVVIA TUTORIAL
+    // ==========================================
+    startTutorialGameplay() {
+        this.tutorialStep = 1;
+        this.spawnTutorialCustomer();
+        this.updateTutorialPanel();
+        this.scene.gameActive = true;
+    }
+
+    // ==========================================
+    // 4. CREA CLIENTE
+    // ==========================================
+    spawnTutorialCustomer() {
+        const scene = this.scene;
+        const table = scene.tables.find(t => t.id === 1);
+        if (!table) return;
+
+        table.reserved = true;
+        table.occupied = true;
+        table._seatedCustomer = null;
+        table._activeOrder = null;
+        table.status = 'in_arrivo';
+        table.dirty = false;
+
+        let customer = null;
+        try {
+            customer = scene.generateFallbackCustomer();
+        } catch (e) {
+            console.error("❌ generateFallbackCustomer errore:", e);
             return;
         }
-        if (Phaser.Math.Between(0, 200) === 0) {
-            this.triggerCall();
-        }
-    }
+        if (!customer) return;
 
-    triggerCall() {
-        if (this.isRinging) return;
+        customer.name = 'Marco';
+        customer.order = 'Pizza';
+        customer.emojiChar = '👨';
+        customer.table = table;
+        customer.x = 240;
+        customer.y = 592;
+        customer.isDead = false;
+        customer.patienceMultiplier = 0;
+        customer.patience = 100;
+        customer.bringsChild = false;
 
-        this.isRinging = true;
-        this.ringIndicator.setVisible(true);
-        this.idleGlow.setVisible(false);
+        table.customer = customer;
+        scene.createCustomerGraphics(customer);
+        scene.customers.push(customer);
+        this.tutorialCustomer = customer;
+        scene.moveCustomerToTable(customer);
 
-        const tween = this.scene.tweens.getTweensOf(this.ringIndicator)[0];
-        if (tween) tween.paused = false;
-
-        if (this.vibrationSound) {
-            this.vibrationSound.play();
-        }
-
-        const types = ['boyfriend', 'advertisement', 'machine_break'];
-        const weights = [30, 50, 20];
-        
-        let random = Phaser.Math.Between(1, 100);
-        let cumulative = 0;
-        let selectedType = 'advertisement';
-
-        for (let i = 0; i < weights.length; i++) {
-            cumulative += weights[i];
-            if (random <= cumulative) {
-                selectedType = types[i];
-                break;
-            }
-        }
-
-        this.currentCallData = {
-            type: selectedType,
-            timer: this.scene.time.delayedCall(8000, () => {
-                this.missedCall();
-            })
-        };
-        
-        this.scene.showFloatingText(this.phoneX, this.phoneY - 45, '📱 CHIAMATA IN ARRIVO!', '#e74c3c');
-        
-        this.scene.customers.forEach(c => {
-            if (!c.isDead && c.patience > 0) {
-                c.patience = Math.max(0, c.patience - 3);
-            }
-        });
-    }
-
-    onPhoneClick() {
-        if (!this.isRinging) {
-            this.scene.showFloatingText(this.phoneX, this.phoneY - 45, '📞 Nessuna chiamata', '#999');
-            return;
-        }
-
-        this.isRinging = false;
-        if (this.currentCallData && this.currentCallData.timer) {
-            this.currentCallData.timer.remove();
-        }
-        this.ringIndicator.setVisible(false);
-        this.idleGlow.setVisible(true);
-        
-        if (this.vibrationSound) {
-            this.vibrationSound.stop();
-        }
-
-        this.isActive = true;
-        this.handleCallLogic(this.currentCallData);
-    }
-
-    missedCall() {
-        if (!this.isRinging) return;
-
-        this.isRinging = false;
-        this.ringIndicator.setVisible(false);
-        this.idleGlow.setVisible(true);
-        
-        if (this.vibrationSound) {
-            this.vibrationSound.stop();
-        }
-
-        if (this.currentCallData.type === 'boyfriend') {
-            this.boyfriendAffection -= 15;
-            this.saveBoyfriendData();
-            this.scene.showFloatingText(this.phoneX, this.phoneY - 45, `💔 ${this.boyfriendName} è deluso!`, '#ff4444');
-            if (this.boyfriendAffection <= 0) this.boyfriendBreakup();
-        } else if (this.currentCallData.type === 'machine_break') {
-            // Se il giocatore non risponde alla chiamata di guasto, penalità automatica
-            this.scene.showFloatingText(this.phoneX, this.phoneY - 45, '🔥 GUASTO IGNORATO! PENALITÀ 100€!', '#ff0000');
-            window.GAME.score -= 100;
-            this.scene.updateHUD();
-        }
-    }
-
-    handleCallLogic(callData) {
-        if (callData.type === 'boyfriend') this.showBoyfriendUI();
-        else if (callData.type === 'advertisement') this.showAdUI();
-        else if (callData.type === 'machine_break') this.showMachineRepairUI();
-    }
-
-    hidePhoneElements() {
-        this.phoneSprite.setVisible(false);
-        this.idleGlow.setVisible(false);
-        this.ringIndicator.setVisible(false);
-        this.bg.setVisible(false);
-    }
-
-    showPhoneElements() {
-        this.phoneSprite.setVisible(true);
-        this.idleGlow.setVisible(true);
-        this.ringIndicator.setVisible(false);
-        this.bg.setVisible(true);
-    }
-
-    // --- UI DEL FIDANZATO ---
-    showBoyfriendUI() {
-        this.hidePhoneElements();
-
-        const text = `📱 ${this.boyfriendName} sta chiamando!\n(Sintonia: ${this.boyfriendAffection}%)`;
-        const options = [
-            { text: '❤️ "Amore, ti penso sempre!"', value: 10 },
-            { text: '😅 "Scusa amore, sono al lavoro!"', value: 5 },
-            { text: '😒 "Ora non posso, ti richiamo."', value: -5 },
-            { text: '🤬 "Smettila di chiamare!"', value: -20 }
-        ];
-        
-        this.showChoiceUI(text, options, (affectionChange) => {
-            this.showPhoneElements();
-
-            this.boyfriendAffection = Phaser.Math.Clamp(this.boyfriendAffection + affectionChange, 0, 100);
-            this.saveBoyfriendData();
-            
-            this.scene.showFloatingText(this.phoneX, this.phoneY - 45, 
-                affectionChange > 0 ? `❤️ +${affectionChange}%` : `💔 ${affectionChange}%`, 
-                affectionChange > 0 ? '#2ecc71' : '#e74c3c'
-            );
-            
-            if (this.boyfriendAffection <= 0) this.boyfriendBreakup();
-            this.isActive = false;
-            this.callCooldown = 15000;
-        });
-    }
-
-    // --- UI DELLA PUBBLICITÀ ---
-    showAdUI() {
-        this.hidePhoneElements();
-
-        const adMessages = [
-            "📞 Pubblicità: 'Vinci una cucina nuova! Rispondi per partecipare.'",
-            "📞 Pubblicità: 'Solo oggi! Lavastoviglie SuperLava in offerta.'",
-            "📞 Pubblicità: 'Il tuo ristorante potrebbe essere nella guida! Ascolta questa offerta.'",
-            "📞 Pubblicità: 'Vendi il tuo oro? Chiama per una valutazione!'"
-        ];
-        const text = adMessages[Phaser.Math.Between(0, adMessages.length - 1)];
-        
-        this.showTimerUI(text, 10000, () => {
-            this.showPhoneElements();
-
-            this.isActive = false;
-            this.callCooldown = 10000;
-            this.scene.showFloatingText(this.phoneX, this.phoneY - 45, '📞 Pubblicità finita. Hai perso 10 secondi!', '#999');
-        });
-    }
-
-    // --- UI DEI GUASTI (TECNICO O POMPIERI) ---
-    showMachineRepairUI() {
-        this.hidePhoneElements();
-
-        // Controlla se è un incendio o un semplice guasto
-        const isFire = this.scene.kitchen && this.scene.kitchen.isOnFire;
-
-        let text = '';
-        let options = [];
-
-        if (isFire) {
-            text = `🚒 INCENDIO IN CUCINA!\nChiama i pompieri!`;
-            options = [
-                { text: '🚒 Chiama i pompieri (20€)', value: 'firefighters' },
-                { text: '❌ Ignora l\'incendio (Penalità 100€)', value: 'ignore_fire' }
-            ];
-        } else {
-            text = `🔧 Un elettrodomestico si è rotto!\nChiama il tecnico.`;
-            options = [
-                { text: '🔧 Chiama il tecnico (10€)', value: 'technician' },
-                { text: '❌ Ignora il guasto (Penalità 100€)', value: 'ignore_break' }
-            ];
-        }
-        
-        this.showChoiceUI(text, options, (choice) => {
-            this.showPhoneElements();
-
-            if (choice === 'technician') {
-                window.GAME.score -= 10;
-                this.scene.showFloatingText(400, 300, '🔧 Tecnico in arrivo! -10€', '#f1c40f');
-                if (this.scene.kitchen) this.scene.kitchen.fixAppliance('tecnico');
-            } else if (choice === 'firefighters') {
-                window.GAME.score -= 20;
-                this.scene.showFloatingText(400, 300, '🚒 Pompieri in arrivo! -20€', '#f1c40f');
-                if (this.scene.kitchen) this.scene.kitchen.fixAppliance('pompieri');
-            } else if (choice === 'ignore_break' || choice === 'ignore_fire') {
-                window.GAME.score -= 100;
-                this.scene.showFloatingText(400, 300, '💸 PENALITÀ 100€ per omissione di soccorso!', '#ff0000');
-                this.scene.updateHUD();
-                if (this.scene.kitchen) this.scene.kitchen.stopFireAnimation(); // Spegni il fumo ma perdi soldi
-            }
-
-            this.isActive = false;
-            this.callCooldown = 12000;
-        });
-    }
-
-    // --- UI CENTRALE FISSA ---
-    showChoiceUI(text, options, callback) {
-        if (this.uiContainer) this.uiContainer.destroy();
-        
-        this.uiContainer = this.scene.add.container(400, 300).setDepth(400).setScrollFactor(0);
-        this.overlay = this.scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.75).setDepth(399).setScrollFactor(0);
-        this.overlay.setInteractive();
-
-        const bg = this.scene.add.rectangle(0, 0, 440, 320, 0x110906, 0.95).setStrokeStyle(2, 0xd27d2d);
-        const title = this.scene.add.text(0, -120, text, {
-            fontSize: '18px', color: '#ffffff', fontFamily: 'Fredoka', align: 'center', wordWrap: { width: 400 }
-        }).setOrigin(0.5);
-        this.uiContainer.add([bg, title]);
-
-        let yPos = -40;
-        options.forEach((opt) => {
-            const btn = this.scene.add.rectangle(0, yPos, 380, 40, 0x2c1a11).setStrokeStyle(1, 0xd27d2d);
-            const txt = this.scene.add.text(0, yPos, opt.text, {
-                fontSize: '14px', color: '#e0d5c1', fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            btn.setInteractive({ useHandCursor: true });
-            btn.on('pointerover', () => btn.setFillStyle(0x3d2518));
-            btn.on('pointerout', () => btn.setFillStyle(0x2c1a11));
-            btn.on('pointerdown', () => {
-                this.uiContainer.destroy(); this.uiContainer = null;
-                this.overlay.destroy();
-                if (typeof opt.value !== 'undefined') callback(opt.value);
-                else callback(opt);
-            });
-            this.uiContainer.add([btn, txt]);
-            yPos += 60;
-        });
-    }
-
-    showTimerUI(text, duration, callback) {
-        if (this.uiContainer) this.uiContainer.destroy();
-        
-        this.uiContainer = this.scene.add.container(400, 300).setDepth(400).setScrollFactor(0);
-        this.overlay = this.scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.75).setDepth(399).setScrollFactor(0);
-        this.overlay.setInteractive();
-
-        const bg = this.scene.add.rectangle(0, 0, 440, 160, 0x110906, 0.95).setStrokeStyle(2, 0xd27d2d);
-        const title = this.scene.add.text(0, -30, text, {
-            fontSize: '16px', color: '#ffffff', fontFamily: 'Fredoka', align: 'center', wordWrap: { width: 400 }
-        }).setOrigin(0.5);
-        const timerText = this.scene.add.text(0, 30, '⏳ Attendere...', {
-            fontSize: '18px', color: '#ffd700', fontFamily: 'Fredoka'
-        }).setOrigin(0.5);
-        this.uiContainer.add([bg, title, timerText]);
-
-        let remaining = duration / 1000;
-        const timerInterval = this.scene.time.addEvent({
-            delay: 100,
+        this._arrivalTimer = scene.time.addEvent({
+            delay: 200,
+            loop: true,
             callback: () => {
-                remaining -= 0.1;
-                timerText.setText(`⏳ ${remaining.toFixed(1)}s`);
-                if (remaining <= 0) {
-                    timerInterval.remove();
-                    this.uiContainer.destroy(); this.uiContainer = null;
-                    this.overlay.destroy();
-                    callback();
+                if (!this.tutorialCustomer || this.tutorialCustomer.isDead) {
+                    if (this._arrivalTimer) { this._arrivalTimer.remove(); this._arrivalTimer = null; }
+                    return;
                 }
-            },
-            loop: true
+                const c = this.tutorialCustomer;
+                if (c.movementData && c.movementData.movementComplete) {
+                    if (this._arrivalTimer) { this._arrivalTimer.remove(); this._arrivalTimer = null; }
+                    table.status = 'ordinazione_pronta';
+                    table.reserved = false;
+                    table.occupied = true;
+                    table._seatedCustomer = c;
+                    if (c.bubble && c.bubble.active) {
+                        c.bubble.setTexture('bubble_order');
+                        c.bubble.setVisible(true);
+                    }
+                }
+            }
+        });
+
+        scene.time.delayedCall(6000, () => {
+            if (!this.tutorialCustomer || this.tutorialCustomer.isDead) return;
+            const c = this.tutorialCustomer;
+            if (!c.movementData || !c.movementData.movementComplete) {
+                const seat = { x: table.x, y: table.y + 50 };
+                if (c.sprite) { c.sprite.x = seat.x; c.sprite.y = seat.y; }
+                if (c.emoji) { c.emoji.x = seat.x; c.emoji.y = seat.y; }
+                if (c.shadow) { c.shadow.x = seat.x; c.shadow.y = seat.y + 10; }
+                if (c.bubble) { c.bubble.x = seat.x; c.bubble.y = seat.y - 30; }
+                c.x = seat.x; c.y = seat.y;
+                if (c.movementData) c.movementData.movementComplete = true;
+                table.status = 'ordinazione_pronta';
+                table.reserved = false;
+                table.occupied = true;
+                table._seatedCustomer = c;
+                if (c.bubble && c.bubble.active) {
+                    c.bubble.setTexture('bubble_order');
+                    c.bubble.setVisible(true);
+                }
+            }
         });
     }
 
-    boyfriendBreakup() {
-        this.isActive = false;
-        this.scene.gameActive = false;
-        this.scene.showFloatingText(400, 300, '💔 HAI ROTTO CON IL FIDANZATO! 💔', '#ff0000');
-        this.scene.time.delayedCall(3000, () => { this.scene.scene.start('GameOver'); });
+    // ==========================================
+    // 5. PANNELLO TUTORIAL
+    // ==========================================
+    updateTutorialPanel() {
+        if (this.tutorialPanel) { this.tutorialPanel.destroy(); this.tutorialPanel = null; }
+        if (this.arrowGraphic) { this.arrowGraphic.destroy(); this.arrowGraphic = null; }
+        if (this.finishTimer) { this.finishTimer.remove(); this.finishTimer = null; }
+
+        const scene = this.scene;
+
+        const steps = [
+            {},
+            {
+                title: '📋 STEP 1/6 — PRENDI L\'ORDINE',
+                desc: 'Avvicinati al TAVOLO 1 con WASD\ne clicca sul cliente (o premi SPAZIO).',
+                target: 'take_order'
+            },
+            {
+                title: '📝 STEP 2/6 — PORTA LA COMANDA',
+                desc: 'Vai al PASS PIATTI (zona a destra)\ne clicca per consegnare la comanda allo chef.',
+                target: 'counter_order'
+            },
+            {
+                title: '🍕 STEP 3/6 — RITIRA IL CIBO',
+                desc: 'Il cuoco ha preparato la pizza!\nClicca di nuovo sul PASS PIATTI per ritirarla.',
+                target: 'counter_pickup'
+            },
+            {
+                title: '🍽️ STEP 4/6 — SERVI IL CLIENTE',
+                desc: 'Torna al TAVOLO 1 e clicca sul cliente\nper servirgli la pizza calda.',
+                target: 'serve_food'
+            },
+            {
+                title: '🧹 STEP 5/6 — PULISCI IL TAVOLO',
+                desc: 'Clicca sul TAVOLO 1 per raccogliere il piatto sporco,\npoi portalo al LAVELLO (in basso a sinistra).',
+                target: 'clear_table'
+            },
+            {
+                title: '🎉 STEP 6/6 — TUTORIAL COMPLETATO!',
+                desc: 'Ottimo lavoro! Il gioco inizierà tra 2 secondi...',
+                target: 'finish'
+            }
+        ];
+
+        const current = steps[this.tutorialStep];
+        if (!current) return;
+
+        this.tutorialPanel = scene.add.container(400, 480).setDepth(999);
+
+        const bg = scene.add.rectangle(0, 0, 660, 115, 0x110906, 0.96);
+        bg.setStrokeStyle(2, 0xd27d2d);
+
+        const title = scene.add.text(0, -35, current.title, {
+            fontSize: '17px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
+
+        const desc = scene.add.text(0, 12, current.desc, {
+            fontSize: '13px', color: '#ffffff', fontFamily: 'Fredoka',
+            align: 'center', wordWrap: { width: 620 }, lineSpacing: 4
+        }).setOrigin(0.5);
+
+        this.tutorialPanel.add([bg, title, desc]);
+
+        this.scene.tutorialStepTarget = current.target || null;
+
+        // Freccia
+        if (current.target && this.tutorialStep < 6) {
+            let tx = 0, ty = 0;
+
+            if (current.target === 'take_order' || current.target === 'serve_food' || current.target === 'clear_table') {
+                // Frecce verso il tavolo 1
+                if (this.tutorialCustomer && this.tutorialCustomer.table) {
+                    tx = this.tutorialCustomer.table.x;
+                    ty = this.tutorialCustomer.table.y + 30;
+                } else {
+                    const t1 = scene.tables.find(t => t.id === 1);
+                    if (t1) { tx = t1.x; ty = t1.y + 30; }
+                }
+            } else if (current.target === 'counter_order' || current.target === 'counter_pickup') {
+                tx = 595;
+                ty = 400;
+            }
+
+            if (tx || ty) this.drawArrow(tx, ty);
+        }
+
+        if (this.tutorialStep === 6) {
+            this.finishTimer = this.scene.time.delayedCall(2200, () => this.finishTutorial());
+        }
+    }
+
+    drawArrow(x, y) {
+        if (this.arrowGraphic) this.arrowGraphic.destroy();
+        this.arrowGraphic = this.scene.add.graphics().setDepth(15);
+        this.arrowGraphic.fillStyle(0xffd700, 1);
+        this.arrowGraphic.fillTriangle(x - 14, y - 70, x + 14, y - 70, x, y - 38);
+        this.arrowGraphic.fillRect(x - 3, y - 92, 6, 32);
+        this.scene.tweens.add({
+            targets: this.arrowGraphic,
+            alpha: 0.5, y: '+=8',
+            duration: 500, yoyo: true, repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    // ==========================================
+    // 6. AVANZA STEP
+    // ==========================================
+    progressStep() {
+        if (this.completed) return;
+        if (this.tutorialStep >= 6) {
+            this.finishTutorial();
+            return;
+        }
+
+        this.tutorialStep++;
+        triggerSfx('coin');
+
+        if (this.tutorialStep === 3) {
+            this.forceKitchenComplete();
+        }
+
+        if (this.tutorialStep === 5) {
+            // Entriamo nello step 5: il cliente è andato via, il tavolo è sporco
+            this.forceTableDirty();
+        }
+
+        this.updateTutorialPanel();
+    }
+
+    // Forza la cucina a completare subito l'ordine della pizza
+    forceKitchenComplete() {
+        const scene = this.scene;
+        if (!scene.kitchen) return;
+
+        const arrays = ['orders', 'activeOrders', 'cookingOrders', 'queue', 'pendingOrders', 'dishes', 'items'];
+        arrays.forEach(name => {
+            if (Array.isArray(scene.kitchen[name])) {
+                scene.kitchen[name].forEach(order => {
+                    if (order) {
+                        if (typeof order.remaining === 'number') order.remaining = 0;
+                        if (typeof order.timeLeft === 'number') order.timeLeft = 0;
+                        if (typeof order.progress === 'number') order.progress = 1;
+                        if (typeof order.cookTime === 'number') order.cookTime = 0;
+                        if (typeof order.timer === 'number') order.timer = 0;
+                    }
+                });
+            }
+        });
+
+        if (typeof scene.kitchen.cookingTime !== 'undefined') scene.kitchen.cookingTime = 0;
+    }
+
+    // Forza il tavolo 1 ad essere sporco e rimuove il cliente
+    forceTableDirty() {
+        const scene = this.scene;
+        const table = (this.tutorialCustomer && this.tutorialCustomer.table)
+            ? this.tutorialCustomer.table
+            : scene.tables.find(t => t.id === 1);
+        if (!table) return;
+
+        table.dirty = true;
+        table.status = 'piatto_sporco';
+
+        if (!table.dirtySprite && scene.textures.exists('Piatto Sporco')) {
+            table.dirtySprite = scene.add.image(table.x, table.y + 15, 'Piatto Sporco')
+                .setDisplaySize(32, 32)
+                .setDepth(table.y + 1);
+        } else if (!table.dirtySprite && !table.dirtyLabel) {
+            table.dirtyLabel = scene.add.text(table.x, table.y + 15, '🍽️ SPORCO', {
+                fontSize: '8px', color: '#e67e22', fontStyle: 'bold', fontFamily: 'Fredoka'
+            }).setOrigin(0.5).setDepth(table.y + 1);
+        }
+
+        if (this.tutorialCustomer) {
+            try {
+                scene.removeCustomer(this.tutorialCustomer);
+            } catch (e) {
+                const c = this.tutorialCustomer;
+                ['emoji', 'sprite', 'shadow', 'bubble', 'patienceBar', 'patienceBg', 'childGraphic'].forEach(k => {
+                    if (c[k] && c[k].destroy) { try { c[k].destroy(); } catch(e){} }
+                });
+                const idx = scene.customers.indexOf(c);
+                if (idx > -1) scene.customers.splice(idx, 1);
+            }
+            this.tutorialCustomer = null;
+        }
+    }
+
+    // ==========================================
+    // 7. FINE TUTORIAL
+    // ==========================================
+    finishTutorial() {
+        if (this.completed) return;
+        this.completed = true;
+
+        if (this.finishTimer) { this.finishTimer.remove(); this.finishTimer = null; }
+
+        this.cleanup();
+
+        this.scene.tutorialActive = false;
+        this.scene.tutorial = null;
+        this.scene.tutorialStepTarget = null;
+        window._tutorialStarting = false;
+
+        localStorage.setItem('waitress_tutorial_done', 'true');
+
+        window.GAME.level = 1;
+        window.GAME.customersServed = 0;
+        window.GAME.customersTarget = 6 + window.GAME.level * 4;
+        window.GAME.lives = 3;
+        window.GAME.dirtyPlates = 0;
+        window.GAME.carriedOrder = null;
+
+        if (this.scene.waitressState) this.scene.waitressState.tray = [];
+        if (this.scene.ordersTaken !== undefined) this.scene.ordersTaken = 0;
+
+        this.scene.tables.forEach(t => {
+            t.occupied = false;
+            t.reserved = false;
+            t.customer = null;
+            t._seatedCustomer = null;
+            t._activeOrder = null;
+            t.status = 'libero';
+            t.dirty = false;
+            if (t.dirtySprite) { t.dirtySprite.destroy(); t.dirtySprite = null; }
+            if (t.dirtyLabel) { t.dirtyLabel.destroy(); t.dirtyLabel = null; }
+        });
+
+        if (this.scene.customers && this.scene.customers.length > 0) {
+            [...this.scene.customers].forEach(c => {
+                try { this.scene.removeCustomer(c); } catch(e) {}
+            });
+        }
+
+        this.scene.updateHUD();
+        this.scene.updateNotepadUI(false);
+
+        this.scene.gameActive = true;
+        this.scene.startSpawning();
+    }
+
+    // ==========================================
+    // 8. CLEANUP
+    // ==========================================
+    cleanup() {
+        if (this._arrivalTimer) { this._arrivalTimer.remove(); this._arrivalTimer = null; }
+        if (this.tutorialPanel) { this.tutorialPanel.destroy(); this.tutorialPanel = null; }
+        if (this.arrowGraphic) { this.arrowGraphic.destroy(); this.arrowGraphic = null; }
+
+        if (this.tutorialCustomer) {
+            try {
+                this.scene.removeCustomer(this.tutorialCustomer);
+            } catch (e) {
+                const c = this.tutorialCustomer;
+                ['emoji', 'sprite', 'shadow', 'bubble', 'patienceBar', 'patienceBg', 'childGraphic'].forEach(k => {
+                    if (c[k] && c[k].destroy) { try { c[k].destroy(); } catch(e){} }
+                });
+                if (c.table) {
+                    c.table.occupied = false;
+                    c.table.customer = null;
+                    c.table.status = 'libero';
+                }
+                const idx = this.scene.customers.indexOf(c);
+                if (idx > -1) this.scene.customers.splice(idx, 1);
+            }
+            this.tutorialCustomer = null;
+        }
     }
 }
 
-window.PhoneSystem = PhoneSystem;
+window.TutorialSystem = TutorialSystem;
