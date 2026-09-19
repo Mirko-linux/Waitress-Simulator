@@ -1,78 +1,26 @@
-# 🍽️ Waitress Simulator  
-**Simulatore di Cameriera & Vita Casalinga – 2026**  
-Creato da **Mirko Yuri Donato**  
-Licenza **MIT**
+# Waitress Simulator 
 
-Waitress Simulator è un videogioco gestionale sviluppato in JavaScript con **Phaser 3**, che combina la vita da cameriera in un ristorante con un sistema di progressione domestica. Il gioco integra un sistema multi‑lingua, NPC modulari, spritesheet animati, audio sintetico e una struttura di scene completa.
 
+[![Phaser](https://img.shields.io/badge/Phaser-3.x-orange)](https://phaser.io/)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Web-blue)](#)
+
+**Waitress Simulator** è un simulatore gestionale 2D open-source realizzato con il framework **Phaser 3**. Ambientato a Palermo, il gioco ti mette nei panni di una giovane cameriera di un bar e ristorante del capoluogo siculo, frequentato da persone diverse. L'obiettivo principale è servire i clienti, accumulare gli incassi e investirli per potenziare il ristorante, tenendo anche in considerazione la vita della cameriera stessa e cercando di non avere guai con la legge.
 ---
+
 
 ##  Caratteristiche Principali
 
-###  Gameplay
-- Servi clienti con ordini generati dinamicamente.
-- Gestisci il vassoio, i piatti sporchi, la pazienza dei clienti e le vite disponibili.
-- Sistema di cucina con stazioni dedicate: forno, friggitrice, fornelli, macchina del caffè, spillatore, frigo.
-- Sistema casa con oggetti acquistabili che migliorano le statistiche di gioco.
-
-### 🏠 Sistema Casa
-Ogni oggetto acquistato modifica parametri di gioco:
-- **Letto Comodo** → +20% velocità della cameriera  
-- **Smart TV** → +25% pazienza dei clienti  
-- **Macchina Espresso** → -45% tempo di lavaggio stoviglie  
-- Altri oggetti estetici: divano, tappeto, pianta, TV, ecc.
-
-### 👥 NPC Modulari
-Registro NPC definito in `NPC_REGISTRY`, con:
-- Tilesheet dedicati (Maria, Elena, Massimo, Francesco)
-- NPC emoji (Rosa, Chiara, Sofia)
-- Biografie, età, genere, parametri speciali (patienceMultiplier, adoptTrigger)
-
-### 🌐 Multi‑Lingua
-Supporto nativo per 14 lingue:
-- Italiano, Spagnolo, Francese, Tedesco, Turco, Russo, Giapponese, Polacco, Ungherese, Portoghese, Hindi, Coreano, Cinese, Hawaiano  
-Sistema automatico di traduzione tramite `LOCAL_AUTO_TRANSLATIONS`.
-
-### Audio Sintetico
-Effetti sonori generati via **Web Audio API**, senza file audio:
-- click, pickup, coin, wash, alert, cook, order_placed
-
-### Scene del Gioco
-- **PreloadScene** – caricamento asset e tilesheet  
-- **MenuScene** – menu principale  
-- **SettingsScene** – impostazioni (audio, difficoltà, controlli, lingua)  
-- **CreditsScene** – crediti  
-- **GameScene** – gameplay principale  
-- **GameOverScene** – schermata di sconfitta  
-- **LevelSummaryScene** - Punteggio
-- **HouseScene** - Cadìsa
+- **Gestionale Ristorante in Tempo Reale:** Accogli i clienti, prendi gli ordini e servi i piatti ai tavoli prima che i clienti perdano la pazienza.
+- **Gastronomia Palermitana:** Un menù ricco di piatti e bevande sia locali  (_cannolo_, _chinotto_, _panino con la milza_...) sia internazionali (_la pizza_, _la birra_...)
+- **Ciclo di Gioco e Progressione:** Completa gli obiettivi giornalieri (servire un numero target di clienti), supera i livelli e accumula guadagni.
+- **Gestione Stoviglie & Cucina:** Lava i piatti sporchi nel lavello prima che si accumulino, gestisci i fornelli, le friggitrici e i dispenser delle bevande.
+- **Integrazione IA & Dialoghi:** Conversazioni dinamiche e immersive con i clienti (tramite il modulo `AIDialogueManager`).
+- **Sistemi di Crimine, Finanza e Copertura:** Gestisci la reputazione, il sospetto delle forze dell'ordine e nascondi gli illeciti nello scomparto segreto del ristorante prima che scatti un'ispezione della Guardia di Finanza!
+- **Supporto Multilingua (18+ Lingue):** Traduzioni automatiche e localizzazione dinamica integrate (Italiano, Español, Français, Deutsch, Русский, 日本語, 中文, e molte altre).
 
 ---
 
-## Controlli
-
-### COMANDI & TRUCCHI
-- **W / A / S / D** → movimento  WASD
-- **↑ / ↓ / ← / →** → movimento  FRECCE
-- **SPACE** → interazione rapida  
-- **H** → torna a casa  
-- **SHIFT + K** → trucco: completa il livello  
-
----
-
-## Installazione & Avvio
-
-1. Scarica o clona il repository.
-2. Assicurati di avere un server locale (Phaser richiede ambiente HTTP/HTTPS).
-3. Avvia il gioco aprendo `index.html` tramite:
-   - Live Server (VS Code)
-   - http-server (Node)
-   - qualsiasi hosting statico
-
-Il gioco si avvia automaticamente tramite:
-
-```javascript
-window.addEventListener('load', () => {
-    const game = new Phaser.Game(config);
-    window.game = game;
-});
+## Esecuzione del videogioco
+Per eseguire il videogioco è sufficiente un qualsiasi server web locale (come HTTP-Server o Live Server di Visual Studio Code) ed un browser moderno con supporto HTML5 WebGL / Canvas. Non richiede build o compilazioni esterne complesse in quanto scritto in JavaScript  utilizzando il framework Phaser 3.
