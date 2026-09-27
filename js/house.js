@@ -8,6 +8,28 @@ const HOUSE_CONFIG = {
 
 const MAX_LIVES = 3;
 
+const CALENDAR_CONFIG = {
+    startMonth: 7,
+    startYear: 2026
+};
+
+const MONTH_NAMES = [
+    'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+    'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+];
+
+const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+const MEDAL_RANKS = {
+    SUPER:    { emoji: '⭐', color: '#9b59b6', label: 'SUPER' },
+    PERFETTO: { emoji: '🥇', color: '#ffd700', label: 'PERFETTO' },
+    BUONO:    { emoji: '🥈', color: '#c0c0c0', label: 'BUONO' },
+    OK:       { emoji: '🥉', color: '#cd7f32', label: 'OK' }
+};
+
+const PACKAGE_DISPLAY_SIZE = 48;
+const PACKAGE_START_SCALE = 0.3;
+
 class HouseScene extends Phaser.Scene {
     constructor() {
         super('House');
@@ -45,6 +67,8 @@ class HouseScene extends Phaser.Scene {
         this.coffeeSound = null;
         this.exitZone = null;
         this.isLeaving = false;
+
+        this.calendarMonthOffset = 0;
     }
 
     preload() {
@@ -56,6 +80,9 @@ class HouseScene extends Phaser.Scene {
         this.load.image('casa_scrivania', 'assets/Casa/Scrivania.png');
         this.load.image('casa_computer', 'assets/Casa/Computer.png');
         this.load.image('casa_macchinetta', 'assets/Casa/Macchinetta.png');
+        this.load.image('casa_armadio', 'assets/Casa/Armadio.png');
+        this.load.image('casa_calendario', 'assets/Casa/Calendario.png');
+        this.load.image('casa_espositore', 'assets/Casa/Espositore.png');
         this.load.image('pacco', 'assets/Sala/pacco.png');
 
         this.load.audio('caffe', [
@@ -78,10 +105,11 @@ class HouseScene extends Phaser.Scene {
             const rawSave = localStorage.getItem('waitress_save_data');
             if (rawSave) {
                 const parsed = JSON.parse(rawSave);
-                if (typeof parsed.score === 'number') window.GAME.score = parsed.score;
-                if (typeof parsed.level === 'number') window.GAME.level = parsed.level;
-                if (typeof parsed.lives === 'number') {
-                    window.GAME.lives = Math.min(MAX_LIVES, Math.max(0, parsed.lives));
+                const data = parsed.data || parsed;
+                if (typeof data.score === 'number') window.GAME.score = data.score;
+                if (typeof data.level === 'number') window.GAME.level = data.level;
+                if (typeof data.lives === 'number') {
+                    window.GAME.lives = Math.min(MAX_LIVES, Math.max(0, data.lives));
                 }
             }
         } catch(e) {}
@@ -92,6 +120,9 @@ class HouseScene extends Phaser.Scene {
 
         if (!window.HOUSE_STATE) {
             window.HOUSE_STATE = { purchased: [], items: [] };
+        }
+        if (!Array.isArray(window.HOUSE_STATE.purchased)) {
+            window.HOUSE_STATE.purchased = [];
         }
 
         if (this.sound.get('caffe')) {
@@ -257,25 +288,44 @@ class HouseScene extends Phaser.Scene {
 
         if (this.textures.exists('pacco')) {
             this.iveaPackageSprite = this.add.image(entryX, entryY, 'pacco')
-                .setDepth(20)
-                .setDisplaySize(48, 48);
+                .setDepth(20);
+
+            const baseW = this.iveaPackageSprite.width;
+            const baseH = this.iveaPackageSprite.height;
+            const baseScaleX = PACKAGE_DISPLAY_SIZE / baseW;
+            const baseScaleY = PACKAGE_DISPLAY_SIZE / baseH;
+
+            this.iveaPackageSprite.setScale(
+                baseScaleX * PACKAGE_START_SCALE,
+                baseScaleY * PACKAGE_START_SCALE
+            );
+            this.iveaPackageSprite.y = 600;
+
+            this.tweens.add({
+                targets: this.iveaPackageSprite,
+                y: entryY,
+                scaleX: baseScaleX,
+                scaleY: baseScaleY,
+                duration: 500,
+                ease: 'Back.easeOut'
+            });
         } else {
             this.iveaPackageSprite = this.add.text(entryX, entryY, '📦', {
                 fontSize: '36px'
             }).setOrigin(0.5).setDepth(20);
+
+            this.iveaPackageSprite.setScale(PACKAGE_START_SCALE);
+            this.iveaPackageSprite.y = 600;
+
+            this.tweens.add({
+                targets: this.iveaPackageSprite,
+                y: entryY,
+                scaleX: 1,
+                scaleY: 1,
+                duration: 500,
+                ease: 'Back.easeOut'
+            });
         }
-
-        this.iveaPackageSprite.setScale(0.3);
-        this.iveaPackageSprite.y = 600;
-
-        this.tweens.add({
-            targets: this.iveaPackageSprite,
-            y: entryY,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 500,
-            ease: 'Back.easeOut'
-        });
 
         this.iveaPackageGlow = this.add.graphics()
             .setDepth(18)
@@ -364,8 +414,13 @@ class HouseScene extends Phaser.Scene {
         this.saveHouseData();
 
         const saveData = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
-        saveData.housePurchased = window.HOUSE_STATE.purchased;
-        saveData.score = window.GAME.score;
+        if (saveData.data) {
+            saveData.data.housePurchased = window.HOUSE_STATE.purchased;
+            saveData.data.score = window.GAME.score;
+        } else {
+            saveData.housePurchased = window.HOUSE_STATE.purchased;
+            saveData.score = window.GAME.score;
+        }
         localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
 
         this.spawnPurchasedItems();
@@ -388,9 +443,10 @@ class HouseScene extends Phaser.Scene {
         } catch(e) {}
 
         const allItems = [
-            { id: 'wardrobe', name: 'Armadio', emoji: '🚪' },
+            { id: 'wardrobe', name: 'Armadio', emoji: '🚪', texture: 'casa_armadio', width: 55, height: 65, interactable: true, label: 'Armadio', action: 'wardrobe' },
             { id: 'coffee_machine', name: 'Macchinetta del Caffè', emoji: '☕', texture: 'casa_macchinetta', width: 40, height: 50, interactable: true, label: 'Caffè', action: 'coffee' },
-            { id: 'display_case', name: 'Espositore', emoji: '🖼️' },
+            { id: 'display_case', name: 'Espositore', emoji: '🖼️', texture: 'casa_espositore', width: 55, height: 55, interactable: true, label: 'Espositore', action: 'displaycase' },
+            { id: 'calendar', name: 'Calendario', emoji: '📅', texture: 'casa_calendario', width: 50, height: 55, interactable: true, label: 'Calendario', action: 'calendar' },
             { id: 'house_plant', name: 'Pianta da Interno', emoji: '🪴' },
             { id: 'house_radio', name: 'Radio', emoji: '📻' },
             { id: 'crib', name: 'Culla', emoji: '🛏️' },
@@ -431,6 +487,9 @@ class HouseScene extends Phaser.Scene {
                     if (dist <= 80) {
                         if (window.triggerSfx) window.triggerSfx('click');
                         if (itemInfo.action === 'coffee') this.doCoffee();
+                        else if (itemInfo.action === 'wardrobe') this.openWardrobe();
+                        else if (itemInfo.action === 'displaycase') this.openDisplayCase();
+                        else if (itemInfo.action === 'calendar') this.openCalendar();
                     }
                 });
 
@@ -670,7 +729,8 @@ class HouseScene extends Phaser.Scene {
         window.GAME.score -= COFFEE_COST;
 
         const saveData = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
-        saveData.score = window.GAME.score;
+        if (saveData.data) saveData.data.score = window.GAME.score;
+        else saveData.score = window.GAME.score;
         localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
 
         this.updateHouseHUD();
@@ -688,7 +748,8 @@ class HouseScene extends Phaser.Scene {
                 window.GAME.lives = Math.min(MAX_LIVES, window.GAME.lives + 1);
 
                 const saveData2 = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
-                saveData2.lives = window.GAME.lives;
+                if (saveData2.data) saveData2.data.lives = window.GAME.lives;
+                else saveData2.lives = window.GAME.lives;
                 localStorage.setItem('waitress_save_data', JSON.stringify(saveData2));
 
                 this.showFloatingText(this.player.x, this.player.y - 40, '❤️ +1 Vita!', '#2ecc71');
@@ -735,12 +796,14 @@ class HouseScene extends Phaser.Scene {
             window.GAME.lives = MAX_LIVES;
             window.GAME.customersServed = 0;
             window.GAME.dirtyPlates = 0;
-            window.GAME.carriedOrder = null;
+            window.GAME.carriedOrders = [];
             window.GAME.customersTarget = 6 + (window.GAME.level * 4);
 
             this.coffeeUsedToday = false;
             localStorage.removeItem('waitress_coffee_day');
             localStorage.removeItem('waitress_coffee_sprint');
+            localStorage.removeItem('waitress_replay_day');
+            localStorage.removeItem('waitress_original_day');
 
             const saveData = {
                 score: window.GAME.score,
@@ -760,6 +823,397 @@ class HouseScene extends Phaser.Scene {
         });
     }
 
+    openCalendar() {
+        if (this.isComputerOpen) return;
+        this.isComputerOpen = true;
+        this.currentMenuTab = 'calendar';
+        this.calendarMonthOffset = 0;
+        this.renderComputerUI();
+    }
+
+    getDateFromGameDay(gameDay) {
+        let d = Math.max(1, gameDay) - 1;
+        let month = CALENDAR_CONFIG.startMonth;
+        let year = CALENDAR_CONFIG.startYear;
+
+        while (true) {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            if (d < daysInMonth) break;
+            d -= daysInMonth;
+            month++;
+            if (month > 11) { month = 0; year++; }
+        }
+
+        return { month, year, dayOfMonth: d + 1 };
+    }
+
+    getGameDayFromDate(year, month, dayOfMonth) {
+        let total = 0;
+        let m = CALENDAR_CONFIG.startMonth;
+        let y = CALENDAR_CONFIG.startYear;
+
+        while (y < year || (y === year && m < month)) {
+            total += new Date(y, m + 1, 0).getDate();
+            m++;
+            if (m > 11) { m = 0; y++; }
+        }
+
+        return total + dayOfMonth;
+    }
+
+    getMonthDifference(startYear, startMonth, year, month) {
+        return (year - startYear) * 12 + (month - startMonth);
+    }
+
+    renderCalendarContent() {
+        const container = this.computerUIContainer;
+
+        const today = this.getDateFromGameDay(window.GAME.level || 1);
+
+        let viewMonth = today.month + this.calendarMonthOffset;
+        let viewYear = today.year;
+        while (viewMonth > 11) { viewMonth -= 12; viewYear++; }
+        while (viewMonth < 0) { viewMonth += 12; viewYear--; }
+
+        const monthDiffFromStart = this.getMonthDifference(
+            CALENDAR_CONFIG.startYear,
+            CALENDAR_CONFIG.startMonth,
+            viewYear,
+            viewMonth
+        );
+
+        const canGoPrev = monthDiffFromStart > 0;
+        const canGoNext = this.calendarMonthOffset < 6;
+
+        container.add(this.add.text(400, 80,
+            `📅 ${MONTH_NAMES[viewMonth]} ${viewYear}`, {
+            fontSize: '24px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
+        container.add(this.add.text(400, 108,
+            `Oggi: Giorno ${window.GAME.level} (${today.dayOfMonth} ${MONTH_NAMES[today.month]})`, {
+            fontSize: '12px', color: '#aaaaaa', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
+        const prevMonthBtn = this.add.text(150, 90, '◀', {
+            fontSize: '26px',
+            color: canGoPrev ? '#d27d2d' : '#444444',
+            fontStyle: 'bold'
+        });
+        if (canGoPrev) {
+            prevMonthBtn.setInteractive({ useHandCursor: true });
+            prevMonthBtn.on('pointerover', () => prevMonthBtn.setColor('#ffd700'));
+            prevMonthBtn.on('pointerout', () => prevMonthBtn.setColor('#d27d2d'));
+            prevMonthBtn.on('pointerdown', () => {
+                this.calendarMonthOffset--;
+                this.renderComputerUI();
+            });
+        }
+        container.add(prevMonthBtn);
+
+        const nextMonthBtn = this.add.text(650, 90, '▶', {
+            fontSize: '26px',
+            color: canGoNext ? '#d27d2d' : '#444444',
+            fontStyle: 'bold'
+        });
+        if (canGoNext) {
+            nextMonthBtn.setInteractive({ useHandCursor: true });
+            nextMonthBtn.on('pointerover', () => nextMonthBtn.setColor('#ffd700'));
+            nextMonthBtn.on('pointerout', () => nextMonthBtn.setColor('#d27d2d'));
+            nextMonthBtn.on('pointerdown', () => {
+                this.calendarMonthOffset++;
+                this.renderComputerUI();
+            });
+        }
+        container.add(nextMonthBtn);
+
+        const dayNamesY = 140;
+        const gridStartX = 175;
+        const gridStartY = 175;
+        const cellW = 65;
+        const cellH = 48;
+
+        DAY_NAMES.forEach((name, i) => {
+            container.add(this.add.text(
+                gridStartX + i * cellW,
+                dayNamesY,
+                name,
+                { fontSize: '12px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka' }
+            ).setOrigin(0.5));
+        });
+
+        const firstDayJs = new Date(viewYear, viewMonth, 1).getDay();
+        const firstDayIndex = (firstDayJs + 6) % 7;
+
+        const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+        let scoreHistory = [];
+        try {
+            scoreHistory = JSON.parse(localStorage.getItem('waitress_score_history') || '[]');
+        } catch(e) { scoreHistory = []; }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const cellIndex = firstDayIndex + (d - 1);
+            const col = cellIndex % 7;
+            const row = Math.floor(cellIndex / 7);
+
+            const x = gridStartX + col * cellW;
+            const y = gridStartY + row * cellH;
+
+            const gameDay = this.getGameDayFromDate(viewYear, viewMonth, d);
+
+            const isToday = (viewYear === today.year && viewMonth === today.month && d === today.dayOfMonth);
+            const isPast = gameDay < (window.GAME.level || 1);
+            const isFuture = gameDay > (window.GAME.level || 1);
+
+            let bgColor = 0x222222;
+            let strokeColor = 0x444444;
+            let textColor = '#ffffff';
+
+            if (isToday) {
+                bgColor = 0xd27d2d;
+                strokeColor = 0xffd700;
+                textColor = '#ffffff';
+            } else if (isPast) {
+                bgColor = 0x1a2a1a;
+                strokeColor = 0x2ecc71;
+                textColor = '#88ff88';
+            } else if (isFuture) {
+                bgColor = 0x111111;
+                strokeColor = 0x333333;
+                textColor = '#555555';
+            }
+
+            const cell = this.add.rectangle(x, y, cellW - 6, cellH - 6, bgColor)
+                .setStrokeStyle(isToday ? 2 : 1, strokeColor);
+
+            const dayText = this.add.text(x, y - 8, String(d), {
+                fontSize: '14px',
+                color: textColor,
+                fontStyle: isToday ? 'bold' : 'normal',
+                fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            let badgeText = '';
+            let badgeColor = '#ffffff';
+
+            const historyEntry = scoreHistory.find(h => h.day === gameDay);
+            if (historyEntry) {
+                const rankInfo = MEDAL_RANKS[historyEntry.rank] || MEDAL_RANKS.OK;
+                badgeText = rankInfo.emoji;
+                badgeColor = rankInfo.color;
+            } else if (isPast) {
+                badgeText = '—';
+                badgeColor = '#666666';
+            }
+
+            const badge = this.add.text(x, y + 10, badgeText, {
+                fontSize: '11px', color: badgeColor, fontFamily: 'Fredoka'
+            }).setOrigin(0.5);
+
+            container.add([cell, dayText, badge]);
+
+            if (isPast || isToday) {
+                cell.setInteractive({ useHandCursor: true });
+
+                cell.on('pointerover', () => {
+                    cell.setFillStyle(isToday ? 0xe59866 : 0x2ecc71, 0.4);
+                });
+                cell.on('pointerout', () => {
+                    cell.setFillStyle(bgColor, 1);
+                });
+                cell.on('pointerdown', () => {
+                    this.startReplayDay(gameDay);
+                });
+            }
+        }
+
+        container.add(this.add.text(400, 500,
+            '🟩 Giocabile   🟧 Oggi   ⬛ Bloccato   ⭐ SUPER   🥇 PERFETTO   🥈 BUONO   🥉 OK', {
+            fontSize: '10px', color: '#aaaaaa', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
+        const closeBtn = this.add.text(670, 65, '✖', {
+            fontSize: '28px', color: '#e74c3c', fontStyle: 'bold'
+        }).setInteractive({ useHandCursor: true });
+        closeBtn.on('pointerdown', () => this.closeComputerHub());
+        container.add(closeBtn);
+    }
+
+    startReplayDay(gameDay) {
+        if (window.triggerSfx) window.triggerSfx('click');
+
+        localStorage.setItem('waitress_replay_day', String(gameDay));
+        localStorage.setItem('waitress_original_day', String(window.GAME.level || 1));
+
+        this.showFloatingText(400, 300, `📅 Rigioco Giorno ${gameDay}...`, '#ffd700');
+
+        this.cameras.main.fadeOut(500, 0, 0, 0);
+
+        this.time.delayedCall(500, () => {
+            this.closeComputerHub();
+            this.scene.start('Game', { replayDay: gameDay });
+        });
+    }
+
+    openDisplayCase() {
+        if (this.isComputerOpen) return;
+        this.isComputerOpen = true;
+        this.currentMenuTab = 'displaycase';
+        this.renderComputerUI();
+    }
+
+    renderDisplayCaseContent() {
+        const container = this.computerUIContainer;
+
+        container.add(this.add.text(400, 90, '🖼️ ESPOSITORE', {
+            fontSize: '24px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
+        let history = [];
+        try {
+            history = JSON.parse(localStorage.getItem('waitress_score_history') || '[]');
+        } catch(e) { history = []; }
+
+        const sortedHistory = [...history].sort((a, b) => a.day - b.day);
+
+        let superStreak = 0;
+        for (let i = sortedHistory.length - 1; i >= 0; i--) {
+            if (sortedHistory[i].rank === 'SUPER') superStreak++;
+            else break;
+        }
+
+        const bonusActive = superStreak >= 5;
+
+        const bonusColor = bonusActive ? '#2ecc71' : '#f39c12';
+        const bonusText = bonusActive
+            ? `🔥 BONUS ATTIVO: +20% incassi! (${superStreak} SUPER)`
+            : `⭐ SUPER consecutivi: ${superStreak}/5`;
+
+        container.add(this.add.rectangle(400, 125, 520, 30, bonusActive ? 0x1a3a1a : 0x2a1a0a)
+            .setStrokeStyle(1.5, bonusActive ? 0x2ecc71 : 0xf39c12));
+
+        container.add(this.add.text(400, 125, bonusText, {
+            fontSize: '13px', color: bonusColor, fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
+        const counts = { SUPER: 0, PERFETTO: 0, BUONO: 0, OK: 0 };
+        history.forEach(h => {
+            if (counts[h.rank] !== undefined) counts[h.rank]++;
+        });
+
+        const totalDays = history.length;
+
+        container.add(this.add.text(400, 165, '📊 STATISTICHE TOTALI', {
+            fontSize: '13px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
+        const statY = 190;
+        const statSpacing = 20;
+
+        container.add(this.add.text(200, statY, `⭐ SUPER: ${counts.SUPER}`, {
+            fontSize: '13px', color: MEDAL_RANKS.SUPER.color, fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0, 0.5));
+
+        container.add(this.add.text(400, statY, `🥇 PERFETTO: ${counts.PERFETTO}`, {
+            fontSize: '13px', color: MEDAL_RANKS.PERFETTO.color, fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5, 0.5));
+
+        container.add(this.add.text(200, statY + statSpacing, `🥈 BUONO: ${counts.BUONO}`, {
+            fontSize: '13px', color: MEDAL_RANKS.BUONO.color, fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0, 0.5));
+
+        container.add(this.add.text(400, statY + statSpacing, `🥉 OK: ${counts.OK}`, {
+            fontSize: '13px', color: MEDAL_RANKS.OK.color, fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5, 0.5));
+
+        container.add(this.add.text(600, statY + 10, `📅 ${totalDays}`, {
+            fontSize: '13px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(1, 0.5));
+
+        container.add(this.add.text(600, statY + 10 + statSpacing, 'giorni', {
+            fontSize: '10px', color: '#aaaaaa', fontFamily: 'Fredoka'
+        }).setOrigin(1, 0.5));
+
+        container.add(this.add.text(400, 245, '📜 ULTIMI 10 GIORNI', {
+            fontSize: '13px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
+        const recent = [...history].sort((a, b) => b.day - a.day).slice(0, 10);
+
+        if (recent.length === 0) {
+            container.add(this.add.text(400, 320,
+                'Nessun giorno giocato ancora.\nCompleta un livello per vedere i tuoi risultati qui!', {
+                fontSize: '12px', color: '#aaaaaa', fontFamily: 'Fredoka', align: 'center'
+            }).setOrigin(0.5));
+        } else {
+            const listStartY = 270;
+            const rowSpacing = 22;
+
+            recent.forEach((entry, i) => {
+                const y = listStartY + i * rowSpacing;
+                const rankInfo = MEDAL_RANKS[entry.rank] || MEDAL_RANKS.OK;
+
+                const bgColor = (i % 2 === 0) ? 0x1a1a1a : 0x222222;
+                container.add(this.add.rectangle(400, y, 500, 20, bgColor).setStrokeStyle(1, 0x333333));
+
+                container.add(this.add.text(160, y, `G.${entry.day}`, {
+                    fontSize: '12px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka'
+                }).setOrigin(0, 0.5));
+
+                container.add(this.add.text(240, y, rankInfo.emoji, {
+                    fontSize: '14px', color: rankInfo.color, fontFamily: 'Fredoka'
+                }).setOrigin(0.5, 0.5));
+
+                container.add(this.add.text(290, y, rankInfo.label, {
+                    fontSize: '12px', color: rankInfo.color, fontStyle: 'bold', fontFamily: 'Fredoka'
+                }).setOrigin(0, 0.5));
+
+                container.add(this.add.text(620, y, `${entry.score}€`, {
+                    fontSize: '12px', color: '#2ecc71', fontStyle: 'bold', fontFamily: 'Fredoka'
+                }).setOrigin(1, 0.5));
+
+                if (entry.expositorBonus && entry.expositorBonus > 0) {
+                    container.add(this.add.text(640, y, `🔥`, {
+                        fontSize: '12px', color: '#9b59b6', fontFamily: 'Fredoka'
+                    }).setOrigin(0.5, 0.5));
+                }
+            });
+        }
+
+        const closeBtn = this.add.text(670, 65, '✖', {
+            fontSize: '28px', color: '#e74c3c', fontStyle: 'bold'
+        }).setInteractive({ useHandCursor: true });
+        closeBtn.on('pointerdown', () => this.closeComputerHub());
+        container.add(closeBtn);
+    }
+
+    openWardrobe() {
+        if (this.isComputerOpen) return;
+        this.isComputerOpen = true;
+        this.currentMenuTab = 'wardrobe';
+        this.renderComputerUI();
+    }
+
+    renderWardrobeContent() {
+        const container = this.computerUIContainer;
+
+        container.add(this.add.text(400, 160, '🚪 ARMADIO', {
+            fontSize: '24px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
+        container.add(this.add.text(400, 220,
+            'In arrivo nello step successivo!', {
+            fontSize: '14px', color: '#aaaaaa', fontFamily: 'Fredoka', align: 'center'
+        }).setOrigin(0.5));
+
+        const closeBtn = this.add.text(670, 65, '✖', {
+            fontSize: '28px', color: '#e74c3c', fontStyle: 'bold'
+        }).setInteractive({ useHandCursor: true });
+        closeBtn.on('pointerdown', () => this.closeComputerHub());
+        container.add(closeBtn);
+    }
+
     openComputerHub() {
         if (this.isComputerOpen) return;
         this.isComputerOpen = true;
@@ -777,32 +1231,49 @@ class HouseScene extends Phaser.Scene {
         this.clearHtmlInputs();
     }
 
+    isCustomPanel() {
+        return this.currentMenuTab === 'calendar' ||
+               this.currentMenuTab === 'displaycase' ||
+               this.currentMenuTab === 'wardrobe';
+    }
+
     renderComputerUI() {
         this.destroyComputerUI();
 
         this.computerUIContainer = this.add.container(0, 0).setDepth(200).setScrollFactor(0);
-        this.computerUIContainer.add(this.add.rectangle(400, 300, 600, 500, 0x110906, 0.97).setStrokeStyle(2, 0xd27d2d));
-        this.computerUIContainer.add(this.add.text(400, 70, '💻 COMPUTER', { fontSize: '24px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0.5));
 
-        const closeBtn = this.add.text(670, 65, '✖', { fontSize: '28px', color: '#e74c3c', fontStyle: 'bold' }).setInteractive({ useHandCursor: true });
-        closeBtn.on('pointerdown', () => this.closeComputerHub());
-        this.computerUIContainer.add(closeBtn);
+        if (this.isCustomPanel()) {
+            const bg = this.add.rectangle(400, 300, 560, 460, 0x110906, 0.97);
+            bg.setStrokeStyle(2, 0xd27d2d);
+            this.computerUIContainer.add(bg);
+        } else {
+            this.computerUIContainer.add(this.add.rectangle(400, 300, 600, 500, 0x110906, 0.97).setStrokeStyle(2, 0xd27d2d));
+            this.computerUIContainer.add(this.add.text(400, 70, '💻 COMPUTER', {
+                fontSize: '24px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+            }).setOrigin(0.5));
 
-        const tabs = [
-            { id: 'upgrades', label: 'Potenziamenti' },
-            { id: 'social', label: 'SOCIAL NETWORK' },
-            { id: 'stats', label: 'STATISTICHE' },
-            { id: 'search', label: 'WEB' }
-        ];
+            const closeBtn = this.add.text(670, 65, '✖', {
+                fontSize: '28px', color: '#e74c3c', fontStyle: 'bold'
+            }).setInteractive({ useHandCursor: true });
+            closeBtn.on('pointerdown', () => this.closeComputerHub());
+            this.computerUIContainer.add(closeBtn);
 
-        tabs.forEach((tab, i) => {
-            const x = 190 + i * 140;
-            const btn = this.add.rectangle(x, 115, 125, 28, this.currentMenuTab === tab.id ? 0xd27d2d : 0x2c1a11).setInteractive({ useHandCursor: true });
-            const btnText = this.add.text(x, 115, tab.label, { fontSize: '11px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0.5);
-            btn.on('pointerdown', () => { this.currentMenuTab = tab.id; this.scrollOffsetY = 0; this.renderComputerUI(); });
-            this.computerUIContainer.add(btn);
-            this.computerUIContainer.add(btnText);
-        });
+            const tabs = [
+                { id: 'upgrades', label: 'Potenziamenti' },
+                { id: 'social', label: 'SOCIAL NETWORK' },
+                { id: 'stats', label: 'STATISTICHE' },
+                { id: 'search', label: 'WEB' }
+            ];
+
+            tabs.forEach((tab, i) => {
+                const x = 190 + i * 140;
+                const btn = this.add.rectangle(x, 115, 125, 28, this.currentMenuTab === tab.id ? 0xd27d2d : 0x2c1a11).setInteractive({ useHandCursor: true });
+                const btnText = this.add.text(x, 115, tab.label, { fontSize: '11px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0.5);
+                btn.on('pointerdown', () => { this.currentMenuTab = tab.id; this.scrollOffsetY = 0; this.renderComputerUI(); });
+                this.computerUIContainer.add(btn);
+                this.computerUIContainer.add(btnText);
+            });
+        }
 
         if (this.currentMenuTab === 'upgrades') this.renderUpgradesContent();
         else if (this.currentMenuTab === 'social') this.renderSocialContent();
@@ -810,6 +1281,9 @@ class HouseScene extends Phaser.Scene {
         else if (this.currentMenuTab === 'search') this.renderSearchContent();
         else if (this.currentMenuTab === 'ivea') this.renderIveaShopContent();
         else if (this.currentMenuTab === 'hiddenvault') this.renderHiddenVaultStoreContent();
+        else if (this.currentMenuTab === 'calendar') this.renderCalendarContent();
+        else if (this.currentMenuTab === 'displaycase') this.renderDisplayCaseContent();
+        else if (this.currentMenuTab === 'wardrobe') this.renderWardrobeContent();
     }
 
     renderUpgradesContent() {
@@ -857,7 +1331,8 @@ class HouseScene extends Phaser.Scene {
                         localStorage.setItem('waitress_house_upgrades', JSON.stringify(savedUpgrades));
 
                         const saveData = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
-                        saveData.score = window.GAME.score;
+                        if (saveData.data) saveData.data.score = window.GAME.score;
+                        else saveData.score = window.GAME.score;
                         localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
 
                         this.updateHouseHUD();
@@ -997,6 +1472,7 @@ class HouseScene extends Phaser.Scene {
             { id: 'wardrobe', name: 'Armadio', price: 120, emoji: '🚪', desc: 'Capiente armadio per organizzare i tuoi abiti.', target: 'house' },
             { id: 'coffee_machine', name: 'Macchinetta del Caffè', price: 140, emoji: '☕', desc: 'Un po\' di caffeina non fa mai male', target: 'house' },
             { id: 'display_case', name: 'Espositore', price: 180, emoji: '🖼️', desc: 'Esponi i tuoi risultati.', target: 'house' },
+            { id: 'calendar', name: 'Calendario', price: 100, emoji: '📅', desc: 'Rigioca i giorni passati.', target: 'house' },
             { id: 'house_plant', name: 'Pianta da Interno', price: 30, emoji: '🪴', desc: 'Rende l\'ambiente più accogliente e rilassante.', target: 'house' },
             { id: 'house_radio', name: 'Radio', price: 75, emoji: '📻', desc: 'Diffonde musica d\'ambiente nel locale.', target: 'house' },
             { id: 'crib', name: 'Culla', price: 200, emoji: '🛏️', desc: 'Culla per bimbi piccoli', target: 'house' },
@@ -1048,7 +1524,8 @@ class HouseScene extends Phaser.Scene {
                         window.GAME.score -= item.price;
 
                         const saveData = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
-                        saveData.score = window.GAME.score;
+                        if (saveData.data) saveData.data.score = window.GAME.score;
+                        else saveData.score = window.GAME.score;
                         localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
 
                         this.updateHouseHUD();
@@ -1067,10 +1544,10 @@ class HouseScene extends Phaser.Scene {
         this.computerUIContainer.add([headerBg, logoText, subText]);
 
         const items = [
-            { id: 'poison', name: 'Veleno', price: 150, emoji: '🧪', desc: 'Avvelena un piatto senza uccidere' },
-            { id: 'fake_pos', name: 'POS Contraffatto', price: 250, emoji: '💳', desc: 'Raddoppia le entrate del giorno' },
-            { id: 'vpn', name: 'VPN', price: 200, emoji: '🛡️', desc: 'Dimezza il sospetto dal dark web' },
-            { id: 'compartment', name: 'Scomparto Segreto', price: 300, emoji: '📦', desc: 'Nasconde oggetti illegali dalla finanza' }
+            { id: 'poison', name: 'Veleno', price: 150, emoji: '🧪', desc: 'Avvelena un piatto senza uccidere', target: 'inventory' },
+            { id: 'fake_pos', name: 'POS Contraffatto', price: 250, emoji: '💳', desc: 'Raddoppia le entrate del giorno', target: 'restaurant' },
+            { id: 'vpn', name: 'VPN', price: 200, emoji: '🛡️', desc: 'Dimezza il sospetto dal dark web', target: 'restaurant' },
+            { id: 'compartment', name: 'Scomparto Segreto', price: 300, emoji: '📦', desc: 'Nasconde oggetti illegali dalla finanza', target: 'restaurant' }
         ];
 
         const maskShape = this.make.graphics();
@@ -1095,38 +1572,55 @@ class HouseScene extends Phaser.Scene {
                 (item.id === 'compartment' && this.crime.hasSecretCompartment)
             ) : false;
 
+            const isPending = this.iveaPendingDeliveries.some(d => d.id === item.id);
+
             const card = this.add.rectangle(400, yPos, 520, 48, 0x0f172a).setStrokeStyle(1, 0x1e293b);
             const icon = this.add.text(150, yPos, item.emoji, { fontSize: '22px' }).setOrigin(0.5);
             const title = this.add.text(180, yPos - 8, item.name, { fontSize: '13px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0, 0.5);
             const desc = this.add.text(180, yPos + 8, item.desc, { fontSize: '10px', color: '#94a3b8', fontFamily: 'Fredoka' }).setOrigin(0, 0.5);
 
-            let btnColor = owned ? 0x475569 : 0x166534;
-            let btnLabel = owned ? 'POSSEDUTO' : `${item.price}€`;
+            let btnColor = owned ? 0x475569 : (isPending ? 0xf39c12 : 0x166534);
+            let btnLabel = owned ? 'POSSEDUTO' : (isPending ? 'IN CONSEGNA...' : `${item.price}€`);
 
             const buyBtn = this.add.rectangle(610, yPos, 80, 26, btnColor).setInteractive({ useHandCursor: true });
             const buyTxt = this.add.text(610, yPos, btnLabel, { fontSize: '10px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0.5);
 
             this.scrollableContentContainer.add([card, icon, title, desc, buyBtn, buyTxt]);
 
-            if (!owned) {
+            if (!owned && !isPending) {
                 buyBtn.on('pointerdown', () => {
                     if (window.GAME && window.GAME.score >= item.price) {
                         window.GAME.score -= item.price;
 
                         const saveData = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
-                        saveData.score = window.GAME.score;
+                        if (saveData.data) saveData.data.score = window.GAME.score;
+                        else saveData.score = window.GAME.score;
                         localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
 
                         this.updateHouseHUD();
 
-                        if (this.crime) {
-                            this.crime.inventory.push(item.id);
-                            if (item.id === 'poison') { this.crime.hasPoison = true; this.crime.addSuspicion(15, 'darkweb'); }
-                            if (item.id === 'fake_pos') { this.crime.hasFakePOS = true; this.crime.addSuspicion(20, 'darkweb'); }
-                            if (item.id === 'vpn') this.crime.hasVPN = true;
-                            if (item.id === 'compartment') this.crime.hasSecretCompartment = true;
-                            this.crime.darkWebAccessCount++;
-                            this.crime.saveCrimeData();
+                        if (item.id === 'poison') {
+                            if (this.crime) {
+                                this.crime.inventory.push(item.id);
+                                this.crime.hasPoison = true;
+                                this.crime.addSuspicion(15, 'darkweb');
+                                this.crime.darkWebAccessCount++;
+                                this.crime.saveCrimeData();
+                            }
+                            this.showMessage(`🧪 Veleno aggiunto all'inventario!`, '#e74c3c');
+                        } else {
+                            this.queueIveaDelivery({
+                                id: item.id,
+                                name: item.name,
+                                emoji: item.emoji,
+                                price: item.price,
+                                target: 'restaurant'
+                            });
+                            if (this.crime) {
+                                this.crime.addSuspicion(20, 'darkweb');
+                                this.crime.darkWebAccessCount++;
+                                this.crime.saveCrimeData();
+                            }
                         }
                         this.renderComputerUI();
                     }

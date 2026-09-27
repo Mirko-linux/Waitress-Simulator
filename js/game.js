@@ -156,7 +156,7 @@
         customersTarget: 10,
         lives: 3,
         dirtyPlates: 0,
-        carriedOrder: null,
+        carriedOrders: [],
         isCheater: false,
         suspicion: 0,
         compartmentHidden: false,
@@ -352,9 +352,11 @@
             
             this.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
             this.load.audio('scarico', 'assets/audio/scarico.mp3');
-            this.load.audio('npc_call_center', 'assets/audio/Pubblicita/npc_call_center.mp3');
-            this.load.audio('npc_call_center_1', 'assets/audio/Pubblicita/npc_call_center_1.mp3');
-            this.load.audio('npc_call_center_2', 'assets/audio/Pubblicita/npc_call_center_2.mp3');
+            this.load.audio('chiesa', 'assets/audio/chiesa.mp3');
+            this.load.audio('npc_call_center', 'assets/audio/Chiamata/npc_call_center.mp3');
+            this.load.audio('npc_call_center_1', 'assets/audio/Chiamata/npc_call_center_1.mp3');
+            this.load.audio('npc_call_center_2', 'assets/audio/Chiamata/npc_call_center_2.mp3');
+            this.load.audio('npc_call_center_3', 'assets/audio/Chiamata/npc_call_center_3.mp3');
 
             this.load.image('Piatto Sporco', 'assets/Cibo/Piatto Sporco.png');
             this.load.image('Lavello_vuoto', 'assets/Lavello/Lavello_vuoto.png');
@@ -609,10 +611,21 @@
 
             this.maxOrders = 1 + notebookLevel;
 
+            const replayDay = this.scene.settings && this.scene.settings.data
+                ? this.scene.settings.data.replayDay
+                : null;
+
+            if (replayDay) {
+                localStorage.removeItem('waitress_replay_day');
+            }
+
             let savedData = null;
             try {
                 const raw = localStorage.getItem('waitress_save_data');
-                if (raw) savedData = JSON.parse(raw);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    savedData = parsed.data || parsed;
+                }
             } catch(e) {}
 
             if (savedData && savedData.level > 0) {
@@ -622,7 +635,7 @@
                 GAME.lives = savedData.lives || 3;
                 GAME.dirtyPlates = savedData.dirtyPlates || 0;
                 GAME.customersTarget = 6 + (GAME.level * 4);
-                GAME.carriedOrder = null;
+                GAME.carriedOrders = [];
 
                 let isSaveTampered = false;
                 try {
@@ -655,7 +668,7 @@
                 GAME.lives = 3;
                 GAME.customersTarget = 10;
                 GAME.level = 1;
-                GAME.carriedOrder = null;
+                GAME.carriedOrders = [];
                 GAME.score = 0;
                 GAME.isCheater = false;
                 GAME.suspicion = 0;
@@ -668,10 +681,22 @@
                 };
             }
 
+            if (replayDay && replayDay > 0) {
+                GAME.level = replayDay;
+                GAME.customersServed = 0;
+                GAME.customersTarget = 6 + (GAME.level * 4);
+                GAME.carriedOrders = [];
+                GAME.dirtyPlates = 0;
+                GAME.lives = 3;
+
+                this.showFloatingText(400, 300, `📅 Replay Giorno ${replayDay}`, '#ffd700');
+            }
+
             this.isCheater = GAME.isCheater || false;
 
             if (typeof GAME.suspicion !== 'number') GAME.suspicion = 0;
             if (typeof GAME.compartmentHidden !== 'boolean') GAME.compartmentHidden = false;
+            if (!Array.isArray(GAME.carriedOrders)) GAME.carriedOrders = [];
 
             applyUpgrades();
 
@@ -702,20 +727,7 @@
             }
 
             if (typeof window.AIDialogueManager === 'function') {
-                if (GAME.settings.aiEnabled) {
-                    this.aiManager = new window.AIDialogueManager(this, true);
-                } else {
-                    this.aiManager = {
-                        useFallback: true,
-                        isModelReady: true,
-                        openChat: (customer) => {
-                            if (window.AIDialogueManager) {
-                                const dummy = new window.AIDialogueManager(this, false);
-                                dummy.openChat(customer);
-                            }
-                        }
-                    };
-                }
+                this.aiManager = new window.AIDialogueManager(this, true);
             }
 
             if (this.aiManager && this.aiManager.npcManager) {
@@ -760,7 +772,7 @@
             const tutorialSkipped = localStorage.getItem('waitress_tutorial_done') === 'true';
             window.FORCE_TUTORIAL = !tutorialSkipped;
 
-            if (window.FORCE_TUTORIAL && typeof window.TutorialSystem === 'function') {
+            if (!replayDay && window.FORCE_TUTORIAL && typeof window.TutorialSystem === 'function') {
                 this.tutorialActive = true;
                 this.tutorial = new window.TutorialSystem(this);
                 GAME.level = 0;
@@ -858,24 +870,11 @@
         }
 
         checkPoliceInspection() {
-            if (GAME.suspicion >= 100 && !this.inspectionActive) {
+            if ((GAME.suspicion >= 100 || GAME.isCheater) && !this.inspectionActive) {
                 this.inspectionActive = true;
-                this.gameActive = false;
-
-                this.showFloatingText(400, 300, '🚨 CONTROLLO FINANZA IN CORSO! 🚨', '#ff0000');
-                triggerSfx('alert');
-
-                this.time.delayedCall(4000, () => {
-                    if (GAME.compartmentHidden) {
-                        this.showFloatingText(400, 300, '✅ Ispezione superata! Nessun illecito trovato.', '#2ecc71');
-                        GAME.suspicion = 0;
-                        this.gameActive = true;
-                        this.inspectionActive = false;
-                    } else {
-                        this.inspectionActive = false;
-                        this.arrestWaitress();
-                    }
-                });
+                if (this.crime) {
+                    this.crime.triggerInspection();
+                }
             }
         }
 
@@ -899,7 +898,7 @@
                 GAME.lives = 3;
                 GAME.level = 1;
                 GAME.customersTarget = 6 + GAME.level * 4;
-                GAME.carriedOrder = null;
+                GAME.carriedOrders = [];
             }
             
             this.gameActive = true;
@@ -1611,10 +1610,17 @@
             const prevTable = this.notepadTableText.text;
             const prevFood = this.notepadFoodText.text;
 
-            if (GAME.carriedOrder) {
-                const newTableStr = `${t('NOTEPAD_TABLE')} ${GAME.carriedOrder.tableId}`;
-                const emoji = this.getFoodEmoji(GAME.carriedOrder.foodName);
-                const newFoodStr = `${emoji} ${GAME.carriedOrder.foodName.toUpperCase()}`;
+            const orders = GAME.carriedOrders || [];
+
+            if (orders.length > 0) {
+                const firstOrder = orders[0];
+                const newTableStr = `${t('NOTEPAD_TABLE')} ${firstOrder.tableId}`;
+                const emoji = this.getFoodEmoji(firstOrder.foodName);
+                let newFoodStr = `${emoji} ${firstOrder.foodName.toUpperCase()}`;
+
+                if (orders.length > 1) {
+                    newFoodStr += ` +${orders.length - 1}`;
+                }
 
                 if (shouldAnimate && (prevTable !== t('NOTEPAD_EMPTY'))) {
                     this.animateTornPaper(prevTable, prevFood);
@@ -1797,7 +1803,7 @@
             GAME.level = targetDay;
             GAME.customersServed = 0;
             GAME.customersTarget = 6 + (GAME.level * 4);
-            GAME.carriedOrder = null;
+            GAME.carriedOrders = [];
             GAME.dirtyPlates = 0;
 
             this.ordersTaken = 0;
@@ -2504,21 +2510,15 @@
                 if (this.isPhoneActive) return;
                 if (!customer.bubble || !customer.bubble.active || !customer.bubble.visible) return;
 
-                if (customer.bubble.texture && customer.bubble.texture.key === 'bubble_talk') {
-                    if (
-                        !customer.movementData ||
-                        !customer.movementData.movementComplete ||
-                        !customer.table ||
-                        customer.table.customer !== customer
-                    ) {
-                        return;
-                    }
+                const texKey = customer.bubble.texture && customer.bubble.texture.key;
 
+                if (texKey === 'bubble_talk' || texKey === 'bubble_happy' || texKey === 'bubble_order' || texKey === 'bubble_angry' || texKey === 'bubble_mission' || texKey === 'bubble_cash') {
                     this.currentCustomer = customer;
 
-                    if (this.aiManager) {
+                    if (this.aiManager && typeof this.aiManager.openChat === 'function') {
                         this.aiManager.openChat(customer);
                     }
+
                     return;
                 }
 
@@ -2674,13 +2674,10 @@
                     customer.table.status = 'piatto_sporco';
                 }
 
-                if (
-                    GAME.carriedOrder &&
-                    GAME.carriedOrder.tableId === tableId
-                ) {
-                    GAME.carriedOrder = null;
-                    this.waitressHasOrder = false;
-                    this.currentOrder = null;
+                const orderIdx = (GAME.carriedOrders || []).findIndex(o => o.tableId === tableId);
+                if (orderIdx > -1) {
+                    GAME.carriedOrders.splice(orderIdx, 1);
+                    this.ordersTaken = Math.max(0, this.ordersTaken - 1);
                     this.updateNotepadUI(true);
                     this.updateHUD();
                 }
@@ -2818,14 +2815,13 @@
                     triggerSfx('alert');
                     return;
                 }
-                
-                if (this.ordersTaken > 0) {
-                    if (GAME.carriedOrder && GAME.carriedOrder.tableId !== table.id) {
-                        this.showFloatingText(this.waitress.x, this.waitress.y - 30, 
-                            `📝 Hai già la comanda di un altro tavolo nel taccuino! Portala al Pass Piatti.`, '#ff4444');
-                        triggerSfx('click');
-                        return;
-                    }
+
+                const existingOrder = (GAME.carriedOrders || []).find(o => o.tableId === table.id);
+                if (existingOrder) {
+                    this.showFloatingText(this.waitress.x, this.waitress.y - 30, 
+                        `📝 Hai già preso la comanda per questo tavolo!`, '#ff4444');
+                    triggerSfx('click');
+                    return;
                 }
                 
                 triggerSfx('pickup');
@@ -2834,10 +2830,12 @@
 
                 const orderedFood = String(table.customer.order || '').trim();
 
-                GAME.carriedOrder = {
+                if (!Array.isArray(GAME.carriedOrders)) GAME.carriedOrders = [];
+
+                GAME.carriedOrders.push({
                     tableId: table.id,
                     foodName: orderedFood
-                };
+                });
 
                 table._activeOrder = {
                     tableId: table.id,
@@ -2907,14 +2905,10 @@
 
                     const servedTableId = table.id;
 
-                    if (
-                        GAME.carriedOrder &&
-                        GAME.carriedOrder.tableId === servedTableId
-                    ) {
-                        GAME.carriedOrder = null;
-                        this.waitressHasOrder = false;
-                        this.currentOrder = null;
-                        this.ordersTaken = 0;
+                    const orderIdx = (GAME.carriedOrders || []).findIndex(o => o.tableId === servedTableId);
+                    if (orderIdx > -1) {
+                        GAME.carriedOrders.splice(orderIdx, 1);
+                        this.ordersTaken = Math.max(0, this.ordersTaken - 1);
                     }
 
                     table._activeOrder = null;
@@ -3074,7 +3068,7 @@
                 const stepTarget = this.tutorialStepTarget;
 
                 if (stepTarget === 'counter_order') {
-                    if (!GAME.carriedOrder) {
+                    if (!GAME.carriedOrders || GAME.carriedOrders.length === 0) {
                         this.showFloatingText(this.waitress.x, this.waitress.y - 40,
                             "⚠️ Prima prendi la comanda dal cliente!", '#f39c12');
                         triggerSfx('click');
@@ -3091,32 +3085,13 @@
                 }
             }
 
-            if (GAME.carriedOrder) {
+            if (!Array.isArray(GAME.carriedOrders)) GAME.carriedOrders = [];
 
-                const order = GAME.carriedOrder;
+            if (GAME.carriedOrders.length > 0) {
 
-                const foodName = String(order.foodName || '').trim();
-                const tableId = order.tableId;
+                const ordersToSend = [...GAME.carriedOrders];
 
-                if (!foodName || tableId === undefined || tableId === null) {
-                    GAME.carriedOrder = null;
-                    this.waitressHasOrder = false;
-                    this.currentOrder = null;
-                    this.ordersTaken = 0;
-
-                    this.updateNotepadUI(true);
-                    this.updateHUD();
-
-                    return;
-                }
-
-                const normalizedFood = foodName
-                    .toLowerCase()
-                    .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
-                    .trim();
-
-                const foodStationMap = {
+                const normalizedStationMap = {
                     'pizza': 'forno',
                     'patatine': 'friggitrice',
                     'panino': 'fornelli',
@@ -3136,113 +3111,105 @@
                     'acqua': 'frigo'
                 };
 
-                const stationKey = foodStationMap[normalizedFood];
+                for (const order of ordersToSend) {
+                    const foodName = String(order.foodName || '').trim();
+                    const tableId = order.tableId;
 
-                if (!stationKey) {
-                    this.showFloatingText(
-                        this.waitress.x,
-                        this.waitress.y - 40,
-                        `❌ Nessuna stazione per ${foodName}!`,
-                        '#ff0000'
+                    if (!foodName || tableId === undefined || tableId === null) {
+                        const idx = GAME.carriedOrders.indexOf(order);
+                        if (idx > -1) GAME.carriedOrders.splice(idx, 1);
+                        this.ordersTaken = Math.max(0, this.ordersTaken - 1);
+                        continue;
+                    }
+
+                    const normalizedFood = foodName
+                        .toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .trim();
+
+                    const stationKey = normalizedStationMap[normalizedFood];
+
+                    if (!stationKey) {
+                        this.showFloatingText(
+                            this.waitress.x,
+                            this.waitress.y - 40,
+                            `❌ Nessuna stazione per ${foodName}!`,
+                            '#ff0000'
+                        );
+                        continue;
+                    }
+
+                    if (!this.kitchen || typeof this.kitchen.addOrder !== 'function') {
+                        this.showFloatingText(
+                            this.waitress.x,
+                            this.waitress.y - 40,
+                            '❌ Cucina non disponibile!',
+                            '#ff0000'
+                        );
+                        break;
+                    }
+
+                    const table = this.tables.find(t => t.id === tableId);
+
+                    if (!table || !table.customer || table.customer.isDead) {
+                        const idx = GAME.carriedOrders.indexOf(order);
+                        if (idx > -1) GAME.carriedOrders.splice(idx, 1);
+                        this.ordersTaken = Math.max(0, this.ordersTaken - 1);
+                        continue;
+                    }
+
+                    table._activeOrder = {
+                        tableId: tableId,
+                        foodName: foodName
+                    };
+
+                    const added = this.kitchen.addOrder(
+                        stationKey,
+                        foodName,
+                        tableId
                     );
-                    return;
-                }
 
-                if (!this.kitchen || typeof this.kitchen.addOrder !== 'function') {
-                    this.showFloatingText(
-                        this.waitress.x,
-                        this.waitress.y - 40,
-                        '❌ Cucina non disponibile!',
-                        '#ff0000'
-                    );
-                    return;
-                }
+                    if (added) {
+                        const idx = GAME.carriedOrders.indexOf(order);
+                        if (idx > -1) GAME.carriedOrders.splice(idx, 1);
+                        this.ordersTaken = Math.max(0, this.ordersTaken - 1);
 
-                const table = this.tables.find(t => t.id === tableId);
+                        this.showFloatingText(
+                            this.waitress.x,
+                            this.waitress.y - 40,
+                            `📝 ${t('ORDER_SENT')} - ${foodName}`,
+                            '#00ff00'
+                        );
 
-                if (!table || !table.customer || table.customer.isDead) {
-                    GAME.carriedOrder = null;
-                    this.waitressHasOrder = false;
-                    this.currentOrder = null;
-                    this.ordersTaken = 0;
+                        triggerSfx('cook');
 
-                    this.updateNotepadUI(true);
-                    this.updateHUD();
+                        if (this.tutorialActive && this.tutorial) {
+                            this.tutorial.forceKitchenComplete();
+                            this.time.delayedCall(500, () => {
+                                if (this.tutorialActive && this.tutorial) {
+                                    this.tutorial.forceKitchenComplete();
+                                }
+                            });
+                        }
+                    } else {
+                        this.showFloatingText(
+                            this.waitress.x,
+                            this.waitress.y - 40,
+                            '⚠️ Il cuoco non può prendere l\'ordine!',
+                            '#ffaa00'
+                        );
+                        triggerSfx('alert');
 
-                    return;
-                }
-
-                table._activeOrder = {
-                    tableId: tableId,
-                    foodName: foodName
-                };
-
-                const added = this.kitchen.addOrder(
-                    stationKey,
-                    foodName,
-                    tableId
-                );
-
-                if (added) {
-                    this.showFloatingText(
-                        this.waitress.x,
-                        this.waitress.y - 40,
-                        `📝 ${t('ORDER_SENT')}`,
-                        '#00ff00'
-                    );
-
-                    triggerSfx('cook');
-
-                    if (this.tutorialActive && this.tutorial) {
-                        this.tutorial.forceKitchenComplete();
-                        this.time.delayedCall(500, () => {
-                            if (this.tutorialActive && this.tutorial) {
-                                this.tutorial.forceKitchenComplete();
+                        const failedTable = this.tables.find(t => t.id === tableId);
+                        if (failedTable && failedTable.customer && !failedTable.customer.isDead) {
+                            failedTable.status = 'ordinazione_pronta';
+                            if (failedTable.customer.bubble && failedTable.customer.bubble.active) {
+                                failedTable.customer.bubble.setVisible(true);
                             }
-                        });
-                    }
-
-                    GAME.carriedOrder = null;
-                    this.waitressHasOrder = false;
-                    this.currentOrder = null;
-
-                    this.ordersTaken = 0;
-
-                    this.updateNotepadUI(true);
-                    this.updateHUD();
-
-                    return;
-                }
-
-                this.showFloatingText(
-                    this.waitress.x,
-                    this.waitress.y - 40,
-                    '⚠️ Il cuoco non può prendere l\'ordine!',
-                    '#ffaa00'
-                );
-
-                triggerSfx('alert');
-
-                const failedTable = this.tables.find(
-                    t => t.id === tableId
-                );
-
-                if (failedTable && failedTable.customer && !failedTable.customer.isDead) {
-                    failedTable.status = 'ordinazione_pronta';
-
-                    if (
-                        failedTable.customer.bubble &&
-                        failedTable.customer.bubble.active
-                    ) {
-                        failedTable.customer.bubble.setVisible(true);
+                        }
                     }
                 }
-
-                GAME.carriedOrder = null;
-                this.waitressHasOrder = false;
-                this.currentOrder = null;
-
-                this.ordersTaken = 0;
 
                 this.updateNotepadUI(true);
                 this.updateHUD();
@@ -3672,8 +3639,13 @@
                 this.quest.update();
             }
 
-            if (this.crime && typeof this.crime.update === 'function') {
-                this.crime.update(time, delta);
+            if (this.crime) {
+                if (typeof this.crime.update === 'function') {
+                    this.crime.update(time, delta);
+                }
+                if (this.crime._inspectionActive && this.crime._inspectionPolice) {
+                    this.crime.updateInspectionPolice(delta);
+                }
             }
 
             if (this.radio && typeof this.radio.update === 'function') {
@@ -3935,28 +3907,100 @@
                 this.story.onDayComplete(GAME.level);
             }
 
+            const isReplay = localStorage.getItem('waitress_replay_day') !== null;
+            const originalDay = parseInt(localStorage.getItem('waitress_original_day') || String(GAME.level));
+
+            const currentLevel = isReplay ? parseInt(localStorage.getItem('waitress_replay_day')) : GAME.level;
+
             const rent = 50;
             const net = Math.max(0, this.levelEarnings - rent);
             GAME.score = net;
 
+            const targetScore = GAME.customersTarget * 15;
+            const ratio = targetScore > 0 ? (this.levelEarnings / targetScore) : 0;
+
+            let rank = 'OK';
+            if (ratio >= 1.4) rank = 'SUPER';
+            else if (ratio >= 1.1) rank = 'PERFETTO';
+            else if (ratio >= 0.8) rank = 'BUONO';
+            else rank = 'OK';
+
+            let history = [];
+            try {
+                history = JSON.parse(localStorage.getItem('waitress_score_history') || '[]');
+            } catch(e) { history = []; }
+
+            history = history.filter(h => h.day !== currentLevel);
+
+            history.push({
+                day: currentLevel,
+                rank: rank,
+                score: this.levelEarnings,
+                ratio: ratio,
+                timestamp: Date.now()
+            });
+
+            if (history.length > 200) {
+                history.sort((a, b) => a.day - b.day);
+                history = history.slice(-200);
+            }
+
+            const sortedHistory = [...history].sort((a, b) => a.day - b.day);
+
+            let superStreak = 0;
+            for (let i = sortedHistory.length - 1; i >= 0; i--) {
+                if (sortedHistory[i].rank === 'SUPER') superStreak++;
+                else break;
+            }
+
+            let expositorBonus = 0;
+            if (superStreak >= 5 && !isReplay) {
+                expositorBonus = Math.floor(this.levelEarnings * 0.2);
+                GAME.score += expositorBonus;
+                this.showFloatingText(400, 350, `🔥 BONUS ESPOSITORE: +${expositorBonus}€!`, '#9b59b6');
+            }
+
+            const currentEntry = history.find(h => h.day === currentLevel);
+            if (currentEntry) {
+                currentEntry.expositorBonus = expositorBonus;
+                currentEntry.superStreak = superStreak;
+            }
+            localStorage.setItem('waitress_score_history', JSON.stringify(history));
+
             const saveData = {
                 score: GAME.score,
-                level: GAME.level + 1,
+                level: isReplay ? originalDay : (GAME.level + 1),
                 customersServed: 0,
                 lives: 3,
                 dirtyPlates: 0,
                 isCheater: GAME.isCheater || false,
                 settings: GAME.settings,
-                housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
+                housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : [],
+                lastRank: rank,
+                lastBonus: expositorBonus
             };
-            
+
             localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
-            
+
             if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
                 window.SaveManager.saveGame(saveData);
             }
-            
+
+            if (isReplay) {
+                localStorage.removeItem('waitress_replay_day');
+                localStorage.removeItem('waitress_original_day');
+            }
+
             this.time.delayedCall(1200, () => {
+                if (isReplay) {
+                    if (window.HouseScene && !this.scene.get('House')) {
+                        this.scene.add('House', window.HouseScene, true);
+                    } else {
+                        this.scene.start('House');
+                    }
+                    return;
+                }
+
                 if (window.LevelSummaryScene && !this.scene.get('LevelSummary')) {
                     this.scene.add('LevelSummary', window.LevelSummaryScene, false);
                 }
@@ -3970,14 +4014,17 @@
                         served: GAME.customersServed,
                         target: GAME.customersTarget,
                         lives: GAME.lives,
-                        level: GAME.level
+                        level: GAME.level,
+                        rank: rank,
+                        expositorBonus: expositorBonus,
+                        superStreak: superStreak
                     });
                 } else {
                     GAME.level++;
                     GAME.customersServed = 0;
                     GAME.lives = 3;
                     GAME.dirtyPlates = 0;
-                    GAME.carriedOrder = null;
+                    GAME.carriedOrders = [];
                     GAME.customersTarget = 6 + GAME.level * 4;
                     this.scene.restart();
                 }

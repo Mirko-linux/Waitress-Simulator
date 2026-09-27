@@ -297,7 +297,7 @@
             this.callDialog.add([bg, title, icon, body, statusText, btnCloseBg, btnCloseTxt]);
 
             try {
-                const audioKeys = ['npc_call_center', 'npc_call_center_1', 'npc_call_center_2'];
+                const audioKeys = ['npc_call_center', 'npc_call_center_1', 'npc_call_center_2', 'npc_call_center_3'];
                 const audioKey = audioKeys[Phaser.Math.Between(0, audioKeys.length - 1)];
                 if (this.scene.sound && this.scene.cache.audio.exists(audioKey)) {
                     this.callCenterAudio = this.scene.sound.add(audioKey, {

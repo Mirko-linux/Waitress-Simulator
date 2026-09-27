@@ -1,5 +1,3 @@
-// supplier.js - Sistema Fornitore Completo
-
 class SupplierSystem {
     constructor(scene) {
         this.scene = scene;
@@ -12,6 +10,10 @@ class SupplierSystem {
         this._hintShown = false;
         this.costPerUnit = 0.50;
         this.totalCost = 7.50;
+        this.externalPackageSpawned = false;
+        this.externalPackageSprite = null;
+        this.externalPackageZone = null;
+        this.externalPackageGlow = null;
 
         this.createStockUI();
         this.updateStock();
@@ -84,58 +86,41 @@ class SupplierSystem {
             return false;
         }
 
-        // ============================================================
-        // POSIZIONE DEL PACCO
-        // ============================================================
         const entryX = 150;
         const entryY = 500;
-        // ============================================================
 
-        // ============================================================
-        // CREA IL PACCO CON DIMENSIONE ADEGUATA (VERAMENTE GRANDE)
-        // ============================================================
         if (this.scene.textures.exists('pacco')) {
             this.packageSprite = this.scene.add.image(entryX, entryY, 'pacco')
                 .setDepth(20)
-                .setDisplaySize(80, 80);  // ✅ INGRANDITO: da 50x50 a 80x80
+                .setDisplaySize(80, 80);
         } else {
-            // Fallback: emoji
             this.packageSprite = this.scene.add.text(entryX, entryY, '📦', {
-                fontSize: '64px'  // ✅ INGRANDITO: da 48px a 64px
+                fontSize: '64px'
             }).setOrigin(0.5).setDepth(20);
         }
-        // ============================================================
 
-        // ============================================================
-        // ZONA INTERATTIVA PER IL CLIC (ingrandita)
-        // ============================================================
-        this.packageInteractZone = this.scene.add.zone(entryX, entryY, 90, 90)  // ✅ INGRANDITO: da 60x60 a 90x90
+        this.packageInteractZone = this.scene.add.zone(entryX, entryY, 90, 90)
             .setDepth(19)
             .setInteractive({ useHandCursor: true });
 
         this.packageInteractZone.on('pointerdown', () => {
-            // ✅ RICHIEDE IL CLIC
             const dist = Phaser.Math.Distance.Between(
                 this.scene.waitress.x,
                 this.scene.waitress.y,
                 entryX,
                 entryY
             );
-            if (dist <= 120) {  // ✅ RAGGIO AUMENTATO: da 100 a 120
+            if (dist <= 120) {
                 this.pickUpPackage();
             } else {
                 this.scene.showFloatingText(entryX, entryY - 50, 'Avvicinati al pacco e clicca!', '#ffd700');
             }
         });
-        // ============================================================
 
-        // ============================================================
-        // GLOW PIÙ VISIBILE
-        // ============================================================
         this.packageGlow = this.scene.add.graphics()
             .setDepth(18)
             .fillStyle(0x3498db, 0.25)
-            .fillCircle(entryX, entryY, 60);  // ✅ INGRANDITO: da 40 a 60
+            .fillCircle(entryX, entryY, 60);
 
         this.scene.tweens.add({
             targets: this.packageGlow,
@@ -144,11 +129,7 @@ class SupplierSystem {
             yoyo: true,
             repeat: -1
         });
-        // ============================================================
 
-        // ============================================================
-        // ANIMAZIONE DI ENTRATA
-        // ============================================================
         this.packageSprite.setScale(0.3);
         this.packageSprite.y = 580;
 
@@ -160,12 +141,145 @@ class SupplierSystem {
             duration: 500,
             ease: 'Back.easeOut'
         });
-        // ============================================================
 
         this.packageSpawned = true;
 
         if (this.scene.showFloatingText) {
             this.scene.showFloatingText(entryX, entryY - 50, '📦 Pacco consegnato! Clicca per ritirare', '#3498db');
+        }
+
+        return true;
+    }
+
+    spawnExternalPackage(itemData) {
+        if (this.externalPackageSpawned) {
+            return false;
+        }
+
+        const entryX = 150;
+        const entryY = 500;
+
+        if (this.scene.textures.exists('pacco')) {
+            this.externalPackageSprite = this.scene.add.image(entryX, entryY, 'pacco')
+                .setDepth(20)
+                .setDisplaySize(80, 80);
+        } else {
+            this.externalPackageSprite = this.scene.add.text(entryX, entryY, '📦', {
+                fontSize: '64px'
+            }).setOrigin(0.5).setDepth(20);
+        }
+
+        this.externalPackageZone = this.scene.add.zone(entryX, entryY, 90, 90)
+            .setDepth(19)
+            .setInteractive({ useHandCursor: true });
+
+        this.externalPackageZone.on('pointerdown', () => {
+            const dist = Phaser.Math.Distance.Between(
+                this.scene.waitress.x,
+                this.scene.waitress.y,
+                entryX,
+                entryY
+            );
+            if (dist <= 120) {
+                this.pickUpExternalPackage(itemData);
+            } else {
+                this.scene.showFloatingText(entryX, entryY - 50, 'Avvicinati al pacco e clicca!', '#ffd700');
+            }
+        });
+
+        this.externalPackageGlow = this.scene.add.graphics()
+            .setDepth(18)
+            .fillStyle(0xf39c12, 0.25)
+            .fillCircle(entryX, entryY, 60);
+
+        this.scene.tweens.add({
+            targets: this.externalPackageGlow,
+            alpha: 0.05,
+            duration: 800,
+            yoyo: true,
+            repeat: -1
+        });
+
+        this.externalPackageSprite.setScale(0.3);
+        this.externalPackageSprite.y = 580;
+
+        this.scene.tweens.add({
+            targets: this.externalPackageSprite,
+            y: entryY,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 500,
+            ease: 'Back.easeOut'
+        });
+
+        this.externalPackageSpawned = true;
+
+        if (this.scene.showFloatingText) {
+            this.scene.showFloatingText(entryX, entryY - 50, `📦 Consegna: ${itemData.name}!`, '#f39c12');
+        }
+
+        return true;
+    }
+
+    pickUpExternalPackage(itemData) {
+        if (!this.externalPackageSpawned || !this.externalPackageSprite) {
+            return false;
+        }
+
+        if (this.externalPackageSprite) {
+            this.scene.tweens.add({
+                targets: this.externalPackageSprite,
+                scaleX: 0,
+                scaleY: 0,
+                alpha: 0,
+                duration: 300,
+                ease: 'Back.easeIn',
+                onComplete: () => {
+                    this.externalPackageSprite.destroy();
+                    this.externalPackageSprite = null;
+                }
+            });
+        }
+
+        if (this.externalPackageZone) {
+            this.externalPackageZone.destroy();
+            this.externalPackageZone = null;
+        }
+        if (this.externalPackageGlow) {
+            this.externalPackageGlow.destroy();
+            this.externalPackageGlow = null;
+        }
+
+        this.externalPackageSpawned = false;
+
+        if (window.HOUSE_STATE && !window.HOUSE_STATE.purchased.includes(itemData.id)) {
+            window.HOUSE_STATE.purchased.push(itemData.id);
+        }
+
+        try {
+            const saveData = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
+            if (saveData.data) {
+                saveData.data.housePurchased = window.HOUSE_STATE.purchased;
+            } else {
+                saveData.housePurchased = window.HOUSE_STATE.purchased;
+            }
+            localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
+        } catch(e) {}
+
+        try {
+            const customPositions = JSON.parse(localStorage.getItem('waitress_ivea_positions') || '{}');
+            if (itemData.x !== undefined && itemData.y !== undefined) {
+                customPositions[itemData.id] = { x: itemData.x, y: itemData.y };
+                localStorage.setItem('waitress_ivea_positions', JSON.stringify(customPositions));
+            }
+        } catch(e) {}
+
+        if (this.scene.showFloatingText) {
+            this.scene.showFloatingText(400, 300, `✅ ${itemData.name} installato!`, '#2ecc71');
+        }
+
+        if (this.scene.triggerSfx) {
+            this.scene.triggerSfx('coin');
         }
 
         return true;
@@ -195,7 +309,6 @@ class SupplierSystem {
             }
         }
 
-        // ✅ ANIMAZIONE DI RACCOLTA
         if (this.packageSprite) {
             this.scene.tweens.add({
                 targets: this.packageSprite,
@@ -237,7 +350,6 @@ class SupplierSystem {
     }
 
     update() {
-        // ✅ MOSTRA L'HINT QUANDO IL GIOCATORE È VICINO AL PACCO
         if (this.packageSpawned && this.packageInteractZone && this.scene.waitress) {
             const dist = Phaser.Math.Distance.Between(
                 this.scene.waitress.x,
@@ -259,6 +371,39 @@ class SupplierSystem {
         } else {
             this._hintShown = false;
         }
+
+        this.checkExternalDeliveries();
+    }
+
+    checkExternalDeliveries() {
+        if (this.externalPackageSpawned) return;
+
+        let deliveries = [];
+        try {
+            deliveries = JSON.parse(localStorage.getItem('waitress_ivea_deliveries') || '[]');
+        } catch(e) {
+            return;
+        }
+
+        const now = Date.now();
+        const restaurantDeliveries = deliveries.filter(d => d.target === 'restaurant');
+
+        for (const delivery of restaurantDeliveries) {
+            const elapsed = now - delivery.orderTime;
+            if (elapsed >= delivery.deliveryTime) {
+                const remaining = deliveries.filter(d => d.orderTime !== delivery.orderTime);
+                localStorage.setItem('waitress_ivea_deliveries', JSON.stringify(remaining));
+
+                this.spawnExternalPackage({
+                    id: delivery.id,
+                    name: delivery.name,
+                    emoji: delivery.emoji || '📦',
+                    x: delivery.x,
+                    y: delivery.y
+                });
+                break;
+            }
+        }
     }
 
     destroy() {
@@ -277,6 +422,18 @@ class SupplierSystem {
         if (this.packageGlow) {
             this.packageGlow.destroy();
             this.packageGlow = null;
+        }
+        if (this.externalPackageSprite) {
+            this.externalPackageSprite.destroy();
+            this.externalPackageSprite = null;
+        }
+        if (this.externalPackageZone) {
+            this.externalPackageZone.destroy();
+            this.externalPackageZone = null;
+        }
+        if (this.externalPackageGlow) {
+            this.externalPackageGlow.destroy();
+            this.externalPackageGlow = null;
         }
     }
 }

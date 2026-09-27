@@ -3,12 +3,14 @@ class SaveMenu {
         this.scene = scene;
         this.overlay = null;
         this.buttons = [];
+        this.aiStatusLabel = null;
     }
 
     async showMenu() {
         if (this.overlay) { this.overlay.destroy(); this.overlay = null; }
         this.buttons.forEach(b => b.destroy());
         this.buttons = [];
+        this.aiStatusLabel = null;
 
         let hasSave = false;
         let isSaveValid = true;
@@ -16,24 +18,48 @@ class SaveMenu {
         try {
             const raw = localStorage.getItem('waitress_save_data');
             if (raw) {
-                hasSave = true;
                 const parsed = JSON.parse(raw);
-                // Se esiste una firma, verificala.
-                // Se NON esiste la firma, considera il save valido
-                // (compatibilità con vecchi salvataggi pre-firma).
-                if (parsed && parsed.sig) {
-                    isSaveValid = window.SaveManager.verifySave(parsed);
-                } else {
-                    isSaveValid = true;
+                const data = parsed.data || parsed;
+                if (data && typeof data.level === 'number' && data.level > 0) {
+                    hasSave = true;
+                    if (parsed && parsed.sig) {
+                        isSaveValid = window.SaveManager.verifySave(parsed);
+                    } else {
+                        isSaveValid = true;
+                    }
                 }
             }
         } catch(e) { hasSave = false; }
 
-        this.overlay = this.scene.add.rectangle(400, 300, 620, 380, 0x110906, 0.9);
+        let aiStatusText = '';
+        let aiStatusColor = '#888888';
+
+        try {
+            const rawRef = localStorage.getItem('waitress_ai_model_ref');
+            if (rawRef) {
+                const ref = JSON.parse(rawRef);
+                const isCached = await window.SaveManager.isAIModelCached(ref.id);
+                if (isCached) {
+                    aiStatusText = '✅ IA pronta (modello in cache locale)';
+                    aiStatusColor = '#2ecc71';
+                } else {
+                    aiStatusText = '⚠️ IA in cache assente (verrà riscaricata)';
+                    aiStatusColor = '#f39c12';
+                }
+            } else {
+                aiStatusText = 'ℹ️ IA non ancora scaricata';
+                aiStatusColor = '#95a5a6';
+            }
+        } catch (e) {
+            aiStatusText = '⚠️ Impossibile verificare lo stato IA';
+            aiStatusColor = '#f39c12';
+        }
+
+        this.overlay = this.scene.add.rectangle(400, 300, 620, 420, 0x110906, 0.9);
         this.overlay.setStrokeStyle(2, 0xd27d2d);
         this.overlay.setDepth(200);
 
-        const title = this.scene.add.text(400, 130, "💾 MENU SALVATAGGIO", {
+        const title = this.scene.add.text(400, 115, "💾 MENU SALVATAGGIO", {
             fontSize: '28px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
         }).setOrigin(0.5).setDepth(201);
         this.buttons.push(title);
@@ -52,8 +78,10 @@ class SaveMenu {
             btn.on('pointerout', () => btn.setFillStyle(color));
         };
 
+        let nextY = 175;
+
         if (hasSave) {
-            createBtn(200, "▶ CONTINUA PARTITA", 0x27ae60, async () => {
+            createBtn(nextY, "▶ CONTINUA PARTITA", 0x27ae60, async () => {
                 try {
                     const raw = localStorage.getItem('waitress_save_data');
                     if (raw) {
@@ -61,15 +89,21 @@ class SaveMenu {
                         const loadedData = parsed.data || parsed;
                         Object.assign(GAME, loadedData);
 
+                        if (typeof GAME.suspicion !== 'number') GAME.suspicion = 0;
+
                         if (!isSaveValid) {
-                            // Save manomesso: segnala come cheater
                             GAME.isCheater = true;
-                            // Flag persistente che sopravvive ai restart della scena
                             localStorage.setItem('waitress_cheater_flag', 'true');
                         } else {
-                            // Save valido: pulisci SEMPRE il flag cheater
                             GAME.isCheater = false;
                             localStorage.removeItem('waitress_cheater_flag');
+                        }
+
+                        if (loadedData.housePurchased && window.HOUSE_STATE) {
+                            window.HOUSE_STATE.purchased = loadedData.housePurchased;
+                        }
+                        if (loadedData.settings) {
+                            GAME.settings = { ...GAME.settings, ...loadedData.settings };
                         }
 
                         localStorage.setItem('waitress_tutorial_done', 'true');
@@ -78,21 +112,26 @@ class SaveMenu {
                     }
                 } catch (e) {}
             });
-            createBtn(270, "🔄 NUOVA PARTITA", 0xe74c3c, () => {
+            nextY += 60;
+            createBtn(nextY, "🔄 NUOVA PARTITA", 0xe74c3c, () => {
                 this.closeMenu();
                 this.newGame();
             });
+            nextY += 60;
         } else {
-            createBtn(200, "🔄 NUOVA PARTITA", 0xe74c3c, () => {
+            createBtn(nextY, "🔄 NUOVA PARTITA", 0xe74c3c, () => {
                 this.closeMenu();
                 this.newGame();
             });
+            nextY += 60;
         }
 
-        createBtn(340, "⬇️ ESPORTA BACKUP", 0x2980b9, async () => {
+        createBtn(nextY, "⬇️ ESPORTA BACKUP", 0x2980b9, async () => {
             await window.SaveManager.exportBackup();
         });
-        createBtn(410, "⬆️ IMPORTA BACKUP", 0x8e44ad, () => {
+        nextY += 60;
+
+        createBtn(nextY, "⬆️ IMPORTA BACKUP", 0x8e44ad, () => {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
@@ -100,39 +139,65 @@ class SaveMenu {
                 const file = e.target.files[0];
                 if (file) {
                     try {
-                        const result = await window.SaveManager.importBackup(file);
-                        if (result && result.cheater) {
-                            // Fai finta che vada tutto bene: il flag è già settato
-                            alert("✅ Backup importato con successo!");
-                        } else {
-                            alert("✅ Backup importato con successo!");
+                        const text = await file.text();
+                        const result = await window.SaveManager.importBackup(text);
+
+                        if (!result || result.success !== true) {
+                            const errorMsg = result && result.error ? result.error : 'Firma non valida';
+                            alert(`❌ Importazione rifiutata:\n${errorMsg}`);
+                            return;
                         }
+
+                        GAME.isCheater = false;
+                        localStorage.removeItem('waitress_cheater_flag');
+                        alert("✅ Backup importato con successo!");
                         this.closeMenu();
                         this.scene.scene.restart();
                     } catch (error) {
-                        alert(`❌ Errore: ${error}`);
+                        alert(`❌ Importazione rifiutata:\n${error.message || error}`);
                     }
                 }
             };
             input.click();
         });
+
+        if (aiStatusText) {
+            this.aiStatusLabel = this.scene.add.text(400, nextY + 45, aiStatusText, {
+                fontSize: '11px',
+                color: aiStatusColor,
+                fontFamily: 'Fredoka',
+                align: 'center'
+            }).setOrigin(0.5).setDepth(201);
+            this.buttons.push(this.aiStatusLabel);
+        }
     }
 
     closeMenu() {
         if (this.overlay) { this.overlay.destroy(); this.overlay = null; }
         this.buttons.forEach(b => b.destroy());
         this.buttons = [];
+        this.aiStatusLabel = null;
     }
 
     async newGame() {
         await window.SaveManager.deleteSave();
+        localStorage.removeItem('waitress_save_data');
+        localStorage.removeItem('waitress_crime_data');
+        localStorage.removeItem('waitress_story_data');
+        localStorage.removeItem('waitress_quest_data');
+
+        await window.SaveManager.clearNPCMemories();
+
         GAME.score = 0;
         GAME.level = 1;
         GAME.customersServed = 0;
         GAME.isCheater = false;
+        GAME.suspicion = 0;
+        GAME.dirtyPlates = 0;
+        GAME.lives = 3;
+        GAME.carriedOrders = [];
         localStorage.removeItem('waitress_cheater_flag');
         if (window.HOUSE_STATE) window.HOUSE_STATE.purchased = [];
-        localStorage.removeItem('waitress_save_data');
 
         const overlay = this.scene.add.rectangle(400, 300, 500, 200, 0x221111, 0.95);
         overlay.setStrokeStyle(2, 0xd27d2d);
