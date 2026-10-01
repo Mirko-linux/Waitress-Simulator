@@ -12,6 +12,19 @@ class KitchenSystem {
         this.isChefMoving = false;
         this.chefDialog = null;
 
+        this.chefFacing = 'down';
+        this.chefTargetX = this.chefRestX;
+        this.chefTargetY = this.chefRestY;
+        this.chefSpeed = 130;
+        this.chefArrivalThreshold = 4;
+        this.chefOnArrive = null;
+        this.chefAnimationKey = {
+            up: 'Cuoco_Dietro',
+            down: 'Cuoco_Avanti',
+            left: 'Cuoco_Sinistra',
+            right: 'Cuoco_Destra'
+        };
+
         this.isOnFire = false;
         this.fireTimer = null;
         this.smokeEffects = [];
@@ -152,8 +165,12 @@ class KitchenSystem {
             });
         });
 
-        if (scene.textures.exists('st_cuoco')) {
-            this.chef = scene.add.image(this.chefRestX, this.chefRestY, 'st_cuoco').setDepth(8);
+        const chefTexture = scene.textures.exists('Cuoco_Avanti')
+            ? 'Cuoco_Avanti'
+            : (scene.textures.exists('st_cuoco') ? 'st_cuoco' : null);
+
+        if (chefTexture) {
+            this.chef = scene.add.image(this.chefRestX, this.chefRestY, chefTexture).setDepth(8);
             this.chef.setDisplaySize(48, 48);
         } else {
             this.chef = scene.add.text(this.chefRestX, this.chefRestY, '👨‍🍳', {
@@ -374,34 +391,54 @@ class KitchenSystem {
     }
 
     moveChef(targetX, targetY, callback) {
-        if (this.isChefMoving) {
-            this.scene.time.delayedCall(80, () => {
-                this.moveChef(targetX, targetY, callback);
-            });
+        this.chefTargetX = targetX;
+        this.chefTargetY = targetY;
+        this.chefOnArrive = callback || null;
+        this.isChefMoving = true;
+    }
+
+    updateChef(delta) {
+        if (!this.chef || !this.chef.active) return;
+
+        const dx = this.chefTargetX - this.chef.x;
+        const dy = this.chefTargetY - this.chef.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= this.chefArrivalThreshold) {
+            this.chef.x = this.chefTargetX;
+            this.chef.y = this.chefTargetY;
+
+            if (this.isChefMoving) {
+                this.isChefMoving = false;
+                const cb = this.chefOnArrive;
+                this.chefOnArrive = null;
+                if (cb) cb();
+            }
             return;
         }
 
-        this.isChefMoving = true;
-        const distance = Phaser.Math.Distance.Between(this.chef.x, this.chef.y, targetX, targetY);
-        const duration = Math.min(distance * 2.8, 450);
+        if (Math.abs(dx) > Math.abs(dy)) {
+            this.chefFacing = dx > 0 ? 'right' : 'left';
+        } else {
+            this.chefFacing = dy > 0 ? 'down' : 'up';
+        }
 
-        this.scene.tweens.add({
-            targets: this.chef,
-            x: targetX,
-            y: targetY,
-            duration: duration,
-            ease: 'Quad.easeInOut',
-            onUpdate: () => {
-                if (this.chefShadow && this.chef) {
-                    this.chefShadow.x = this.chef.x;
-                    this.chefShadow.y = this.chef.y + 20;
-                }
-            },
-            onComplete: () => {
-                this.isChefMoving = false;
-                if (callback) callback();
-            }
-        });
+        const texKey = this.chefAnimationKey[this.chefFacing];
+        if (texKey && this.scene.textures.exists(texKey) && this.chef.texture.key !== texKey) {
+            this.chef.setTexture(texKey);
+            this.chef.setDisplaySize(48, 48);
+        }
+
+        const step = this.chefSpeed * (delta / 1000);
+        const ratio = Math.min(1, step / distance);
+        this.chef.x += dx * ratio;
+        this.chef.y += dy * ratio;
+        this.chef.setDepth(this.chef.y);
+
+        if (this.chefShadow) {
+            this.chefShadow.x = this.chef.x;
+            this.chefShadow.y = this.chef.y + 20;
+        }
     }
 
     pickUpFood() {
@@ -490,7 +527,6 @@ class KitchenSystem {
 
         if (this.scene.showFloatingText) {
             this.scene.showFloatingText(station.x, station.y - 50, `💥 ${station.name} ROTTO!`, '#e74c3c');
-            this.scene.showFloatingText(station.x, station.y - 70, '📞 Chiama il tecnico!', '#ffd700');
         }
 
         if (window.triggerSfx) window.triggerSfx('alert');
@@ -556,8 +592,12 @@ class KitchenSystem {
         const startX = 240;
         const startY = 592;
 
-        if (this.scene.textures.exists('st_cuoco')) {
-            this.technician = this.scene.add.image(startX, startY, 'st_cuoco').setDepth(15);
+        const techTexture = this.scene.textures.exists('Cuoco_Avanti')
+            ? 'Cuoco_Avanti'
+            : (this.scene.textures.exists('st_cuoco') ? 'st_cuoco' : null);
+
+        if (techTexture) {
+            this.technician = this.scene.add.image(startX, startY, techTexture).setDepth(15);
             this.technician.setDisplaySize(45, 45);
             this.technician.setTint(0x3498db);
         } else {
@@ -799,10 +839,17 @@ class KitchenSystem {
         return true;
     }
 
-    update(player) {
+    update(player, delta) {
+        this.updateChef(delta || this.scene.game.loop.delta);
+
         if (this.chefShadow && this.chef) {
             this.chefShadow.x = this.chef.x;
             this.chefShadow.y = this.chef.y + 20;
+        }
+
+        if (this.chefDialog && this.chef) {
+            this.chefDialog.x = this.chef.x;
+            this.chefDialog.y = this.chef.y - 32;
         }
 
         const nearest = this.getNearestStation(player || this.scene.waitress);
@@ -865,8 +912,16 @@ class KitchenSystem {
         if (this.chef) {
             this.chef.x = this.chefRestX;
             this.chef.y = this.chefRestY;
+            if (this.scene.textures.exists('Cuoco_Avanti')) {
+                this.chef.setTexture('Cuoco_Avanti');
+                this.chef.setDisplaySize(48, 48);
+            }
         }
+        this.chefFacing = 'down';
+        this.chefTargetX = this.chefRestX;
+        this.chefTargetY = this.chefRestY;
         this.isChefMoving = false;
+        this.chefOnArrive = null;
 
         this.despawnTechnician();
         this.isTechnicianComing = false;

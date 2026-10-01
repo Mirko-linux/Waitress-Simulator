@@ -29,7 +29,9 @@
                 served: data.served || 0,
                 target: data.target || 10,
                 lives: data.lives || 3,
-                level: data.level || 1
+                level: data.level || 1,
+                waste: data.waste || 0,
+                wastePenalty: data.wastePenalty || 0
             };
         }
 
@@ -50,7 +52,7 @@
             bg.fillRect(0, 0, width, height);
 
             const panelWidth = Math.min(width * 0.85, 480);
-            const panelHeight = Math.min(height * 0.8, 520);
+            const panelHeight = Math.min(height * 0.8, 560);
             const panelX = width / 2 - panelWidth / 2;
             const panelY = height / 2 - panelHeight / 2;
 
@@ -89,6 +91,7 @@
                 { label: 'Clienti Serviti:', value: `${this.levelData.served} / ${this.levelData.target}` },
                 { label: 'Incassi totali:', value: `${this.levelData.earned} €` },
                 { label: 'Affitto casa:', value: `- ${this.levelData.rent} €` },
+                { label: 'Spreco cibo:', value: `- ${this.levelData.wastePenalty} €` },
                 { label: 'Saldo netto:', value: `${this.levelData.net} €` },
                 { label: 'Vite Rimaste:', value: '❤️'.repeat(Math.max(0, this.levelData.lives)) }
             ];

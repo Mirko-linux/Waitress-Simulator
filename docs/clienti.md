@@ -30,4 +30,4 @@ _Sono riportati in **grassetto** i clienti disponibili già dal giorno 1_
 
 - Marco: Marco è il tuo fidanzato, ma non ti illudere: a parte qualche chiamata che ti farà durante il gioco, è un personaggio relativamente inutile. Una volta adottata Ludovica, Marco si troverà a casa del giocatore e, ogni tanto, potrebbe visitare sua sponte il ristorante come cliente. Marco è l'unico cliente che non ti lascierà la manca (ci credo hanno il conto cointestato). Se la sintonia con lui scenderà a 0, vi separete causando un _Game Over_. 
 
-- 
+- **Calogero**

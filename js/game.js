@@ -113,7 +113,8 @@
                 ginseng: 1500,
                 'fritto misto': 4000,
                 'pasta al pesto': 3500,
-                'panino milza': 3000
+                'panino milza': 3000,
+                'moroni': 1500
             }
         }
     };
@@ -144,7 +145,8 @@
         'Ginseng': 'Ginseng',
         'Fritto Misto': 'Fritto Misto',
         'Pasta al Pesto': 'Pasta al Pesto',
-        'Panino con la Milza': 'Panino Milza'
+        'Panino con la Milza': 'Panino Milza',
+        'Moroni': 'Moroni'
     };
 
     const NPC_REGISTRY = window.NPC_CONFIG || {};
@@ -160,6 +162,9 @@
         isCheater: false,
         suspicion: 0,
         compartmentHidden: false,
+        arcadeMode: false,
+        wastePenalty: 0,
+        waste: 0,
         settings: {
             soundEnabled: true,
             difficulty: 'normale',
@@ -343,8 +348,12 @@
             this.load.image('st_bevande', 'assets/cucina/dispenser_cola.png');
             this.load.image('st_caffe', 'assets/cucina/macchina_caffe.png');
             this.load.image('st_spillatore', 'assets/cucina/spillatore_birra.png');
-            this.load.image('st_cuoco', 'assets/cucina/cuoco_cucina.png');
             this.load.image('st_bancone', 'assets/cucina/bancone_sala.png');
+            
+            this.load.image('Cuoco_Avanti', 'assets/NPC/Cuoco/Cuoco_Avanti.png');
+            this.load.image('Cuoco_Dietro', 'assets/NPC/Cuoco/Cuoco_Dietro.png');
+            this.load.image('Cuoco_Sinistra', 'assets/NPC/Cuoco/Cuoco_Sinistra.png');
+            this.load.image('Cuoco_Destra', 'assets/NPC/Cuoco/Cuoco_Destra.png');
             
             this.load.image('phone', 'assets/Sala/phone.png');
             this.load.image('pacco', 'assets/Sala/pacco.png');
@@ -353,6 +362,7 @@
             this.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
             this.load.audio('scarico', 'assets/audio/scarico.mp3');
             this.load.audio('chiesa', 'assets/audio/chiesa.mp3');
+            this.load.audio('colonna_sonora', 'assets/audio/colonna_sonora.mp3');
             this.load.audio('npc_call_center', 'assets/audio/Chiamata/npc_call_center.mp3');
             this.load.audio('npc_call_center_1', 'assets/audio/Chiamata/npc_call_center_1.mp3');
             this.load.audio('npc_call_center_2', 'assets/audio/Chiamata/npc_call_center_2.mp3');
@@ -362,6 +372,8 @@
             this.load.image('Lavello_vuoto', 'assets/Lavello/Lavello_vuoto.png');
             this.load.image('Lavello_mezzopieno', 'assets/Lavello/Lavello_mezzopieno.png');
             this.load.image('Lavello_pieno', 'assets/Lavello/Lavello_pieno.png');
+            this.load.image('bubble_dialog', 'assets/UI/bubble_dialog.png');
+            this.load.image('Cestino_Vuoto', 'assets/Cestino/Cestino_Vuoto.png');
 
             this.load.image('cameriera_avanti', 'assets/Cameriera/Cameriera_Avanti.png');
             this.load.image('cameriera_destra', 'assets/Cameriera/Cameriera_Destra.png');
@@ -491,6 +503,9 @@
             this.sinkCollider = null;
             this.hiddenCompartment = null;
             this.inspectionActive = false;
+            this.sponsorSystem = null;
+            this.trashBin = null;
+            this.trashBinLabel = null;
             
             this.waitressHasOrder = false;
             this.waitressHasFood = false;
@@ -560,6 +575,8 @@
 
             this.ordersTaken = 0;
             this.levelEarnings = 0;
+            GAME.waste = 0;
+            GAME.wastePenalty = 0;
             this.isPhoneActive = false;
             this.isPaused = false;
             this.arrestTriggered = false;
@@ -567,6 +584,8 @@
             this.packageClickZone = null;
             this.packageTooltip = null;
             this.trayIndicator = null;
+            this.trashBin = null;
+            this.trashBinLabel = null;
             this.waitressState = { tray: [], targetX: 300, targetY: 300 };
             this.pendingAction = null;
             this.currentCustomer = null;
@@ -575,6 +594,7 @@
             this.tutorialActive = false;
             this.hiddenCompartment = null;
             this.inspectionActive = false;
+            this.sponsorSystem = null;
 
             this.playerNickname = localStorage.getItem('waitress_nickname') || 'Cameriera';
 
@@ -585,17 +605,43 @@
                 });
             }
 
-            if (typeof window.PriceSystem === 'function') {
+            const A = window.ARCADE;
+
+            if (A.isSystemEnabled('priceSystem') && typeof window.PriceSystem === 'function') {
                 this.priceSystem = new window.PriceSystem(this);
             }
-            if (typeof window.QuestSystem === 'function') {
+            if (A.isSystemEnabled('supplierSystem') && typeof window.SupplierSystem === 'function') {
+                this.supplier = new window.SupplierSystem(this);
+            }
+            if (A.isSystemEnabled('questSystem') && typeof window.QuestSystem === 'function') {
                 this.quest = new window.QuestSystem(this);
             }
-            if (typeof window.CrimeSystem === 'function') {
+            if (A.isSystemEnabled('crimeSystem') && typeof window.CrimeSystem === 'function') {
                 this.crime = new window.CrimeSystem(this);
             }
-            if (typeof window.SupplierSystem === 'function') {
-                this.supplier = new window.SupplierSystem(this);
+            if (A.isSystemEnabled('storySystem') && typeof window.StorySystem === 'function') {
+                this.story = new window.StorySystem(this);
+            }
+            if (A.isSystemEnabled('radioSystem') && typeof window.RadioSystem === 'function') {
+                this.radio = new window.RadioSystem(this);
+            }
+            if (A.isSystemEnabled('aiDialogueManager') && typeof window.AIDialogueManager === 'function') {
+                this.aiManager = new window.AIDialogueManager(this, true);
+            }
+            if (A.isSystemEnabled('npcManager') && window.NPCManager && !this.aiManager) {
+                this.npcManager = new window.NPCManager(this);
+            }
+
+            if (typeof window.SponsorSystem === 'function') {
+                this.sponsorSystem = new window.SponsorSystem(this);
+                if (this.sponsorSystem.isAvailable(GAME.level)) {
+                    this.sponsorSystem.startMission();
+                }
+            }
+
+            if (GAME.arcadeMode) {
+                A.applyConfig();
+                GAME.customersTarget = A.getTargetForLevel(GAME.level);
             }
 
             try {
@@ -715,6 +761,7 @@
 
             this.createRestaurant();
             this.createSink();
+            this.createTrashBin();
 
             if (typeof window.KitchenSystem === 'function') {
                 this.kitchen = new window.KitchenSystem(this);
@@ -726,19 +773,10 @@
                 this.bathroom = new window.BathroomSystem(this);
             }
 
-            if (typeof window.AIDialogueManager === 'function') {
-                this.aiManager = new window.AIDialogueManager(this, true);
-            }
-
             if (this.aiManager && this.aiManager.npcManager) {
                 this.npcManager = this.aiManager.npcManager;
-            } else if (window.NPCManager) {
-                this.npcManager = new window.NPCManager(this);
             }
 
-            if (typeof window.StorySystem === 'function') {
-                this.story = new window.StorySystem(this);
-            }
             if (this.story) {
                 this.story.storyState.moneySaved = GAME.score;
             }
@@ -750,19 +788,6 @@
                             this.story.triggerClanCall();
                         }
                     });
-                }
-            }
-
-            if (typeof window.RadioSystem === 'function') {
-                this.radio = new window.RadioSystem(this);
-                if (this.radio.isPurchased && !this.radio.isPlaced && this.radio.deliveryPending) {
-                    const currentDay = window.GAME.level;
-                    const deliveryDay = this.radio.getDeliveryDay();
-                    if (deliveryDay && currentDay >= deliveryDay) {
-                        this.radio.completeDelivery();
-                    } else if (deliveryDay && currentDay < deliveryDay) {
-                        this.radio.setPendingRadioDelivery();
-                    }
                 }
             }
 
@@ -805,7 +830,7 @@
                 this.children.list.forEach(child => {
                     if (child.texture && child.texture.key) {
                         const key = child.texture.key.toLowerCase();
-                        if (key === 'birra') {
+                        if (key === 'birra' || key === 'moroni') {
                             if (typeof child.setDisplaySize === 'function') {
                                 child.setDisplaySize(28, 40);
                             }
@@ -889,6 +914,7 @@
                 t.customer = null;
                 t._seatedCustomer = null;
                 t._activeOrder = null;
+                t._leavingCustomer = null;
                 if (!t.dirty) t.status = 'libero';
             });
 
@@ -926,7 +952,7 @@
             this.spawnEvent = this.time.addEvent({
                 delay: spawnInterval,
                 callback: () => { 
-                    if (this.gameActive && this.customers.length < this.tables.length) {
+                    if (this.gameActive) {
                         this.trySpawnCustomer();
                     }
                 },
@@ -943,6 +969,22 @@
             if (!this.tutorialActive && !this.isCheater) {
                 this.spawnCustomer();
             }
+        }
+
+        getFreeTable() {
+            const freeTables = this.tables.filter(table =>
+                table.status === 'libero' &&
+                !table.dirty &&
+                !table.occupied &&
+                !table.reserved &&
+                !table._leavingCustomer &&
+                table.customer === null
+            );
+
+            if (freeTables.length === 0) return null;
+
+            const randomIndex = Math.floor(Math.random() * freeTables.length);
+            return freeTables[randomIndex];
         }
 
         spawnPoliceArrest() {
@@ -1148,13 +1190,17 @@
                     if (typeof child.setDisplaySize === 'function') {
                         child.setDisplaySize(90, 85);
                     }
-                } else if (key === 'birra') {
+                } else if (key === 'birra' || key === 'moroni') {
                     if (typeof child.setDisplaySize === 'function') {
                         child.setDisplaySize(28, 40);
                     }
                 } else if (key.includes('caffe') && key.includes('st_')) {
                     if (typeof child.setDisplaySize === 'function') {
                         child.setDisplaySize(65, 65);
+                    }
+                } else if (key.includes('cuoco')) {
+                    if (typeof child.setDisplaySize === 'function') {
+                        child.setDisplaySize(UNIFORM_SIZE, UNIFORM_SIZE);
                     }
                 }
             };
@@ -1179,6 +1225,13 @@
                         ['sprite', 'graphic', 'image', 'icon', 'container'].forEach(prop => {
                             if (st[prop] && typeof st[prop].setDisplaySize === 'function') {
                                 st[prop].setDisplaySize(65, 65);
+                            }
+                        });
+                    }
+                    if (lowerKey.includes('cuoco')) {
+                        ['sprite', 'graphic', 'image', 'icon', 'container'].forEach(prop => {
+                            if (st[prop] && typeof st[prop].setDisplaySize === 'function') {
+                                st[prop].setDisplaySize(UNIFORM_SIZE, UNIFORM_SIZE);
                             }
                         });
                     }
@@ -1211,7 +1264,8 @@
                 'Ginseng': '☕',
                 'Fritto Misto': '🍤',
                 'Pasta al Pesto': '🍝',
-                'Panino con la Milza': '🥖'
+                'Panino con la Milza': '🥖',
+                'Moroni': '🍺'
             };
             return map[foodName] || '🍽️';
         }
@@ -1300,6 +1354,7 @@
                     customer: null,
                     _seatedCustomer: null,
                     _activeOrder: null,
+                    _leavingCustomer: null,
                     status: 'libero',
                     dirty: false,
                     graphic: table,
@@ -1375,6 +1430,72 @@
                     this.showFloatingText(passX, passY - 30, 'Avvicinati al Pass Piatti!', '#ffd700');
                 }
             });
+        }
+
+        createTrashBin() {
+            const trashX = 438;
+            const trashY = 100;
+
+            this.trashBin = this.add.image(trashX, trashY, 'Cestino_Vuoto')
+                .setDisplaySize(55, 55)
+                .setDepth(trashY)
+                .setInteractive({ useHandCursor: true });
+
+            this.trashBin.on('pointerdown', () => {
+                if (this.isPhoneActive || this.isPaused) return;
+
+                const dist = Phaser.Math.Distance.Between(
+                    this.waitress.x, this.waitress.y,
+                    trashX, trashY
+                );
+
+                if (dist <= CONFIG.waitress.interactRange + 20) {
+                    this.disposeFood();
+                } else {
+                    this.showFloatingText(trashX, trashY - 40, 'Avvicinati al cestino!', '#ffd700');
+                }
+            });
+
+            this.trashBinLabel = this.add.text(trashX, trashY - 40, '🗑️', {
+                fontSize: '18px'
+            }).setOrigin(0.5).setDepth(trashY + 1);
+        }
+
+        disposeFood() {
+            if (this.waitressState.tray.length === 0) {
+                this.showFloatingText(this.waitress.x, this.waitress.y - 40, 'Vassoio vuoto!', '#999999');
+                triggerSfx('click');
+                return;
+            }
+
+            const foodIndex = this.waitressState.tray.findIndex(item => item.food !== 'piatto_sporco');
+
+            if (foodIndex === -1) {
+                this.showFloatingText(this.waitress.x, this.waitress.y - 40, 'Solo piatti sporchi nel vassoio!', '#999999');
+                triggerSfx('click');
+                return;
+            }
+
+            const disposed = this.waitressState.tray.splice(foodIndex, 1)[0];
+
+            GAME.waste++;
+            GAME.wastePenalty += 5;
+
+            this.ensureTrayIndicator();
+            this.updateTrayGraphics();
+            this.updateHUD();
+
+            const emoji = this.getFoodEmoji(disposed.food);
+            this.showFloatingText(this.waitress.x, this.waitress.y - 40,
+                `${emoji} ${disposed.food} buttato!`, '#e74c3c');
+            triggerSfx('alert');
+
+            const orderIdx = (GAME.carriedOrders || []).findIndex(o => o.foodName === disposed.food);
+            if (orderIdx > -1) {
+                GAME.carriedOrders.splice(orderIdx, 1);
+                this.ordersTaken = Math.max(0, this.ordersTaken - 1);
+                this.updateNotepadUI(true);
+            }
         }
         
         createWaitress() {
@@ -1670,6 +1791,7 @@
 
             if (this.sinkSprite) interactiveObjects.push(this.sinkSprite);
             if (this.passPiattiZone) interactiveObjects.push(this.passPiattiZone);
+            if (this.trashBin) interactiveObjects.push(this.trashBin);
             
             if (Array.isArray(this.tables)) {
                 this.tables.forEach(table => {
@@ -1797,6 +1919,7 @@
                 t.customer = null;
                 t._seatedCustomer = null;
                 t._activeOrder = null;
+                t._leavingCustomer = null;
                 if (!t.dirty) t.status = 'libero';
             });
 
@@ -1970,27 +2093,18 @@
         spawnCustomer() {
             if (this.isCheater) return;
             if (this.tutorialActive) return;
-            
-            const activeCustomers = this.customers.filter(c => !c.isDead);
-            if (activeCustomers.length >= this.tables.length) return;
 
-            let freeTable = this.tables.find(
-                t => !t.occupied && !t.reserved && !t.customer && t.status === 'libero'
-            );
+            const table = this.getFreeTable();
 
-            if (!freeTable) {
-                freeTable = this.tables.find(
-                    t => !t.occupied && !t.reserved && !t.customer && t.dirty === true
-                );
+            if (!table) {
+                return;
             }
 
-            if (!freeTable) return;
-
-            freeTable.reserved = true;
-            freeTable.occupied = true;
-            freeTable._seatedCustomer = null;
-            freeTable._activeOrder = null;
-            freeTable.status = 'in_arrivo';
+            table.reserved = true;
+            table._leavingCustomer = null;
+            table._seatedCustomer = null;
+            table._activeOrder = null;
+            table.status = 'in_arrivo';
 
             let customer = null;
             try {
@@ -2005,9 +2119,8 @@
             }
 
             if (!customer) {
-                freeTable.reserved = false;
-                freeTable.occupied = false;
-                freeTable.status = 'libero';
+                table.reserved = false;
+                table.status = 'libero';
                 return;
             }
 
@@ -2019,12 +2132,18 @@
                 customer.order = foods[Phaser.Math.Between(0, foods.length - 1)];
             }
 
-            customer.table = freeTable;
+            if (customer.order === 'Birra' && this.sponsorSystem && this.sponsorSystem.state && this.sponsorSystem.state.active && this.sponsorSystem.state.beersRemaining > 0) {
+                customer.order = 'Birra';
+            }
+
+            customer.table = table;
             customer.x = ENTRANCE_X;
             customer.y = ENTRANCE_Y;
             customer.isDead = false;
+            customer.isWalking = true;
+            customer.isLeaving = false;
 
-            freeTable.customer = customer;
+            table.customer = customer;
 
             this.createCustomerGraphics(customer);
             this.customers.push(customer);
@@ -2134,7 +2253,7 @@
             if (customer.movementTimeout) {
                 customer.movementTimeout.remove();
             }
-            customer.movementTimeout = this.time.delayedCall(8000, () => {
+            customer.movementTimeout = this.time.delayedCall(15000, () => {
                 if (customer.movementData && !customer.movementData.movementComplete && !customer.isDead) {
                     const seat = customer.movementData.waypoints[customer.movementData.waypoints.length - 1];
                     if (customer.sprite) {
@@ -2151,6 +2270,98 @@
                     this.onCustomerArrived(customer);
                 }
             });
+        }
+
+        moveCustomerToExit(customer, onComplete) {
+            if (!customer || !customer.sprite) {
+                if (onComplete) onComplete();
+                return;
+            }
+
+            if (customer.table) {
+                customer.table.occupied = false;
+                customer.table.reserved = true;
+                customer.table._leavingCustomer = customer;
+                customer.table.customer = null;
+                customer.table._seatedCustomer = null;
+                if (!customer.table.dirty) {
+                    customer.table.status = 'libero';
+                }
+            }
+
+            const startX = customer.sprite.x;
+            const startY = customer.sprite.y;
+            const seat = { x: startX, y: startY };
+
+            let waypoints = [];
+
+            if (customer.table) {
+                const id = customer.table.id;
+                if (id === 1 || id === 3) {
+                    waypoints = [
+                        { x: seat.x, y: seat.y },
+                        { x: 180, y: 520 },
+                        { x: 200, y: 540 },
+                        { x: 240, y: 540 },
+                        { x: ENTRANCE_X, y: ENTRANCE_Y }
+                    ];
+                } else {
+                    waypoints = [
+                        { x: seat.x, y: seat.y },
+                        { x: 400, y: 530 },
+                        { x: 350, y: 540 },
+                        { x: 240, y: 540 },
+                        { x: ENTRANCE_X, y: ENTRANCE_Y }
+                    ];
+                }
+            } else {
+                waypoints = [
+                    { x: startX, y: startY },
+                    { x: 240, y: 540 },
+                    { x: ENTRANCE_X, y: ENTRANCE_Y }
+                ];
+            }
+
+            customer.movementData = {
+                waypoints: waypoints,
+                currentWaypoint: 1,
+                destination: waypoints[1],
+                movementComplete: false
+            };
+            customer.speed = 60;
+            customer._lastPos = null;
+            customer.isLeaving = true;
+            customer.isWalking = true;
+            customer._onExitComplete = onComplete || null;
+
+            if (customer.movementTimeout) customer.movementTimeout.remove();
+            customer.movementTimeout = this.time.delayedCall(10000, () => {
+                if (customer.movementData && !customer.movementData.movementComplete) {
+                    if (customer._onExitComplete) {
+                        const cb = customer._onExitComplete;
+                        customer._onExitComplete = null;
+                        cb();
+                    }
+                }
+            });
+        }
+
+        _onCustomerMovementComplete(customer) {
+            if (!customer || !customer.movementData) return;
+            customer.movementData.movementComplete = true;
+
+            if (customer.isLeaving) {
+                if (customer._onExitComplete) {
+                    const cb = customer._onExitComplete;
+                    customer._onExitComplete = null;
+                    cb();
+                }
+                return;
+            }
+
+            if (typeof this.onCustomerArrived === 'function') {
+                this.onCustomerArrived(customer);
+            }
         }
 
         updateCustomerMovement(customer, delta) {
@@ -2183,9 +2394,15 @@
                     customer.sprite.y = data.destination.y;
                     customer.x = data.destination.x;
                     customer.y = data.destination.y;
-                    data.movementComplete = true;
-                    this.onCustomerArrived(customer);
-                    return;
+                    if (data.waypoints && data.currentWaypoint < data.waypoints.length - 1) {
+                        data.currentWaypoint++;
+                        data.destination = data.waypoints[data.currentWaypoint];
+                        customer._lastPos = { x: customer.sprite.x, y: customer.sprite.y, t: 0 };
+                        return;
+                    } else {
+                        this._onCustomerMovementComplete(customer);
+                        return;
+                    }
                 }
                 customer._lastPos = { x: customer.sprite.x, y: customer.sprite.y, t: 0 };
             }
@@ -2199,10 +2416,7 @@
                 customer.sprite.y = data.destination.y;
                 customer.x = data.destination.x;
                 customer.y = data.destination.y;
-                data.movementComplete = true;
-                if (typeof this.onCustomerArrived === 'function') {
-                    this.onCustomerArrived(customer);
-                }
+                this._onCustomerMovementComplete(customer);
                 return;
             }
 
@@ -2218,13 +2432,9 @@
                     return;
                 }
 
-                data.movementComplete = true;
                 customer.x = data.destination.x;
                 customer.y = data.destination.y;
-
-                if (typeof this.onCustomerArrived === 'function') {
-                    this.onCustomerArrived(customer);
-                }
+                this._onCustomerMovementComplete(customer);
                 return;
             }
 
@@ -2276,6 +2486,8 @@
                 return;
             }
 
+            customer.isWalking = false;
+
             table.reserved = false;
             table.occupied = true;
             table.customer = customer;
@@ -2285,6 +2497,27 @@
                 return;
             }
             table._seatedCustomer = customer;
+
+            const SEATS = {
+                1: { x: 180, y: 270 },
+                2: { x: 400, y: 270 },
+                3: { x: 180, y: 470 },
+                4: { x: 400, y: 470 }
+            };
+            const seat = SEATS[table.id] || { x: table.x, y: table.y + 55 };
+
+            if (customer.sprite) {
+                customer.sprite.x = seat.x;
+                customer.sprite.y = seat.y;
+            }
+            if (customer.emoji) {
+                customer.emoji.x = seat.x;
+                customer.emoji.y = seat.y;
+            }
+            if (customer.shadow) {
+                customer.shadow.x = seat.x;
+                customer.shadow.y = seat.y + 10;
+            }
 
             const hadDirtyPlate = table.dirty === true && !customer._dirtyPlateCleared;
 
@@ -2334,6 +2567,10 @@
                         customer.isDead ||
                         this.tutorialActive
                     ) {
+                        return;
+                    }
+
+                    if (customer.isWalking || customer.isLeaving) {
                         return;
                     }
 
@@ -2433,6 +2670,8 @@
                 tipMultiplier: npcConfig.tipMultiplier || 1.0,
                 movementData: null,
                 speed: 55,
+                isWalking: true,
+                isLeaving: false,
                 serve: () => {
                     this.time.delayedCall(CONFIG.customers.eatingDuration, () => {
                         this.finishMeal(this.customers[this.customers.length - 1]);
@@ -2546,21 +2785,57 @@
         }
         
         angryLeave(customer) {
+            if (!customer || customer.isLeaving || customer.isWalking) {
+                return;
+            }
+
+            if (customer.patience > 0) {
+                return;
+            }
+
+            customer.isLeaving = true;
+
             this.showFloatingText(customer.table.x, customer.table.y - 40, t('LEAVING_ANGRY'), '#ff0000');
             triggerSfx('alert');
             GAME.lives--;
             this.updateHUD();
-            this.removeCustomer(customer);
-            
+
+            if (customer.table) {
+                customer.table.occupied = false;
+                customer.table.reserved = true;
+                customer.table._leavingCustomer = customer;
+                customer.table.customer = null;
+                customer.table._seatedCustomer = null;
+                customer.table._activeOrder = null;
+                if (!customer.table.dirty) customer.table.status = 'libero';
+                else customer.table.status = 'piatto_sporco';
+            }
+
+            if (customer.timerEvent) {
+                customer.timerEvent.remove();
+                customer.timerEvent = null;
+            }
+
+            if (customer.bubble) customer.bubble.setVisible(false);
+            if (customer.patienceBar) customer.patienceBar.setVisible(false);
+            if (customer.patienceBg) customer.patienceBg.setVisible(false);
+            if (customer.childGraphic) customer.childGraphic.setVisible(false);
+
+            this.moveCustomerToExit(customer, () => {
+                this._finalizeRemoveCustomer(customer);
+            });
+
             if (GAME.lives <= 0) {
                 this.gameOver();
             }
         }
         
         finishMeal(customer) {
+            if (!customer) return;
+
             let basePay = 14;
             if (this.priceSystem) {
-                basePay = this.priceSystem.getFoodPrice(customer.order);
+                basePay = this.priceSystem.getFoodPrice(customer.order === 'Moroni' ? 'Birra' : customer.order);
             }
             
             const customerConfig = NPC_REGISTRY[customer.name] || {};
@@ -2631,39 +2906,47 @@
                 customer.timerEvent.remove();
                 customer.timerEvent = null;
             }
-            
-            this.removeCustomer(customer);
+
+            customer.isLeaving = true;
+            customer.isWalking = false;
+
+            if (customer.table) {
+                customer.table.occupied = false;
+                customer.table.reserved = true;
+                customer.table._leavingCustomer = customer;
+                customer.table.customer = null;
+                customer.table._seatedCustomer = null;
+                customer.table._activeOrder = null;
+            }
+
+            if (customer.bubble) customer.bubble.setVisible(false);
+            if (customer.patienceBar) customer.patienceBar.setVisible(false);
+            if (customer.patienceBg) customer.patienceBg.setVisible(false);
+            if (customer.childGraphic) customer.childGraphic.setVisible(false);
+
+            this.moveCustomerToExit(customer, () => {
+                this._finalizeRemoveCustomer(customer);
+            });
             
             if (GAME.customersServed >= GAME.customersTarget) {
                 this.levelComplete();
             }
         }
         
-        removeCustomer(customer) {
+        removeCustomer(customer, skipAnimation = false) {
             if (!customer) return;
-            
-            customer.isDead = true;
-            
-            if (customer.movementData) {
-                customer.movementData.movementComplete = true;
-                customer.movementData = null;
-            }
-            
-            if (customer.timerEvent) {
-                customer.timerEvent.remove();
-                customer.timerEvent = null;
+
+            if (skipAnimation || !customer.sprite || customer.isLeaving || !customer.sprite.active) {
+                this._finalizeRemoveCustomer(customer);
+                return;
             }
 
-            if (customer.movementTimeout) {
-                customer.movementTimeout.remove();
-                customer.movementTimeout = null;
-            }
-            
             if (customer.table) {
                 const tableId = customer.table.id;
 
                 customer.table.occupied = false;
-                customer.table.reserved = false;
+                customer.table.reserved = true;
+                customer.table._leavingCustomer = customer;
                 customer.table.customer = null;
                 customer.table._seatedCustomer = null;
                 customer.table._activeOrder = null;
@@ -2682,12 +2965,67 @@
                     this.updateHUD();
                 }
             }
-            
+
+            if (customer.bubble) customer.bubble.setVisible(false);
+            if (customer.patienceBar) customer.patienceBar.setVisible(false);
+            if (customer.patienceBg) customer.patienceBg.setVisible(false);
+            if (customer.childGraphic) customer.childGraphic.setVisible(false);
+
+            if (customer.timerEvent) {
+                customer.timerEvent.remove();
+                customer.timerEvent = null;
+            }
+
+            customer._onExitComplete = () => {
+                this._finalizeRemoveCustomer(customer);
+            };
+
+            this.moveCustomerToExit(customer, customer._onExitComplete);
+        }
+
+        _finalizeRemoveCustomer(customer) {
+            if (!customer) return;
+
+            customer.isDead = true;
+
+            if (customer.table) {
+                const table = customer.table;
+
+                if (table._leavingCustomer === customer) {
+                    table.occupied = false;
+                    table.reserved = false;
+                    table.customer = null;
+                    table._seatedCustomer = null;
+                    table._activeOrder = null;
+                    table._leavingCustomer = null;
+
+                    if (!table.dirty) {
+                        table.status = 'libero';
+                    } else {
+                        table.status = 'piatto_sporco';
+                    }
+                }
+            }
+
+            if (customer.timerEvent) {
+                customer.timerEvent.remove();
+                customer.timerEvent = null;
+            }
+
+            if (customer.movementTimeout) {
+                customer.movementTimeout.remove();
+                customer.movementTimeout = null;
+            }
+
+            if (customer.movementData) {
+                customer.movementData = null;
+            }
+
             const toDestroy = [
                 'emoji', 'sprite', 'childGraphic', 'bubble',
                 'bubbleIcon', 'shadow', 'patienceBar', 'patienceBg'
             ];
-            
+
             toDestroy.forEach(key => {
                 if (customer[key]) {
                     try {
@@ -2696,7 +3034,7 @@
                     customer[key] = null;
                 }
             });
-            
+
             const index = this.customers.indexOf(customer);
             if (index > -1) {
                 this.customers.splice(index, 1);
@@ -2890,13 +3228,24 @@
                     activeOrder.foodName
                 ).trim().toLowerCase();
 
-                const foodIndex = this.waitressState.tray.findIndex(item => {
+                let foodIndex = this.waitressState.tray.findIndex(item => {
                     if (!item || !item.food) return false;
-
-                    return String(item.food)
-                        .trim()
-                        .toLowerCase() === expectedFood;
+                    return String(item.food).trim().toLowerCase() === expectedFood;
                 });
+
+                if (foodIndex === -1 && expectedFood === 'birra') {
+                    foodIndex = this.waitressState.tray.findIndex(item => {
+                        if (!item || !item.food) return false;
+                        return String(item.food).trim().toLowerCase() === 'moroni';
+                    });
+                }
+
+                if (foodIndex === -1 && expectedFood === 'moroni') {
+                    foodIndex = this.waitressState.tray.findIndex(item => {
+                        if (!item || !item.food) return false;
+                        return String(item.food).trim().toLowerCase() === 'moroni';
+                    });
+                }
                 
                 if (foodIndex > -1) {
                     triggerSfx('serve');
@@ -3107,6 +3456,7 @@
                     'caffe': 'caffe',
                     'ginseng': 'caffe',
                     'birra': 'spillatore',
+                    'moroni': 'spillatore',
                     'cola': 'bevande',
                     'acqua': 'frigo'
                 };
@@ -3272,6 +3622,12 @@
                     indicatorText = foodCount === 1 ? '🍕' : foodCount === 2 ? '🍕🍕' : '🍕🍕🍕';
                 }
             }
+
+            const moroniCount = this.waitressState.tray.filter(item => item.food === 'Moroni').length;
+
+            if (moroniCount > 0) {
+                indicatorText = moroniCount === 1 ? '🍺' : moroniCount === 2 ? '🍺🍺' : '🍺🍺🍺';
+            }
             
             if (this.trayIndicator && this.trayIndicator.active) {
                 this.trayIndicator.setText(indicatorText);
@@ -3409,6 +3765,10 @@
         }
         
         update(time, delta) {
+            if (this.sponsorSystem && typeof this.sponsorSystem.update === 'function') {
+                this.sponsorSystem.update(delta);
+            }
+
             if (this.isCheater && this.policeNPC) {
                 this.updatePoliceMovement(delta);
             }
@@ -3792,6 +4152,13 @@
 
             this.waitress.setDepth(this.waitress.y);
 
+            if (this.trashBin && this.trashBin.active) {
+                this.trashBin.setDepth(this.trashBin.y);
+                if (this.trashBinLabel && this.trashBinLabel.active) {
+                    this.trashBinLabel.setDepth(this.trashBin.y + 1);
+                }
+            }
+
             if (this.waitressShadow) {
                 this.waitressShadow.x = this.waitress.x;
                 this.waitressShadow.y = this.waitress.y + 16;
@@ -3890,6 +4257,31 @@
             }
             
             this.cleanupCustomers();
+
+            if (GAME.arcadeMode) {
+                const A = window.ARCADE;
+                A.save({
+                    score: GAME.score,
+                    level: GAME.level,
+                    customersServed: GAME.customersServed,
+                    timestamp: Date.now()
+                });
+
+                this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
+                triggerSfx('coin');
+
+                GAME.level++;
+                GAME.customersServed = 0;
+                GAME.lives = 3;
+                GAME.dirtyPlates = 0;
+                GAME.carriedOrders = [];
+                GAME.customersTarget = A.getTargetForLevel(GAME.level);
+
+                this.time.delayedCall(1200, () => {
+                    this.scene.restart();
+                });
+                return;
+            }
             
             this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
             triggerSfx('coin');
@@ -3913,7 +4305,8 @@
             const currentLevel = isReplay ? parseInt(localStorage.getItem('waitress_replay_day')) : GAME.level;
 
             const rent = 50;
-            const net = Math.max(0, this.levelEarnings - rent);
+            const wastePenalty = GAME.wastePenalty || 0;
+            const net = Math.max(0, this.levelEarnings - rent - wastePenalty);
             GAME.score = net;
 
             const targetScore = GAME.customersTarget * 15;
@@ -3977,7 +4370,9 @@
                 settings: GAME.settings,
                 housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : [],
                 lastRank: rank,
-                lastBonus: expositorBonus
+                lastBonus: expositorBonus,
+                waste: GAME.waste,
+                wastePenalty: wastePenalty
             };
 
             localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
@@ -4017,7 +4412,9 @@
                         level: GAME.level,
                         rank: rank,
                         expositorBonus: expositorBonus,
-                        superStreak: superStreak
+                        superStreak: superStreak,
+                        waste: GAME.waste,
+                        wastePenalty: wastePenalty
                     });
                 } else {
                     GAME.level++;
@@ -4067,7 +4464,41 @@
                 this.input.off('pointerdown', unlockAudio);
                 this.input.off('keydown', unlockAudio);
             });
-            
+
+            if (this.sound.context && this.sound.context.state === 'suspended') {
+                this.sound.context.resume();
+            }
+
+            if (!this.sound.get('colonna_sonora') && this.cache.audio.exists('colonna_sonora')) {
+                this.bgm = this.sound.add('colonna_sonora', {
+                    volume: 0.4,
+                    loop: true
+                });
+
+                try {
+                    this.bgm.play();
+                } catch (e) {}
+
+                const unlockAndPlayBgm = () => {
+                    try {
+                        if (this.sound.context && this.sound.context.state === 'suspended') {
+                            this.sound.context.resume();
+                        }
+                        if (this.bgm && !this.bgm.isPlaying) {
+                            this.bgm.play();
+                        }
+                    } catch (e) {}
+                };
+
+                this.input.once('pointerdown', unlockAndPlayBgm);
+                this.input.keyboard.once('keydown', unlockAndPlayBgm);
+            } else if (this.sound.get('colonna_sonora')) {
+                this.bgm = this.sound.get('colonna_sonora');
+                if (!this.bgm.isPlaying) {
+                    try { this.bgm.play(); } catch(e) {}
+                }
+            }
+
             const bg = this.add.graphics();
             bg.fillStyle(0x2c1a11, 0.35);
             for (let i = 0; i < 800; i += 40) {
@@ -4101,14 +4532,14 @@
             }).setOrigin(0.5);
             
             this.createButton(400, 240, t('GIOCA'), () => {
+                window.ARCADE.enabled = false;
+                GAME.arcadeMode = false;
                 triggerSfx('click');
-                
                 if (localStorage.getItem('waitress_tutorial_done') === 'true') {
                     window.FORCE_TUTORIAL = false;
                 } else {
                     window.FORCE_TUTORIAL = true;
                 }
-                
                 if (typeof window.SaveMenu === 'function') {
                     this.openSaveMenu();
                 } else {
@@ -4116,17 +4547,25 @@
                 }
             });
             
-            this.createButton(400, 310, t('IMPOSTAZIONI'), () => {
+            this.createButton(400, 310, '🕹️ ARCADE', () => {
+                window.ARCADE.reset();
+                window.ARCADE.applyConfig();
+                window.FORCE_TUTORIAL = false;
+                triggerSfx('click');
+                this.scene.start('Game');
+            });
+            
+            this.createButton(400, 380, t('IMPOSTAZIONI'), () => {
                 triggerSfx('click');
                 this.scene.start('Settings');
             });
             
-            this.createButton(400, 380, t('CREDITI'), () => {
+            this.createButton(400, 450, t('CREDITI'), () => {
                 triggerSfx('click');
                 this.scene.start('Credits');
             });
             
-            this.add.text(400, 490, 'Mirko Donato - 2026', {
+            this.add.text(400, 530, 'Mirko Donato - 2026', {
                 fontSize: '11px',
                 color: '#d27d2d',
                 fontStyle: 'italic',

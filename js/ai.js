@@ -22,6 +22,30 @@ const NPC_CONFIG = {
         textureLeft: 'Poliziotto_Sinistra.png',
         textureRight: 'Poliziotto_Destra.png'
     },
+        "Uomo d'Affari": {
+        hasTilesheet: false,
+        emojiChar: '🕴️',
+        age: 45,
+        gender: 'male',
+        bio: 'Uomo d\'affari losco, rappresentante della Moroni. In realtà è un criminale che usa il birrificio come copertura.',
+        patienceMultiplier: 99.0,
+        tipMultiplier: 0,
+        noTip: true,
+        orderPreference: ['Moroni'],
+        personality: 'Sei un uomo d\'affari losco e intimidatorio. Rappresenti la Moroni, ma in realtà sei un criminale. Parli in modo formale ma minaccioso, con doppi sensi. Non accetti un no.',
+        sensitiveTopics: ['sponsor', 'birra', 'affari', 'polizia', 'denaro'],
+        dialogueStyles: {
+            greeting: 'Buongiorno. Sono qui per conto della Moroni. Non è una richiesta, è un\'offerta che non può rifiutare.',
+            order: 'Le ho lasciato delle casse sul davanzale. Le venda. Tutte. Non deluda la Moroni.',
+            happy: 'Bene. La Moroni ricorderà la sua collaborazione.',
+            angry: 'La Moroni non apprezza i ritardi. Sa cosa succede a chi non collabora.',
+            farewell: 'A presto. La Moroni tiene d\'occhio i suoi investimenti.'
+        },
+        textureUp: "Uomod'Affari_Dietro.png",
+        textureDown: "Uomod'Affari_Avanti.png",
+        textureLeft: "Uomod'Affari_Sinistra.png",
+        textureRight: "Uomod'Affari_Destra.png"
+    },
     'Elena': {
         hasTilesheet: false,
         emojiChar: '👩‍🎓',
