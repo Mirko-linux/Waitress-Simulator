@@ -21,18 +21,47 @@
         }
 
         init(data) {
+            let calculatedRent = data.rent || 50;
+            
+
+            if (window.PriceSystem) {
+                const tempPriceSys = new window.PriceSystem(this);
+                tempPriceSys.updateInflation(data.level || 1);
+                calculatedRent = tempPriceSys.getRentPrice(50);
+            }
+
+            const earned = data.earned || 0;
+            const wastePenalty = data.wastePenalty || 0;
+            
+
+            let briscolaBonus = 0;
+            try {
+                const raw = localStorage.getItem('waitress_briscola_state');
+                if (raw) {
+                    const state = JSON.parse(raw);
+                    if (state.completed && state.rewardGiven) {
+                        briscolaBonus = 20;
+                    }
+                }
+            } catch(e) {}
+
+            const totalEarned = earned + briscolaBonus;
+            const net = Math.max(0, totalEarned - calculatedRent - wastePenalty);
+
             this.levelData = {
                 score: data.score || 0,
-                earned: data.earned || 0,
-                rent: data.rent || 50,
-                net: data.net || 0,
+                earned: earned,
+                rent: calculatedRent,
+                net: net,
                 served: data.served || 0,
                 target: data.target || 10,
                 lives: data.lives || 3,
                 level: data.level || 1,
                 waste: data.waste || 0,
-                wastePenalty: data.wastePenalty || 0
+                wastePenalty: wastePenalty
             };
+
+            this.briscolaBonus = briscolaBonus;
         }
 
         preload() {
@@ -52,7 +81,7 @@
             bg.fillRect(0, 0, width, height);
 
             const panelWidth = Math.min(width * 0.85, 480);
-            const panelHeight = Math.min(height * 0.8, 560);
+            const panelHeight = Math.min(height * 0.8, 580);
             const panelX = width / 2 - panelWidth / 2;
             const panelY = height / 2 - panelHeight / 2;
 
@@ -62,8 +91,9 @@
             panel.lineStyle(4, 0xe67e22, 1);
             panel.strokeRoundedRect(panelX, panelY, panelWidth, panelHeight, 16);
 
+            const totalEarned = this.levelData.earned + this.briscolaBonus;
             const targetScore = this.levelData.target * 15;
-            const medal = calculateMedal(this.levelData.earned, targetScore);
+            const medal = calculateMedal(totalEarned, targetScore);
 
             this.add.text(width / 2, panelY + 40, `LIVELLO ${this.levelData.level} COMPLETATO!`, {
                 fontSize: '24px', fontStyle: 'bold', fill: '#f39c12', align: 'center'
@@ -85,26 +115,48 @@
                 fontSize: '28px', fontStyle: 'bold', fill: medal.color, align: 'center'
             }).setOrigin(0.5);
 
-            const statsY = panelY + 250;
-            const spacing = 32;
+            const statsY = panelY + 240;
+            const spacing = 30;
+
             const stats = [
-                { label: 'Clienti Serviti:', value: `${this.levelData.served} / ${this.levelData.target}` },
-                { label: 'Incassi totali:', value: `${this.levelData.earned} €` },
-                { label: 'Affitto casa:', value: `- ${this.levelData.rent} €` },
-                { label: 'Spreco cibo:', value: `- ${this.levelData.wastePenalty} €` },
-                { label: 'Saldo netto:', value: `${this.levelData.net} €` },
-                { label: 'Vite Rimaste:', value: '❤️'.repeat(Math.max(0, this.levelData.lives)) }
+                { label: 'Clienti Serviti:', value: `${this.levelData.served} / ${this.levelData.target}`, color: '#2ecc71' },
+                { label: 'Incassi totali:', value: `${this.levelData.earned} €`, color: '#2ecc71' },
+                { label: 'Affitto (con inflazione):', value: `- ${this.levelData.rent} €`, color: '#e74c3c' },
+                { label: 'Spreco cibo:', value: `- ${this.levelData.wastePenalty} €`, color: '#e74c3c' },
+                { label: 'Saldo netto:', value: `${this.levelData.net} €`, color: '#2ecc71' },
+                { label: 'Vite Rimaste:', value: '❤️'.repeat(Math.max(0, this.levelData.lives)), color: '#e74c3c' }
             ];
+
+            if (this.briscolaBonus > 0) {
+                stats.push({ label: '🃏 Bonus Briscola:', value: `+ ${this.briscolaBonus} €`, color: '#f1c40f' });
+            }
 
             stats.forEach((stat, index) => {
                 const y = statsY + (index * spacing);
-                this.add.text(width / 2 - 130, y, stat.label, { fontSize: '18px', fill: '#ecf0f1', align: 'left' }).setOrigin(0, 0.5);
-                this.add.text(width / 2 + 130, y, stat.value, { fontSize: '18px', fontStyle: 'bold', fill: '#2ecc71', align: 'right' }).setOrigin(1, 0.5);
+                this.add.text(width / 2 - 140, y, stat.label, { 
+                    fontSize: '17px', fill: '#ecf0f1', align: 'left' 
+                }).setOrigin(0, 0.5);
+                this.add.text(width / 2 + 140, y, stat.value, { 
+                    fontSize: '17px', fontStyle: 'bold', fill: stat.color, align: 'right' 
+                }).setOrigin(1, 0.5);
             });
 
             const btnY = panelY + panelHeight - 50;
 
             this.createButton(width / 2 - 80, btnY, 'PROSEGUI', '#2ecc71', () => {
+                if (this.briscolaBonus > 0) {
+                    try {
+                        const raw = localStorage.getItem('waitress_briscola_state');
+                        if (raw) {
+                            const state = JSON.parse(raw);
+                            state.rewardGiven = false;
+                            localStorage.setItem('waitress_briscola_state', JSON.stringify(state));
+                        }
+                    } catch(e) {}
+                }
+
+                window.GAME.score = this.levelData.net;
+
                 const saveData = {
                     score: window.GAME.score,
                     level: window.GAME.level + 1,
@@ -112,9 +164,14 @@
                     lives: 3,
                     dirtyPlates: 0,
                     settings: window.GAME.settings,
-                    housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
+                    housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : [],
+                    restaurantPurchased: window.RESTAURANT_STATE ? window.RESTAURANT_STATE.purchased : []
                 };
                 localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
+
+                if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
+                    window.SaveManager.saveGame(saveData);
+                }
                 
                 if (window.HouseScene && !this.scene.get('House')) {
                     this.scene.add('House', window.HouseScene, true);
@@ -124,6 +181,17 @@
             });
 
             this.createButton(width / 2 + 80, btnY, 'MENU', '#e74c3c', () => {
+                if (this.briscolaBonus > 0) {
+                    try {
+                        const raw = localStorage.getItem('waitress_briscola_state');
+                        if (raw) {
+                            const state = JSON.parse(raw);
+                            state.rewardGiven = false;
+                            localStorage.setItem('waitress_briscola_state', JSON.stringify(state));
+                        }
+                    } catch(e) {}
+                }
+                window.GAME.score = this.levelData.net;
                 this.scene.start('Menu');
             });
         }

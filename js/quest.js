@@ -1,4 +1,4 @@
-// quest.js - Sistema Missioni Completo (Missione Principale + Elena Nascosta)
+
 
 class QuestSystem {
     constructor(scene) {
@@ -34,7 +34,7 @@ class QuestSystem {
         }));
     }
 
-    // --- PULSANTE ---
+
     createQuestButton() {
         const x = 620, y = 550;
         this.btnBg = this.scene.add.rectangle(x, y, 90, 30, 0x2c3e50)
@@ -51,7 +51,7 @@ class QuestSystem {
         this.btnBg.on('pointerdown', () => this.toggleMenu());
     }
 
-    // --- MENU ---
+
     createQuestMenu() {
         this.overlay = this.scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.5)
             .setDepth(300).setScrollFactor(0).setInteractive().setVisible(false);
@@ -77,7 +77,7 @@ class QuestSystem {
         this.overlay.on('pointerdown', () => this.toggleMenu());
     }
 
-    // --- APRI / CHIUDI ---
+
     toggleMenu() {
         this.isMenuOpen = !this.isMenuOpen;
         this.overlay.setVisible(this.isMenuOpen);
@@ -89,7 +89,7 @@ class QuestSystem {
         }
     }
 
-    // --- MISSIONE PRINCIPALE ---
+
     checkMainQuestProgress() {
         const score = window.GAME.score || 0;
         const level = window.GAME.level || 1;
@@ -117,19 +117,19 @@ class QuestSystem {
         this.saveQuests();
     }
 
-    // --- MISSIONE ELENA (NASCOSTA) ---
+
     startElenaAdoptionQuest() {
         if (this.completedQuests.includes('elena_adoption')) return;
         if (this.activeQuests.find(q => q.id === 'elena_adoption')) return;
 
-        // Controlla i requisiti segreti:
-        // 1. Sintonia al 100% con TUTTI i clienti
-        // 2. Guadagno massimo di 15.000€
+
+
+
         const hasMaxAffection = this.scene.customers && this.scene.customers.length > 0 && 
             this.scene.customers.every(c => c.relationScore >= 100);
         const hasMaxMoney = window.GAME.score >= 15000;
 
-        // Se i requisiti NON sono soddisfatti, la missione NON appare (missione nascosta)
+
         if (!hasMaxAffection || !hasMaxMoney) return;
 
         const quest = {
@@ -145,11 +145,11 @@ class QuestSystem {
         this.updateQuestMenuText();
     }
 
-    // --- AGGIORNA TESTO MENU ---
+
     updateQuestMenuText() {
         let text = '';
 
-        // MISSIONE PRINCIPALE (solo testo, senza emoji)
+
         text += 'MISSIONE PRINCIPALE\n';
         if (this.mainQuestStage < 4) {
             text += 'Raggiungi 15.000€\n';
@@ -158,7 +158,7 @@ class QuestSystem {
             text += 'COMPLETATA\n\n';
         }
 
-        // MISSIONI ATTIVE (solo testo essenziale)
+
         if (this.activeQuests.length > 0) {
             text += 'MISSIONI ATTIVE\n\n';
             this.activeQuests.forEach(q => {
@@ -169,7 +169,7 @@ class QuestSystem {
             text += 'Nessuna missione attiva\n\n';
         }
 
-        // MISSIONI COMPLETATE
+
         if (this.completedQuests.length > 0) {
             text += 'COMPLETATE\n';
             this.completedQuests.forEach(id => {
@@ -184,7 +184,7 @@ class QuestSystem {
         this.questTextArea.setText(text);
     }
 
-    // --- COMPLETA MISSIONI ---
+
     completeQuest(questId) {
         const index = this.activeQuests.findIndex(q => q.id === questId);
         if (index > -1) {
@@ -196,7 +196,7 @@ class QuestSystem {
         }
     }
 
-    // --- AGGIORNA QUANDO IL GIOCO AVANZA ---
+
     update() {
         this.checkMainQuestProgress();
         

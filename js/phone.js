@@ -18,6 +18,8 @@
             this.callCooldown = 0;
             this.forceNextCaller = null;
             this.clanCallDelivered = false;
+            this.clanRefusedPermanently = false;
+            this._marcoCallIndex = 0;
             this.createPhoneIcon();
             this.scheduleNextCall();
         }
@@ -111,6 +113,11 @@
                     if (this.scene.gameActive && !this.isCallActive && !this.isMenuOpen) {
                         this.callerName = 'clan';
                         this.clanCallDelivered = true;
+
+                        if (this.scene.crime) {
+                            this.scene.crime.clanCallDay = window.GAME.level;
+                            this.scene.crime.saveCrimeData();
+                        }
                         if (this.scene.story) {
                             this.scene.story.storyState.clanCallReceived = true;
                             this.scene.story.saveStoryData();
@@ -138,10 +145,19 @@
 
         shouldTriggerClanCall() {
             if (this.clanCallDelivered) return false;
+            if (this.clanRefusedPermanently) return false;
             if (!this.scene.crime) return false;
             if (this.scene.crime.hasAcceptedClanMission) return false;
             if (this.scene.crime.clanMissionCompleted) return false;
+            if (this.scene.crime.clanRefusedPermanently) return false;
+
+            if (window.GAME.level === 8) return false;
             if (window.GAME.level < 5) return false;
+
+
+            const today = window.GAME.level;
+            if (this.scene.crime.clanCallDay === today) return false;
+
             return true;
         }
 
@@ -193,7 +209,14 @@
                 }
             } else if (this.callerName === 'clan') {
                 this.scene.showFloatingText(540, 510, '📞 Il clan ha riattaccato...', '#ff4444');
-                this.clanCallDelivered = false;
+
+
+
+
+                if (this.scene.crime) {
+                    this.scene.crime.clanCallIgnored = true;
+                    this.scene.crime.saveCrimeData();
+                }
             } else {
                 this.scene.showFloatingText(540, 510, '📞 Chiamata persa', '#e74c3c');
             }
@@ -221,7 +244,7 @@
             }
 
             if (this.callerName === 'clan') {
-                this.showClanCallUI();
+                this.openClanDialogFromCall();
                 return;
             }
 
@@ -231,6 +254,93 @@
             }
 
             this.showCallUI();
+        }
+
+        openClanDialogFromCall() {
+            this.isCallActive = false;
+
+            if (typeof this.scene.setPhoneGameplayLock === 'function') {
+                this.scene.setPhoneGameplayLock(false);
+            }
+
+            if (!this.scene.scene.get('ClanDialog')) {
+                this.scene.scene.add('ClanDialog', window.ClanDialogScene, false);
+            }
+
+            this.scene.scene.launch('ClanDialog', {
+                mode: 'phone',
+                onAccept: () => {
+                    if (this.scene.crime) {
+                        this.scene.crime.hasAcceptedClanMission = true;
+                        this.scene.crime.clanSheetCode = String(Phaser.Math.Between(100000, 999999));
+                        this.scene.crime.clanSheetExpiry = window.GAME.level + 5;
+                        this.scene.crime.hasClanSheet = true;
+                        if (!this.scene.crime.inventory.includes('clan_sheet')) {
+                            this.scene.crime.inventory.push('clan_sheet');
+                        }
+                        this.scene.crime.clanRefusedPermanently = false;
+                        this.scene.crime.saveCrimeData();
+
+                        this.scene.time.delayedCall(500, () => {
+                            this.scene.crime.spawnClanMember();
+                        });
+
+                        if (this.scene.showFloatingText) {
+                            this.scene.showFloatingText(400, 260, '🤝 Hai accettato la missione del clan.', '#9b59b6');
+                            this.scene.showFloatingText(400, 300, '📄 Il mafioso ti consegna un foglio con un codice...', '#ffd700');
+                        }
+                    }
+                    if (this.scene.story) {
+                        this.scene.story.storyState.clanMissionAccepted = true;
+                        this.scene.story.saveStoryData();
+                    }
+                },
+                onRefuse: (postponed) => {
+                    if (postponed) {
+
+                        this.clanCallDelivered = false;
+                        if (this.scene.crime) {
+                            this.scene.crime.clanCallDay = -1;
+                            this.scene.crime.clanRefusedPermanently = false;
+                            this.scene.crime.saveCrimeData();
+                        }
+                        if (this.scene.showFloatingText) {
+                            this.scene.showFloatingText(400, 260, '🤔 Hai chiesto tempo. Il clan tornerà domani.', '#f39c12');
+                        }
+                    } else {
+
+                        this.clanCallDelivered = true;
+                        this.clanRefusedPermanently = true;
+                        if (this.scene.crime) {
+                            this.scene.crime.clanBetrayed = true;
+                            this.scene.crime.clanRefusedPermanently = true;
+                            this.scene.crime.addSuspicion(25, 'clan');
+                            this.scene.crime.saveCrimeData();
+
+
+                            if (this.scene.kitchen && typeof this.scene.kitchen.triggerVandalism === 'function') {
+                                this.scene.kitchen.triggerVandalism();
+                            }
+                            window.GAME.score = Math.max(0, window.GAME.score - 300);
+                            if (typeof this.scene.updateHUD === 'function') this.scene.updateHUD();
+                            if (typeof this.scene.showFloatingText === 'function') {
+                                this.scene.showFloatingText(400, 300, '💥 Il locale è stato vandalizzato! -300€', '#ff0000');
+                            }
+                        }
+                        if (this.scene.showFloatingText) {
+                            this.scene.showFloatingText(400, 260, '❌ Hai rifiutato. Il clan non dimentica.', '#e74c3c');
+                        }
+                    }
+                },
+                onComplete: () => {
+                    if (this.scene.scene.isPaused()) {
+                        this.scene.scene.resume();
+                    }
+                    this.scheduleNextCall();
+                }
+            });
+
+            this.scene.scene.pause();
         }
 
         showAdCallUI() {
@@ -312,111 +422,127 @@
             } catch(e) {}
         }
 
-        showClanCallUI() {
-            if (this.callDialog) this.callDialog.destroy();
-
-            this.callDialog = this.scene.add.container(400, 300).setDepth(2000);
-            this.callDialog.setScrollFactor(0);
-
-            const bg = this.scene.add.rectangle(0, 0, 360, 240, 0x111111, 0.95);
-            bg.setStrokeStyle(2, 0xff4444);
-
-            const title = this.scene.add.text(0, -90, `📞 ${this.callerName}`, {
-                fontSize: '18px',
-                color: '#ff4444',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-
-            const msgText = '🧔‍♂️ "Ci serve il tuo aiuto. Accetti la missione?"';
-
-            const body = this.scene.add.text(0, -30, msgText, {
-                fontSize: '13px',
-                color: '#ffffff',
-                align: 'center',
-                wordWrap: { width: 320 },
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-
-            this.callDialog.add([bg, title, body]);
-
-            const options = [
-                { text: '✅ Accetto la missione', accept: true },
-                { text: '❌ Rifiuto', accept: false }
+        getMarcoCallDialog() {
+            const marcoCalls = [
+                {
+                    greeting: 'Amore, come stai? Mi manchi!',
+                    options: [
+                        { text: '❤️ Ti amo!', delta: +10 },
+                        { text: '😊 Sto bene, tu?', delta: +5 },
+                        { text: '😅 Sono impegnata, scusa.', delta: -5 },
+                        { text: '😒 Non ora, ho da fare.', delta: -15 }
+                    ]
+                },
+                {
+                    greeting: 'Tesoro, stasera ti va di uscire? Offro io!',
+                    options: [
+                        { text: '🥰 Sì, non vedo l\'ora!', delta: +12 },
+                        { text: '😊 Volentieri, dove andiamo?', delta: +8 },
+                        { text: '😕 Ho il turno in pizzeria, scusa.', delta: -8 },
+                        { text: '😤 Ho già altri piani.', delta: -12 }
+                    ]
+                },
+                {
+                    greeting: 'Ho saputo che lavori tanto... non ti stanchi mai?',
+                    options: [
+                        { text: '💪 Per noi ce la metto tutta!', delta: +10 },
+                        { text: '😊 È dura ma mi piace.', delta: +5 },
+                        { text: '😓 Sì, sono esausta...', delta: 0 },
+                        { text: '😠 Non capisci quanto è difficile!', delta: -10 }
+                    ]
+                },
+                {
+                    greeting: 'Ti ho pensato tutto il giorno...',
+                    options: [
+                        { text: '💖 Anche io! Sei dolcissimo.', delta: +12 },
+                        { text: '😊 Che carino!', delta: +6 },
+                        { text: '😐 Ah, ok.', delta: -6 },
+                        { text: '😒 Più tardi, ora lavoro.', delta: -10 }
+                    ]
+                },
+                {
+                    greeting: 'Ho una sorpresa per te! Indovina cosa?',
+                    options: [
+                        { text: '🎁 Dimmi tutto!', delta: +10 },
+                        { text: '😊 Fammi indovinare...', delta: +5 },
+                        { text: '😕 Ora non posso, scusa.', delta: -5 },
+                        { text: '😤 Non ho tempo per i giochetti.', delta: -12 }
+                    ]
+                },
+                {
+                    greeting: 'Tua madre mi ha chiamato oggi...',
+                    options: [
+                        { text: '😂 Cosa voleva?', delta: +8 },
+                        { text: '😊 Ah sì? Raccontami.', delta: +5 },
+                        { text: '😑 Ci risiamo...', delta: -8 },
+                        { text: '😡 Non voglio parlarne.', delta: -15 }
+                    ]
+                },
+                {
+                    greeting: 'Amore, sono preoccupato per te. È tutto ok?',
+                    options: [
+                        { text: '🥺 Grazie, sei un tesoro.', delta: +12 },
+                        { text: '😊 Sì, sto bene davvero.', delta: +6 },
+                        { text: '😕 Un po\' stanca, ma ok.', delta: 0 },
+                        { text: '😒 Fatti i fatti tuoi.', delta: -18 }
+                    ]
+                },
+                {
+                    greeting: 'Ti va se passo a trovarti al lavoro?',
+                    options: [
+                        { text: '🥰 Sì! Così ti presento tutti!', delta: +12 },
+                        { text: '😊 Volentieri!', delta: +7 },
+                        { text: '😅 Meglio di no, sono piena.', delta: -5 },
+                        { text: '😨 No! Non venire!', delta: -15 }
+                    ]
+                }
             ];
 
-            options.forEach((option, index) => {
-                const y = 40 + (index * 50);
-                const color = option.accept ? 0x2ecc71 : 0xe74c3c;
-                const btnBg = this.scene.add.rectangle(0, y, 280, 40, color).setInteractive({ useHandCursor: true });
-                const btnTxt = this.scene.add.text(0, y, option.text, {
-                    fontSize: '14px',
-                    color: '#ffffff',
-                    fontStyle: 'bold',
-                    fontFamily: 'Fredoka'
-                }).setOrigin(0.5);
-
-                btnBg.on('pointerdown', () => {
-                    if (option.accept) {
-                        if (this.scene.crime && typeof this.scene.crime.acceptClanMission === 'function') {
-                            this.scene.crime.acceptClanMission();
-                        }
-                        if (this.scene.story) {
-                            this.scene.story.storyState.clanMissionAccepted = true;
-                            this.scene.story.saveStoryData();
-                        }
-                    } else {
-                        this.scene.showFloatingText(400, 300, '❌ Missione rifiutata.', '#999999');
-                        this.clanCallDelivered = false;
-                    }
-                    this.endCall();
-                });
-
-                this.callDialog.add([btnBg, btnTxt]);
-            });
+            const call = marcoCalls[this._marcoCallIndex % marcoCalls.length];
+            this._marcoCallIndex++;
+            return call;
         }
 
         showMarcoCallUI() {
             if (this.callDialog) this.callDialog.destroy();
 
+            const callData = this.getMarcoCallDialog();
+
             this.callDialog = this.scene.add.container(400, 300).setDepth(2000);
             this.callDialog.setScrollFactor(0);
 
-            const bg = this.scene.add.rectangle(0, 0, 420, 300, 0x111111, 0.95);
+            const bg = this.scene.add.rectangle(0, 0, 460, 340, 0x111111, 0.95);
             bg.setStrokeStyle(2, 0xff6b6b);
 
-            const title = this.scene.add.text(0, -110, `📞 ${this.callerName}`, {
-                fontSize: '18px',
+            const title = this.scene.add.text(0, -140, `📞 Marco`, {
+                fontSize: '20px',
                 color: '#ff6b6b',
                 fontStyle: 'bold',
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
 
-            const body = this.scene.add.text(0, -70, 'Amore, come stai? Mi manchi!', {
+            const body = this.scene.add.text(0, -95, callData.greeting, {
                 fontSize: '14px',
                 color: '#ffffff',
                 align: 'center',
+                wordWrap: { width: 400 },
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
 
             this.callDialog.add([bg, title, body]);
 
-            const options = [
-                { text: '❤️ Ti amo!', delta: +10 },
-                { text: '😊 Sto bene, tu?', delta: +5 },
-                { text: '😅 Sono impegnata, scusa.', delta: -5 },
-                { text: '😒 Non ora, ho da fare.', delta: -15 }
-            ];
-
-            options.forEach((option, index) => {
-                const y = -20 + (index * 55);
-                const btnBg = this.scene.add.rectangle(0, y, 360, 45, 0x34495e).setInteractive({ useHandCursor: true });
+            callData.options.forEach((option, index) => {
+                const y = -30 + (index * 50);
+                const btnBg = this.scene.add.rectangle(0, y, 380, 42, 0x34495e).setInteractive({ useHandCursor: true });
                 const btnTxt = this.scene.add.text(0, y, option.text, {
-                    fontSize: '14px',
+                    fontSize: '13px',
                     color: '#ffffff',
                     align: 'center',
                     fontFamily: 'Fredoka'
                 }).setOrigin(0.5);
+
+                btnBg.on('pointerover', () => btnBg.setFillStyle(0x4a6785));
+                btnBg.on('pointerout', () => btnBg.setFillStyle(0x34495e));
 
                 btnBg.on('pointerdown', () => {
                     if (window.NPCManager && this.scene.npcManager) {
@@ -424,7 +550,7 @@
                         this.scene.npcManager.relationshipScores['Marco'] = Phaser.Math.Clamp(currentRelation + option.delta, 0, 100);
                         this.scene.npcManager.saveRelationships();
 
-                        this.scene.showFloatingText(540, 510, `${option.delta > 0 ? '❤️ Sintonia +' : '💔 Sintonia '}${option.delta}`, option.delta > 0 ? '#2ecc71' : '#e74c3c');
+                        this.scene.showFloatingText(540, 510, `${option.delta > 0 ? '❤️ Sintonia +' : '💔 Sintonia '}${option.delta}`, option.delta > 0 ? '#2ecc71' : (option.delta < 0 ? '#e74c3c' : '#f39c12'));
 
                         if (this.scene.npcManager.relationshipScores['Marco'] <= 0) {
                             this.scene.showFloatingText(400, 200, '💔 MARCO TI HA LASCIATO!', '#ff0000');

@@ -209,13 +209,13 @@ class KitchenSystem {
         if (!station) return false;
 
         if (station.isBroken) {
-            this.showChefDialog('⚠️ Rotto! Chiama il tecnico!', '#e74c3c');
+            this.showChefDialog('Chiama il tecnico!', '#e74c3c');
             return false;
         }
 
         const supplier = this.scene.supplier;
         if (supplier && typeof supplier.foodStock === 'number' && supplier.foodStock <= 0) {
-            this.showChefDialog('📦 Scorte esaurite!', '#e74c3c');
+            this.showChefDialog('Scorte esaurite!', '#e74c3c');
             return false;
         }
 
@@ -378,7 +378,7 @@ class KitchenSystem {
             if (typeof this.scene.showFloatingText === 'function') {
                 this.scene.showFloatingText(freeSlot.x, freeSlot.y - 20, '✨ PRONTO!', '#2ecc71');
             }
-            this.showChefDialog('Pronto! 👨‍🍳', '#2ecc71');
+            this.showChefDialog('Pronto!', '#2ecc71');
             if (window.triggerSfx) window.triggerSfx('coin');
 
             this.moveChef(this.chefRestX, this.chefRestY);
@@ -465,7 +465,8 @@ class KitchenSystem {
             'caffè': '☕', 'caffe': '☕', 'Caffè': '☕',
             'birra': '🍺', 'Birra': '🍺',
             'acqua': '💧', 'Acqua': '💧',
-            'cola': '🥤', 'Cola': '🥤'
+            'cola': '🥤', 'Cola': '🥤',
+            'moroni': '🍾 ', 'moroni': '🍾 '
         };
         return emojis[food] || '🍽️';
     }

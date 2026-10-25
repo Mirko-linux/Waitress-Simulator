@@ -12,7 +12,7 @@
         
         document.removeEventListener('click', initAudio);
         document.removeEventListener('touchstart', initAudio);
-        console.log('🎵 Audio sbloccato!');
+        console.log('Audio Attivo');
     }
 
     

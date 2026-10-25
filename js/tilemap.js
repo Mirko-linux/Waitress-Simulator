@@ -1,4 +1,4 @@
-// tilemap.js - Versione CORRETTA
+
 class TilemapSystem {
     constructor(scene) {
         this.scene = scene;
@@ -25,19 +25,19 @@ class TilemapSystem {
                 let floorType = 0;
                 let isWall = false;
 
-                // MURI ESTERNI
+
                 if (row === 0 || row === this.mapHeight - 1 || col === 0 || col === this.mapWidth - 1) {
                     isWall = true;
                 }
 
-                // ZONA CUCINA (colonne 19-23)
+
                 if (col >= 19 && col <= 23 && !isWall) {
                     floorType = 1;
                 }
 
-                // MURO VERTICALE TRA SALA E CUCINA (colonna 18)
+
                 if (col === 18 && !isWall) {
-                    // Apri passaggio centrale (righe 8-10)
+
                     if (row >= 8 && row <= 10) {
                         isWall = false;
                     } else {
@@ -45,30 +45,30 @@ class TilemapSystem {
                     }
                 }
 
-                // ZONA BAGNO (colonne 19-21, righe 15-17)
+
                 if (col >= 19 && col <= 21 && row >= 15 && row <= 17 && !isWall) {
                     floorType = 2;
                 }
 
-                // PORTA DI INGRESSO (riga 18, colonne 6-8)
+
                 if (row === 18 && col >= 6 && col <= 8) {
                     isWall = false;
                     floorType = 0;
                 }
 
-                // CORRIDOIO DALLA PORTA AI TAVOLI (colonne 6-8, righe 17-18)
+
                 if (row === 17 && col >= 6 && col <= 8) {
                     isWall = false;
                     floorType = 0;
                 }
 
-                // CORRIDOIO ORIZZONTALE (colonne 0-18, riga 17)
+
                 if (row === 17 && col >= 2 && col <= 18) {
                     isWall = false;
                     floorType = 0;
                 }
 
-                // CORRIDOIO VERTICALE DAL LAVELLO (colonna 2-3, righe 10-17)
+
                 if (col >= 2 && col <= 3 && row >= 10 && row <= 17) {
                     isWall = false;
                     floorType = 0;

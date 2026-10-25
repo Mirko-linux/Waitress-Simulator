@@ -1,6 +1,7 @@
 const NPC_CONFIG = {
     'Poliziotto': {
         hasTilesheet: false,
+        isCustomer: false,
         emojiChar: '👮',
         age: 40,
         gender: 'male',
@@ -22,41 +23,49 @@ const NPC_CONFIG = {
         textureLeft: 'Poliziotto_Sinistra.png',
         textureRight: 'Poliziotto_Destra.png'
     },
-        "Uomo d'Affari": {
+
+    "Uomo d'Affari": {
         hasTilesheet: false,
         emojiChar: '🕴️',
         age: 45,
         gender: 'male',
         bio: 'Uomo d\'affari losco, rappresentante della Moroni. In realtà è un criminale che usa il birrificio come copertura.',
-        patienceMultiplier: 99.0,
-        tipMultiplier: 0,
-        noTip: true,
-        orderPreference: ['Moroni'],
-        personality: 'Sei un uomo d\'affari losco e intimidatorio. Rappresenti la Moroni, ma in realtà sei un criminale. Parli in modo formale ma minaccioso, con doppi sensi. Non accetti un no.',
-        sensitiveTopics: ['sponsor', 'birra', 'affari', 'polizia', 'denaro'],
+        isCustomer: false,
+        patienceMultiplier: 1.0,
+        tipMultiplier: 2.0,
+        orderPreference: ['Birra'],
+        personality: 'Sei un uomo d\'affari losco, sicuro di te, ambiguo e molto persuasivo.',
+        sensitiveTopics: ['Moroni', 'birrificio', 'affari', 'business'],
         dialogueStyles: {
-            greeting: 'Buongiorno. Sono qui per conto della Moroni. Non è una richiesta, è un\'offerta che non può rifiutare.',
-            order: 'Le ho lasciato delle casse sul davanzale. Le venda. Tutte. Non deluda la Moroni.',
-            happy: 'Bene. La Moroni ricorderà la sua collaborazione.',
-            angry: 'La Moroni non apprezza i ritardi. Sa cosa succede a chi non collabora.',
-            farewell: 'A presto. La Moroni tiene d\'occhio i suoi investimenti.'
+            greeting: 'Ho una proposta di business importante per te.',
+            order: 'Una birra. Abbiamo questioni più importanti di cui parlare.',
+            happy: 'Mi piace come ragioni.',
+            angry: 'Non farmi perdere tempo.',
+            farewell: 'Ci rivedremo presto.'
         },
-        textureUp: "Uomod'Affari_Dietro.png",
-        textureDown: "Uomod'Affari_Avanti.png",
-        textureLeft: "Uomod'Affari_Sinistra.png",
-        textureRight: "Uomod'Affari_Destra.png"
+        speed: 100,
+        textures: {
+            front: "UomoDAffari_Avanti",
+            back: "UomoDAffari_Dietro",
+            left: "UomoDAffari_Sinistra",
+            right: "UomoDAffari_Destra"
+        },
+        dialogue: "Ho una proposta di business importante per te.",
+        rewardMultiplier: 2.0
     },
+
     'Elena': {
         hasTilesheet: false,
+        isCustomer: true,
         emojiChar: '👩‍🎓',
         age: 20,
         gender: 'female',
-        bio: 'Studentessa universitaria sui 20 anni.',
+        bio: 'Studentessa universitaria di 20 anni. Studi ECONOMIA. Ti trovi al bancone di un bar.',
         adoptTrigger: true,
         patienceMultiplier: 1.0,
         tipMultiplier: 1.0,
         orderPreference: ['Pizza', 'Patatine', 'Caffè'],
-        personality: 'Sei una studentessa universitaria solare, spontanea, espressiva e amichevole.',
+        personality: 'Sei una studentessa universitaria di Economia, solare, spontanea, espressiva e amichevole.',
         sensitiveTopics: ['studi', 'esami', 'soldi', 'tasse'],
         dialogueStyles: {
             greeting: 'Ciao! Come vanno gli studi?',
@@ -70,8 +79,10 @@ const NPC_CONFIG = {
         textureLeft: 'Elena_Sinistra.png',
         textureRight: 'Elena_Destra.png'
     },
+
     'Maria': {
         hasTilesheet: false,
+        isCustomer: true,
         emojiChar: '👩',
         age: 30,
         gender: 'female',
@@ -93,8 +104,10 @@ const NPC_CONFIG = {
         textureLeft: 'Maria_Sinistra.png',
         textureRight: 'Maria_Destra.png'
     },
+
     'Francesco': {
         hasTilesheet: false,
+        isCustomer: true,
         emojiChar: '👱‍♂️',
         age: 25,
         gender: 'male',
@@ -116,8 +129,10 @@ const NPC_CONFIG = {
         textureLeft: 'Francesco_Sinistra.png',
         textureRight: 'Francesco_Destra.png'
     },
+
     'Rosa': {
         hasTilesheet: false,
+        isCustomer: true,
         emojiChar: '👵',
         age: 80,
         gender: 'female',
@@ -139,8 +154,10 @@ const NPC_CONFIG = {
         textureLeft: 'Rosa_Sinistra.png',
         textureRight: 'Rosa_Destra.png'
     },
+
     'Sofia': {
         hasTilesheet: false,
+        isCustomer: true,
         emojiChar: '👩‍💼',
         age: 30,
         gender: 'female',
@@ -162,8 +179,10 @@ const NPC_CONFIG = {
         textureLeft: 'Sofia_Sinistra.png',
         textureRight: 'Sofia_Destra.png'
     },
+
     'Chiara': {
         hasTilesheet: false,
+        isCustomer: true,
         emojiChar: '👩‍🏫',
         age: 40,
         gender: 'female',
@@ -185,8 +204,10 @@ const NPC_CONFIG = {
         textureLeft: 'Chiara_Sinistra.png',
         textureRight: 'Chiara_Destra.png'
     },
+
     'Massimo': {
         hasTilesheet: false,
+        isCustomer: true,
         emojiChar: '👨',
         age: 50,
         gender: 'male',
@@ -208,8 +229,10 @@ const NPC_CONFIG = {
         textureLeft: 'Massimo_Sinistra.png',
         textureRight: 'Massimo_Destra.png'
     },
+
     'Andrea': {
         hasTilesheet: false,
+        isCustomer: true,
         emojiChar: '👨‍💻',
         age: 35,
         gender: 'male',
@@ -231,8 +254,10 @@ const NPC_CONFIG = {
         textureLeft: 'Andrea_Sinistra.png',
         textureRight: 'Andrea_Destra.png'
     },
+
     'Marco': {
         hasTilesheet: false,
+        isCustomer: true,
         emojiChar: '🤵',
         age: 28,
         gender: 'male',
@@ -245,18 +270,66 @@ const NPC_CONFIG = {
         personality: 'Sei il fidanzato della cameriera, molto dolce, affettuoso, un po\' pigro e spontaneo.',
         sensitiveTopics: ['relazione', 'amore', 'tradimento'],
         dialogueStyles: {
-            greeting: 'Ciao amore! Come è andata la giornata?',
+            greeting: 'Ciao amore! Come sta andando la giornata?',
             order: 'La solita pizza, tesoro. Sai che la condividiamo.',
             happy: 'Sei la migliore! Amore mio!',
             angry: 'Tesoro, stai impiegando troppo tempo...',
             farewell: 'Ci vediamo a casa! Ti aspetto per cena!'
-        },
-        textureUp: 'Marco_Dietro.png',
-        textureDown: 'Marco_Avanti.png',
-        textureLeft: 'Marco_Sinistra.png',
-        textureRight: 'Marco_Destra.png'
+        }
+    },
+
+    'Anziano_Carte': {
+        hasTilesheet: false,
+        isCustomer: false,
+        emojiChar: '🧓',
+        age: 75,
+        gender: 'male',
+        bio: 'Un anziano appassionato di briscola.',
+        patience: 0,
+        bladder: 0,
+        patienceMultiplier: 0,
+        tipMultiplier: 0,
+        orderPreference: [],
+        textureUp: 'Anziano_Carte_Dietro.png',
+        textureDown: 'Anziano_Carte_Avanti.png',
+        textureLeft: 'Anziano_Carte_Sinistra.png',
+        textureRight: 'Anziano_Carte_Destra.png'
     }
 };
+
+class LiveNewsManager {
+    constructor() {
+        this.latestNews = [];
+        this.lastFetch = null;
+    }
+
+    async fetchLatestNews() {
+        try {
+            const rssUrl = encodeURIComponent('https://www.ansa.it/sito/ansait_rss.xml');
+            const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
+            const data = await res.json();
+
+            if (data.status === 'ok' && data.items) {
+                this.latestNews = data.items.slice(0, 5).map(item => ({
+                    title: item.title,
+                    snippet: (item.description || '').replace(/<[^>]*>?/gm, '')
+                }));
+                this.lastFetch = new Date();
+                console.log("[News System] Notizie in tempo reale caricate:", this.latestNews);
+            }
+        } catch (e) {
+            console.warn("[News System] Impossibile scaricare le notizie in tempo reale:", e);
+        }
+    }
+
+    getNewsContext() {
+        if (!this.latestNews || this.latestNews.length === 0) return "";
+        const headlines = this.latestNews.map((n, i) => `${i + 1}. ${n.title}`).join(" | ");
+        return `NOTIZIE REALI DI OGGI DAL MONDO: [ ${headlines} ]`;
+    }
+}
+
+const newsManager = new LiveNewsManager();
 
 class NPCMemory {
     constructor(npcName) {
@@ -270,28 +343,49 @@ class NPCMemory {
     load() {
         try {
             const raw = localStorage.getItem(this.storageKey);
+
             if (raw) {
                 const parsed = JSON.parse(raw);
+
                 const facts = (parsed.facts || []).map(f => {
                     if (typeof f === 'string') {
-                        return { text: f, timestamp: Date.now(), hits: 1 };
+                        return {
+                            text: f,
+                            timestamp: Date.now(),
+                            hits: 1
+                        };
                     }
+
                     return f;
                 });
+
                 return {
                     conversations: [],
-                    facts: facts,
+                    facts,
+                    learnedReplies: Array.isArray(parsed.learnedReplies)
+                        ? parsed.learnedReplies.filter(
+                            item =>
+                                item &&
+                                typeof item.input === 'string' &&
+                                typeof item.reply === 'string'
+                        )
+                        : [],
                     summary: parsed.summary || '',
-                    relationship: typeof parsed.relationship === 'number' ? parsed.relationship : 50,
+                    relationship:
+                        typeof parsed.relationship === 'number'
+                            ? parsed.relationship
+                            : 50,
                     lastSeen: parsed.lastSeen || 0,
                     totalInteractions: parsed.totalInteractions || 0,
                     version: 2
                 };
             }
         } catch (e) {}
+
         return {
             conversations: [],
             facts: [],
+            learnedReplies: [],
             summary: '',
             relationship: 50,
             lastSeen: 0,
@@ -303,7 +397,10 @@ class NPCMemory {
     save() {
         try {
             this.data.lastSeen = Date.now();
-            localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+            localStorage.setItem(
+                this.storageKey,
+                JSON.stringify(this.data)
+            );
         } catch (e) {}
     }
 
@@ -313,16 +410,78 @@ class NPCMemory {
         this.save();
     }
 
+    getLearnedReply(userMessage) {
+        const normalizedInput =
+            normalizeDialogueText(userMessage);
+
+        const learned =
+            this.data.learnedReplies || [];
+
+        for (let i = learned.length - 1; i >= 0; i--) {
+            if (
+                normalizeDialogueText(learned[i].input) ===
+                normalizedInput
+            ) {
+                return learned[i].reply;
+            }
+        }
+
+        return '';
+    }
+
+    addLearnedReply(userMessage, npcReply) {
+        const input = String(userMessage || '').trim();
+        const reply = String(npcReply || '').trim();
+
+        if (!input || !reply) {
+            return;
+        }
+
+        const normalizedInput =
+            normalizeDialogueText(input);
+
+        this.data.learnedReplies =
+            (this.data.learnedReplies || []).filter(
+                item =>
+                    normalizeDialogueText(item.input) !==
+                    normalizedInput
+            );
+
+        this.data.learnedReplies.push({
+            input,
+            reply,
+            timestamp: Date.now()
+        });
+
+        if (this.data.learnedReplies.length > 50) {
+            this.data.learnedReplies =
+                this.data.learnedReplies.slice(-50);
+        }
+
+        this.save();
+    }
+
     addConcept(concept) {
         if (!concept || typeof concept !== 'string') return;
+
         const trimmed = concept.trim();
-        if (trimmed.length < 3 || trimmed.length > 80) return;
+
+        if (trimmed.length < 3 || trimmed.length > 80) {
+            return;
+        }
 
         const lower = trimmed.toLowerCase();
+
         const exists = this.data.facts.some(f => {
-            const fl = f.text.toLowerCase();
-            return fl === lower || fl.includes(lower) || lower.includes(fl);
+            const fl = String(f.text || '').toLowerCase();
+
+            return (
+                fl === lower ||
+                fl.includes(lower) ||
+                lower.includes(fl)
+            );
         });
+
         if (exists) return;
 
         this.data.facts.push({
@@ -333,36 +492,63 @@ class NPCMemory {
 
         if (this.data.facts.length > this.maxFacts) {
             const now = Date.now();
+
             this.data.facts.sort((a, b) => {
-                const ageA = (now - a.timestamp) / (1000 * 60 * 60);
-                const ageB = (now - b.timestamp) / (1000 * 60 * 60);
-                const scoreA = a.hits * Math.exp(-ageA / 24);
-                const scoreB = b.hits * Math.exp(-ageB / 24);
+                const ageA =
+                    (now - a.timestamp) /
+                    (1000 * 60 * 60);
+
+                const ageB =
+                    (now - b.timestamp) /
+                    (1000 * 60 * 60);
+
+                const scoreA =
+                    a.hits *
+                    Math.exp(-ageA / 24);
+
+                const scoreB =
+                    b.hits *
+                    Math.exp(-ageB / 24);
+
                 return scoreB - scoreA;
             });
-            this.data.facts = this.data.facts.slice(0, this.maxFacts);
+
+            this.data.facts =
+                this.data.facts.slice(0, this.maxFacts);
         }
+
         this.save();
     }
 
     reinforceConcept(text) {
         if (!text) return false;
-        const lower = text.toLowerCase();
+
+        const lower = String(text).toLowerCase();
+
         const found = this.data.facts.find(f => {
-            const fl = f.text.toLowerCase();
-            return fl === lower || fl.includes(lower) || lower.includes(fl);
+            const fl = String(f.text || '').toLowerCase();
+
+            return (
+                fl === lower ||
+                fl.includes(lower) ||
+                lower.includes(fl)
+            );
         });
+
         if (found) {
             found.hits++;
             found.timestamp = Date.now();
             this.save();
             return true;
         }
+
         return false;
     }
 
     setRelationship(value) {
-        this.data.relationship = Math.max(0, Math.min(100, value));
+        this.data.relationship =
+            Math.max(0, Math.min(100, value));
+
         this.save();
     }
 
@@ -372,7 +558,13 @@ class NPCMemory {
 
     setSummary(summary) {
         if (!summary) return;
-        this.data.summary = String(summary).slice(0, this.maxSummaryLength);
+
+        this.data.summary =
+            String(summary).slice(
+                0,
+                this.maxSummaryLength
+            );
+
         this.save();
     }
 
@@ -386,23 +578,55 @@ class NPCMemory {
         const lastSeen = this.data.lastSeen;
 
         if (lastSeen > 0) {
-            const hoursAgo = Math.floor((now - lastSeen) / (1000 * 60 * 60));
-            if (hoursAgo > 24) parts.push(`(${Math.floor(hoursAgo / 24)}g fa)`);
-            else if (hoursAgo > 0) parts.push(`(${hoursAgo}h fa)`);
+            const hoursAgo = Math.floor(
+                (now - lastSeen) /
+                (1000 * 60 * 60)
+            );
+
+            if (hoursAgo > 24) {
+                parts.push(
+                    `(${Math.floor(hoursAgo / 24)}g fa)`
+                );
+            } else if (hoursAgo > 0) {
+                parts.push(`(${hoursAgo}h fa)`);
+            }
         }
 
-        if (this.data.summary) parts.push(this.data.summary);
+        if (this.data.summary) {
+            parts.push(this.data.summary);
+        }
 
         if (this.data.facts.length > 0) {
-            const sorted = [...this.data.facts].sort((a, b) => {
-                const ageA = (now - a.timestamp) / (1000 * 60 * 60);
-                const ageB = (now - b.timestamp) / (1000 * 60 * 60);
-                return (b.hits * Math.exp(-ageB / 24)) - (a.hits * Math.exp(-ageA / 24));
-            });
-            parts.push(sorted.slice(0, 5).map(f => f.text).join(' · '));
+            const sorted = [...this.data.facts].sort(
+                (a, b) => {
+                    const ageA =
+                        (now - a.timestamp) /
+                        (1000 * 60 * 60);
+
+                    const ageB =
+                        (now - b.timestamp) /
+                        (1000 * 60 * 60);
+
+                    return (
+                        b.hits *
+                            Math.exp(-ageB / 24) -
+                        a.hits *
+                            Math.exp(-ageA / 24)
+                    );
+                }
+            );
+
+            parts.push(
+                sorted
+                    .slice(0, 5)
+                    .map(f => f.text)
+                    .join(' · ')
+            );
         }
 
-        return parts.join(' | ').slice(0, 280);
+        return parts
+            .join(' | ')
+            .slice(0, 280);
     }
 
     buildMemoryContext() {
@@ -419,6 +643,7 @@ class NPCMemory {
             totalInteractions: 0,
             version: 2
         };
+
         localStorage.removeItem(this.storageKey);
     }
 
@@ -429,41 +654,110 @@ class NPCMemory {
             summary: this.data.summary,
             relationship: this.data.relationship,
             lastSeen: this.data.lastSeen,
-            totalInteractions: this.data.totalInteractions,
+            totalInteractions:
+                this.data.totalInteractions,
             version: 2
         };
     }
 
     import(data) {
-        if (!data || typeof data !== 'object') return;
+        if (!data || typeof data !== 'object') {
+            return;
+        }
+
         this.data = {
             conversations: [],
-            facts: Array.isArray(data.facts) ? data.facts.map(f =>
-                typeof f === 'string' ? { text: f, timestamp: Date.now(), hits: 1 } : f
-            ) : [],
+            facts: Array.isArray(data.facts)
+                ? data.facts.map(f =>
+                    typeof f === 'string'
+                        ? {
+                            text: f,
+                            timestamp: Date.now(),
+                            hits: 1
+                        }
+                        : f
+                )
+                : [],
             summary: data.summary || '',
-            relationship: typeof data.relationship === 'number' ? data.relationship : 50,
+            relationship:
+                typeof data.relationship === 'number'
+                    ? data.relationship
+                    : 50,
             lastSeen: data.lastSeen || 0,
-            totalInteractions: data.totalInteractions || 0,
+            totalInteractions:
+                data.totalInteractions || 0,
             version: 2
         };
+
         this.save();
     }
 }
 
+function normalizeDialogueText(text) {
+    return String(text || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 class SentimentAnalyzer {
     constructor() {
-        this.positiveWords = ['grazie', 'brava', 'ottimo', 'perfetto', 'amore', 'gentile', 'bello', 'buono', 'fantastico', 'meraviglioso'];
-        this.negativeWords = ['stronzo', 'merda', 'cazzo', 'idiota', 'brutto', 'pessimo', 'schifo', 'odio', 'detesto'];
+        this.positiveWords = [
+            'grazie',
+            'brava',
+            'ottimo',
+            'perfetto',
+            'amore',
+            'gentile',
+            'bello',
+            'buono',
+            'fantastico',
+            'meraviglioso'
+        ];
+
+        this.negativeWords = [
+            'stronzo',
+            'merda',
+            'cazzo',
+            'idiota',
+            'brutto',
+            'pessimo',
+            'schifo',
+            'odio',
+            'detesto'
+        ];
     }
 
     analyzeSentiment(text, npcName = '') {
-        const lowerText = text.toLowerCase();
+        const lowerText =
+            String(text || '').toLowerCase();
+
         let score = 0;
-        this.positiveWords.forEach(w => { if (lowerText.includes(w)) score += 10; });
-        this.negativeWords.forEach(w => { if (lowerText.includes(w)) score -= 15; });
-        score = Math.max(-50, Math.min(50, score));
-        return { score, sentiment: this.getSentimentLabel(score) };
+
+        this.positiveWords.forEach(w => {
+            if (lowerText.includes(w)) {
+                score += 10;
+            }
+        });
+
+        this.negativeWords.forEach(w => {
+            if (lowerText.includes(w)) {
+                score -= 15;
+            }
+        });
+
+        score = Math.max(
+            -50,
+            Math.min(50, score)
+        );
+
+        return {
+            score,
+            sentiment: this.getSentimentLabel(score)
+        };
     }
 
     getSentimentLabel(score) {
@@ -476,10 +770,10 @@ class SentimentAnalyzer {
 }
 
 const WEBLLM_MODELS = {
-    'Hermes-3-Llama-3.2-3B-q4f16_1-MLC': {
-        label: 'Hermes 3 Llama 3.2 3B',
-        size: '~2.3GB',
-        vramRequiredMB: 2264
+    'Qwen2.5-3B-Instruct-q4f32_1-MLC': {
+        label: 'Qwen 2.5 3B Instruct',
+        size: '~1.8GB',
+        vramRequiredMB: 2200
     }
 };
 
@@ -487,21 +781,41 @@ class NPCManager {
     constructor(scene) {
         this.scene = scene;
         this.activeCustomers = [];
-        this.relationshipScores = this.loadRelationships();
-        this.sentimentAnalyzer = new SentimentAnalyzer();
-        this.ludovicaAdopted = localStorage.getItem('waitress_ludovica_adopted') === 'true';
+        this.relationshipScores =
+            this.loadRelationships();
+
+        this.sentimentAnalyzer =
+            new SentimentAnalyzer();
+
+        this.ludovicaAdopted =
+            localStorage.getItem(
+                'waitress_ludovica_adopted'
+            ) === 'true';
     }
 
     loadRelationships() {
         try {
-            const saved = localStorage.getItem('waitress_npc_relationships');
-            return saved ? JSON.parse(saved) : {};
-        } catch (e) { return {}; }
+            const saved =
+                localStorage.getItem(
+                    'waitress_npc_relationships'
+                );
+
+            return saved
+                ? JSON.parse(saved)
+                : {};
+        } catch (e) {
+            return {};
+        }
     }
 
     saveRelationships() {
         try {
-            localStorage.setItem('waitress_npc_relationships', JSON.stringify(this.relationshipScores));
+            localStorage.setItem(
+                'waitress_npc_relationships',
+                JSON.stringify(
+                    this.relationshipScores
+                )
+            );
         } catch (e) {}
     }
 
@@ -514,78 +828,199 @@ class NPCManager {
     }
 
     getAvailableNPCs() {
-        return Object.keys(NPC_CONFIG).filter(npc => {
-            if (npc === 'Poliziotto') return false;
-            if (npc === 'Marco' && !this.scene.story?.storyState?.metMarco) return false;
-            if (npc === 'Andrea' && this.scene.level < 3) return false;
-            return true;
-        });
+        return Object.keys(NPC_CONFIG).filter(
+            npc => {
+                const config = NPC_CONFIG[npc];
+
+                if (!config || config.isCustomer !== true) {
+                    return false;
+                }
+
+                if (
+                    npc === 'Marco' &&
+                    !this.scene.story?.storyState?.metMarco
+                ) {
+                    return false;
+                }
+
+                if (
+                    npc === 'Andrea' &&
+                    this.scene.level < 3
+                ) {
+                    return false;
+                }
+
+                return true;
+            }
+        );
     }
 
     spawnCustomer() {
-        const available = this.getAvailableNPCs();
-        if (available.length === 0) return null;
+        const available =
+            this.getAvailableNPCs();
 
-        const weights = { Elena: 3, Maria: 2, Francesco: 2, Rosa: 2, Sofia: 1, Chiara: 2, Massimo: 1, Andrea: 1, Marco: 1 };
-        const totalWeight = available.reduce((sum, npc) => sum + (weights[npc] || 1), 0);
-        let random = Math.random() * totalWeight;
-        let selectedNPC = available[0];
-
-        for (const npc of available) {
-            random -= weights[npc] || 1;
-            if (random <= 0) { selectedNPC = npc; break; }
+        if (available.length === 0) {
+            return null;
         }
 
-        return this.createCustomer(selectedNPC);
+        const weights = {
+            Elena: 3,
+            Maria: 2,
+            Francesco: 2,
+            Rosa: 2,
+            Sofia: 1,
+            Chiara: 2,
+            Massimo: 1,
+            Andrea: 1,
+            Marco: 1
+        };
+
+        const totalWeight =
+            available.reduce(
+                (sum, npc) =>
+                    sum + (weights[npc] || 1),
+                0
+            );
+
+        let random =
+            Math.random() * totalWeight;
+
+        let selectedNPC =
+            available[0];
+
+        for (const npc of available) {
+            random -=
+                weights[npc] || 1;
+
+            if (random <= 0) {
+                selectedNPC = npc;
+                break;
+            }
+        }
+
+        return this.createCustomer(
+            selectedNPC
+        );
     }
 
     createCustomer(npcName) {
-        const config = NPC_CONFIG[npcName];
-        if (!config) return null;
+        const config =
+            NPC_CONFIG[npcName];
 
-        const allFoods = ['Pizza', 'Patatine', 'Panino', 'Risotto', 'Caponata', 'Caffè', 'Cola', 'Acqua', 'Birra', 'Arancina', 'Cassata', 'Chinotto', 'Cannolo', 'Ginseng', 'Fritto Misto', 'Pasta al Pesto', 'Panino con la Milza'];
+        if (!config || config.isCustomer !== true) {
+            return null;
+        }
 
-        const order = config.orderPreference?.length
-            ? config.orderPreference[Math.floor(Math.random() * config.orderPreference.length)]
-            : allFoods[Math.floor(Math.random() * allFoods.length)];
+        const allFoods = [
+            'Pizza',
+            'Patatine',
+            'Panino',
+            'Risotto',
+            'Caponata',
+            'Caffè',
+            'Cola',
+            'Acqua',
+            'Birra',
+            'Arancina',
+            'Cassata',
+            'Chinotto',
+            'Cannolo',
+            'Ginseng',
+            'Fritto Misto',
+            'Pasta al Pesto',
+            'Panino con la Milza'
+        ];
 
-        const memory = new NPCMemory(npcName);
-        const initialRelation = memory.getRelationship();
+        const orderOptions = config.orderPreference?.length
+            ? [...config.orderPreference]
+            : allFoods;
+        if (this.scene.sponsorSystem &&
+            this.scene.sponsorSystem.hasMoroniInMenu() &&
+            !orderOptions.includes('Moroni')) {
+            orderOptions.push('Moroni');
+        }
+
+        const order =
+            orderOptions[
+                Math.floor(
+                    Math.random() *
+                    orderOptions.length
+                )
+            ];
+
+        const memory =
+            new NPCMemory(npcName);
+
+        const initialRelation =
+            memory.getRelationship();
 
         const customer = {
             name: npcName,
             config,
             order,
-            patience: config.isBoyfriend ? 70 : 100,
+            patience:
+                config.isBoyfriend
+                    ? 70
+                    : 100,
             bladder: 0,
             gender: config.gender,
             isInBathroom: false,
             bubbleIcon: null,
             isDead: false,
             table: null,
-            relationScore: initialRelation,
-            adoptTrigger: config.adoptTrigger || false,
-            patienceMultiplier: config.patienceMultiplier || 1.0,
+            relationScore:
+                initialRelation,
+            adoptTrigger:
+                config.adoptTrigger || false,
+            patienceMultiplier:
+                config.patienceMultiplier || 1.0,
             bringsChild: false,
-            emojiChar: config.emojiChar,
-            hasTilesheet: config.hasTilesheet || false,
-            tilesheetKey: config.key || null,
-            tipMultiplier: config.tipMultiplier || 1.0,
-            noTip: config.noTip || false,
-            x: 0, y: 0,
-            orderBubble: null, chatBubble: null, childGraphic: null,
-            patienceBar: null, patienceBg: null, emoji: null, sprite: null, timerEvent: null,
+            emojiChar:
+                config.emojiChar,
+            hasTilesheet:
+                config.hasTilesheet || false,
+            tilesheetKey:
+                config.key || null,
+            tipMultiplier:
+                config.tipMultiplier || 1.0,
+            noTip:
+                config.noTip || false,
+            x: 0,
+            y: 0,
+            orderBubble: null,
+            chatBubble: null,
+            childGraphic: null,
+            patienceBar: null,
+            patienceBg: null,
+            emoji: null,
+            sprite: null,
+            timerEvent: null,
             serve: () => {}
         };
 
-        if (config.textureUp && config.textureDown && config.textureLeft && config.textureRight) {
-            customer.hasDirectionalTextures = true;
-            customer.textureUp = config.textureUp;
-            customer.textureDown = config.textureDown;
-            customer.textureLeft = config.textureLeft;
-            customer.textureRight = config.textureRight;
+        if (
+            config.textureUp &&
+            config.textureDown &&
+            config.textureLeft &&
+            config.textureRight
+        ) {
+            customer.hasDirectionalTextures =
+                true;
+
+            customer.textureUp =
+                config.textureUp;
+
+            customer.textureDown =
+                config.textureDown;
+
+            customer.textureLeft =
+                config.textureLeft;
+
+            customer.textureRight =
+                config.textureRight;
         } else {
-            customer.hasDirectionalTextures = false;
+            customer.hasDirectionalTextures =
+                false;
         }
 
         return customer;
@@ -593,27 +1028,62 @@ class NPCManager {
 
     getRelationship(npcName) {
         try {
-            const memory = new NPCMemory(npcName);
+            const memory =
+                new NPCMemory(npcName);
+
             return memory.getRelationship();
         } catch (e) {
-            return this.relationshipScores[npcName] || 50;
+            return (
+                this.relationshipScores[npcName] ||
+                50
+            );
         }
     }
 
     resetRelationships() {
         this.relationshipScores = {};
-        localStorage.removeItem('waitress_npc_relationships');
-        Object.keys(NPC_CONFIG).forEach(name => {
-            try { new NPCMemory(name).reset(); } catch (e) {}
-        });
+
+        localStorage.removeItem(
+            'waitress_npc_relationships'
+        );
+
+        Object.keys(NPC_CONFIG).forEach(
+            name => {
+                try {
+                    new NPCMemory(name).reset();
+                } catch (e) {}
+            }
+        );
     }
 
-    updateNPCDirection(customer, direction) {
-        if (!customer || !customer.sprite) return;
-        if (customer.hasDirectionalTextures) {
-            const textureKey = customer[`texture${direction}`];
-            if (textureKey && this.scene.textures.exists(textureKey)) {
-                customer.sprite.setTexture(textureKey);
+    updateNPCDirection(
+        customer,
+        direction
+    ) {
+        if (
+            !customer ||
+            !customer.sprite
+        ) {
+            return;
+        }
+
+        if (
+            customer.hasDirectionalTextures
+        ) {
+            const textureKey =
+                customer[
+                    `texture${direction}`
+                ];
+
+            if (
+                textureKey &&
+                this.scene.textures.exists(
+                    textureKey
+                )
+            ) {
+                customer.sprite.setTexture(
+                    textureKey
+                );
             }
         }
     }
@@ -625,34 +1095,59 @@ class AIDialogueManager {
         this.currentCustomer = null;
         this.chatHistory = [];
         this.engine = null;
+
         this.isLoading = false;
         this.isModelReady = false;
         this.isChatOpen = false;
         this.isAIActive = enabled;
-        this.selectedModel = 'Hermes-3-Llama-3.2-3B-q4f16_1-MLC';
+        this._destroyed = false;
+
+        this.selectedModel = 'Qwen2.5-3B-Instruct-q4f32_1-MLC';
+
         this.loadError = null;
         this.webllm = null;
         this._initializationPromise = null;
+
         this._chatInputFocused = false;
         this._pausedCustomerTimers = [];
+
         this._phaserKeyboardWasEnabled = true;
         this._timeWasPaused = false;
         this._physicsWasPaused = false;
+
         this._loadingStartedAt = 0;
         this._lastProgress = 0;
         this._loadingCancelled = false;
         this._modelCachedAt = null;
+
+        this._replyTimeoutMs = 15000;
+        this._replyMaxTokens = 40;
+        this._replyGenerationActive = false;
+        this._generationRequestId = 0;
+
         this._bgTimer = null;
         this._bgPending = [];
+        this._backgroundGenerationQueue = Promise.resolve();
+        this.pendingNpcReplies = {};
+        this._chatSessionId = 0;
+
         this.npcManager = new NPCManager(scene);
         this.npcMemories = {};
         this.currentMemory = null;
+
         this.languageToolEndpoint = 'https://api.languagetool.org/v2/check';
         this.languageToolEnabled = false;
         this.languageToolTimeout = 2000;
+
         this.grammarRules = null;
         this._grammarRulesLoaded = false;
+        this.dialogueDatabase = null;
+        this._dialogueDatabaseLoaded = false;
+
+        newsManager.fetchLatestNews();
+
         this._loadGrammarRules();
+        this._loadDialogueDatabase();
 
         this.injectChatStyles();
         this.createLoadingDOM();
@@ -664,158 +1159,405 @@ class AIDialogueManager {
         if (!this.npcMemories[npcName]) {
             this.npcMemories[npcName] = new NPCMemory(npcName);
         }
+
         return this.npcMemories[npcName];
     }
 
     async _loadGrammarRules() {
         try {
-            const response = await fetch('grammar_rules.json');
-            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const response = await fetch('json/grammar_rules.json');
+
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+
             const raw = await response.json();
             this.grammarRules = {};
+
             for (const [section, rules] of Object.entries(raw)) {
                 this.grammarRules[section] = rules.map(([pattern, replacement]) => {
                     return [new RegExp(pattern, 'gi'), replacement];
                 });
             }
+
             this._grammarRulesLoaded = true;
             console.log('[AI] Regole grammaticali caricate dal JSON:', Object.keys(this.grammarRules).length, 'sezioni');
         } catch (e) {
-            console.warn('[AI] Impossibile caricare grammar_rules.json, uso fallback inline:', e);
+            console.warn('[AI] Impossibile caricare json/grammar_rules.json, uso fallback inline:', e);
             this._grammarRulesLoaded = false;
             this.grammarRules = null;
         }
     }
 
+    async _loadDialogueDatabase() {
+        try {
+            const response = await fetch('json/npc_dialogues.json');
+
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+
+            const database = await response.json();
+
+            if (!database || !database.npcs || typeof database.npcs !== 'object') {
+                throw new Error('Formato del database dialoghi non valido.');
+            }
+
+            this.dialogueDatabase = database;
+            this._dialogueDatabaseLoaded = true;
+
+            console.log('[AI] Database dialoghi caricato:', Object.keys(database.npcs).length, 'clienti');
+        } catch (error) {
+            this.dialogueDatabase = null;
+            this._dialogueDatabaseLoaded = false;
+            console.warn('[AI] Impossibile caricare json/npc_dialogues.json; uso i fallback inline:', error);
+        }
+    }
+
     _applyRuleSection(sectionName, text) {
-        if (!this.grammarRules || !this.grammarRules[sectionName]) return text;
+        if (!this.grammarRules || !this.grammarRules[sectionName]) {
+            return text;
+        }
+
         let s = text;
         for (const [regex, replacement] of this.grammarRules[sectionName]) {
             s = s.replace(regex, replacement);
         }
+
         return s;
     }
 
     async isModelCached(modelId) {
-        if (!('caches' in window)) return false;
+        if (!('caches' in window)) {
+            return false;
+        }
+
         try {
             const cacheNames = await caches.keys();
-            const webllmCaches = cacheNames.filter(n =>
-                n.toLowerCase().includes('webllm') || n.toLowerCase().includes('mlc'));
+            const webllmCaches = cacheNames.filter(n => n.toLowerCase().includes('webllm') || n.toLowerCase().includes('mlc'));
+
             for (const name of webllmCaches) {
                 const cache = await caches.open(name);
                 const keys = await cache.keys();
-                if (keys.some(req => req.url.includes(modelId) || req.url.includes('params') || req.url.includes('tokenizer'))) {
-                    return true;
+
+                for (const request of keys) {
+                    if (request.url.includes(modelId)) {
+                        return true;
+                    }
                 }
             }
-            return false;
-        } catch (e) { return false; }
-    }
+        } catch (e) {}
 
-    getModelReference() {
-        return { id: this.selectedModel, version: '1.0', cachedAt: this._modelCachedAt || Date.now() };
+        return false;
     }
 
     injectChatStyles() {
-        if (document.getElementById('ai-chat-styles')) return;
+        if (document.getElementById('ai-chat-styles')) {
+            return;
+        }
+
         const style = document.createElement('style');
         style.id = 'ai-chat-styles';
+
         style.textContent = `
-            #ai-loading-screen { position: fixed; inset: 0; z-index: 1000000; display: none; align-items: center; justify-content: center; background: radial-gradient(circle at center, rgba(70,45,15,.96) 0%, rgba(18,10,5,.985) 55%, rgba(5,3,2,1) 100%); font-family: 'Fredoka', 'Segoe UI', sans-serif; }
-            #ai-loading-card { width: min(520px, calc(100vw - 36px)); padding: 32px; border: 3px solid #eccc68; border-radius: 18px; background: rgba(20, 10, 5, .97); box-shadow: 0 20px 80px rgba(0,0,0,.75); text-align: center; color: #fff; }
-            #ai-loading-icon { font-size: 58px; margin-bottom: 10px; animation: aiPulse 1.4s infinite ease-in-out; }
-            #ai-loading-title { color: #eccc68; font-size: 27px; font-weight: 800; margin-bottom: 8px; }
-            #ai-loading-subtitle { color: #ddd; font-size: 14px; line-height: 1.45; min-height: 42px; }
-            #ai-loading-percent { margin-top: 22px; font-size: 32px; font-weight: 800; color: #2ed573; }
-            #ai-loading-bar-bg { width: 100%; height: 18px; margin-top: 12px; background: rgba(255,255,255,.12); border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,.15); }
-            #ai-loading-bar { width: 0%; height: 100%; border-radius: 20px; background: linear-gradient(90deg, #2ed573, #7bed9f); transition: width .25s ease; }
-            #ai-loading-details { margin-top: 14px; color: #aaa; font-size: 12px; min-height: 18px; }
-            #ai-loading-time { margin-top: 5px; color: #777; font-size: 11px; }
-            #ai-loading-error { display: none; margin-top: 18px; padding: 12px; border-radius: 8px; background: rgba(231,76,60,.16); border: 1px solid rgba(231,76,60,.5); color: #ffb3aa; font-size: 13px; line-height: 1.4; white-space: pre-wrap; text-align: left; }
-            #ai-loading-close { display: none; margin-top: 18px; padding: 10px 18px; border: 0; border-radius: 8px; background: #eccc68; color: #241508; font-weight: 800; cursor: pointer; font-family: inherit; }
-            #ai-loading-close:hover { background: #ffe58f; }
-            #ai-loading-cache { margin-top: 14px; color: #777; font-size: 11px; }
-            @keyframes aiPulse { 0%,100% { transform: scale(1); opacity: .8; } 50% { transform: scale(1.08); opacity: 1; } }
-            #ai-chat-container { position: fixed; bottom: 20px; right: 20px; width: 360px; height: 460px; background: rgba(20, 10, 5, 0.95); border: 3px solid #eccc68; border-radius: 12px; display: none; flex-direction: column; font-family: 'Fredoka', 'Segoe UI', sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,0.6); z-index: 99999; overflow: hidden; }
-            #ai-chat-header { background: #2ed573; color: #fff; padding: 10px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eccc68; flex-shrink: 0; }
-            #ai-chat-log { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
-            .ai-msg { padding: 8px 12px; border-radius: 8px; max-width: 85%; font-size: 14px; line-height: 1.35; word-wrap: break-word; }
-            .ai-msg.customer { background: #ffa502; color: #2f3542; align-self: flex-start; }
-            .ai-msg.player { background: #70a1ff; color: #fff; align-self: flex-end; }
-            .ai-msg.system { background: rgba(255,255,255,0.1); color: #eccc68; align-self: center; font-size: 12px; text-align: center; max-width: 95%; }
-            #ai-chat-input-area { display: flex; padding: 10px; background: rgba(0,0,0,0.3); gap: 6px; flex-shrink: 0; }
-            #ai-chat-input { flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #eccc68; background: #2f3542; color: #fff; outline: none; font-family: 'Fredoka', sans-serif; }
-            #ai-chat-input::placeholder { color: #888; }
-            #ai-chat-send { padding: 8px 14px; background: #2ed573; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Fredoka', sans-serif; }
-            #ai-chat-send:hover { background: #26af5f; }
-            #ai-chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
-            #ai-chat-close { cursor: pointer; font-weight: bold; padding: 0 8px; font-size: 18px; }
-            #ai-chat-close:hover { color: #ff6b6b; }
-            #ai-chat-status { font-size: 10px; opacity: 0.9; margin-left: auto; margin-right: 8px; max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            #ai-chat-relation { background: rgba(0,0,0,0.3); padding: 2px 10px; border-radius: 12px; font-size: 13px; }
+            #ai-chat-container {
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                width: min(720px, 92vw);
+                max-height: min(720px, 86vh);
+                display: none;
+                flex-direction: column;
+                z-index: 100000;
+                background: #151515;
+                color: #fff;
+                border: 2px solid #444;
+                border-radius: 12px;
+                box-shadow: 0 12px 45px rgba(0,0,0,.55);
+                overflow: hidden;
+                font-family: Arial, sans-serif;
+            }
+
+            #ai-chat-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 14px;
+                background: #202020;
+                border-bottom: 1px solid #383838;
+                font-weight: 700;
+            }
+
+            #ai-chat-title {
+                flex: 1;
+            }
+
+            #ai-chat-status {
+                font-size: 12px;
+                color: #9ee493;
+            }
+
+            #ai-chat-relation {
+                font-size: 12px;
+                color: #ffd166;
+            }
+
+            #ai-chat-close {
+                cursor: pointer;
+                padding: 2px 6px;
+            }
+
+            #ai-chat-log {
+                flex: 1;
+                min-height: 180px;
+                max-height: 55vh;
+                overflow-y: auto;
+                padding: 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .ai-msg {
+                max-width: 85%;
+                padding: 9px 12px;
+                border-radius: 10px;
+                line-height: 1.35;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+
+            .ai-msg.customer {
+                align-self: flex-start;
+                background: #2a2a2a;
+            }
+
+            .ai-msg.player {
+                align-self: flex-end;
+                background: #3b5ccc;
+            }
+
+            .ai-msg.system {
+                align-self: center;
+                color: #aaa;
+                font-size: 12px;
+                background: transparent;
+            }
+
+            #ai-chat-input-area {
+                display: flex;
+                gap: 8px;
+                padding: 10px;
+                border-top: 1px solid #383838;
+                background: #1b1b1b;
+            }
+
+            #ai-chat-input {
+                flex: 1;
+                min-width: 0;
+                padding: 10px;
+                border: 1px solid #444;
+                border-radius: 8px;
+                background: #101010;
+                color: #fff;
+                outline: none;
+            }
+
+            #ai-chat-input:focus {
+                border-color: #777;
+            }
+
+            #ai-chat-send {
+                padding: 10px 16px;
+                border: 0;
+                border-radius: 8px;
+                background: #4f6bed;
+                color: white;
+                cursor: pointer;
+                font-weight: 700;
+            }
+
+            #ai-chat-send:disabled,
+            #ai-chat-input:disabled {
+                opacity: .55;
+                cursor: not-allowed;
+            }
+
+            #ai-loading-screen {
+                position: fixed;
+                inset: 0;
+                z-index: 999999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                background: rgba(0,0,0,.82);
+                color: white;
+                font-family: Arial, sans-serif;
+            }
+
+            #ai-loading-box {
+                width: min(600px, 90vw);
+                background: #181818;
+                border: 1px solid #444;
+                border-radius: 14px;
+                padding: 22px;
+                box-shadow: 0 15px 50px rgba(0,0,0,.6);
+            }
+
+            #ai-loading-title {
+                font-size: 22px;
+                font-weight: 700;
+                margin-bottom: 14px;
+            }
+
+            #ai-loading-percent {
+                font-size: 18px;
+                font-weight: 700;
+                margin-bottom: 8px;
+            }
+
+            #ai-loading-track {
+                width: 100%;
+                height: 12px;
+                background: #333;
+                border-radius: 999px;
+                overflow: hidden;
+            }
+
+            #ai-loading-bar {
+                width: 0%;
+                height: 100%;
+                background: #5c7cfa;
+                transition: width .15s ease;
+            }
+
+            #ai-loading-details {
+                margin-top: 12px;
+                color: #ccc;
+                font-size: 14px;
+                min-height: 40px;
+            }
+
+            #ai-loading-time {
+                margin-top: 8px;
+                color: #999;
+                font-size: 12px;
+            }
+
+            #ai-loading-error {
+                display: none;
+                margin-top: 14px;
+                padding: 10px;
+                background: #4b1e1e;
+                border: 1px solid #7b3434;
+                border-radius: 8px;
+                white-space: pre-wrap;
+                color: #ffd4d4;
+            }
+
+            #ai-loading-close {
+                display: none;
+                margin-top: 14px;
+                padding: 9px 14px;
+                border: 0;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+
+            #ai-streaming-reply {
+                opacity: .92;
+            }
         `;
+
         document.head.appendChild(style);
     }
 
     createLoadingDOM() {
-        if (document.getElementById('ai-loading-screen')) return;
+        if (document.getElementById('ai-loading-screen')) {
+            return;
+        }
+
         const screen = document.createElement('div');
         screen.id = 'ai-loading-screen';
+
         screen.innerHTML = `
-            <div id="ai-loading-card">
-                <div id="ai-loading-icon">🤖</div>
-                <div id="ai-loading-title">Preparazione dell'IA</div>
-                <div id="ai-loading-subtitle">Sto preparando il modello per le conversazioni.</div>
+            <div id="ai-loading-box">
+                <div id="ai-loading-title">🤖 Caricamento Modello IA (Qwen 2.5 3B)</div>
                 <div id="ai-loading-percent">0%</div>
-                <div id="ai-loading-bar-bg"><div id="ai-loading-bar"></div></div>
-                <div id="ai-loading-details">Preparazione...</div>
+                <div id="ai-loading-track">
+                    <div id="ai-loading-bar"></div>
+                </div>
+                <div id="ai-loading-details">Preparazione download WebGPU...</div>
                 <div id="ai-loading-time">Tempo trascorso: 0 secondi</div>
                 <div id="ai-loading-error"></div>
                 <button id="ai-loading-close">Chiudi</button>
-                <div id="ai-loading-cache">Primo caricamento: il modello viene salvato nella cache del browser.</div>
             </div>
         `;
+
         document.body.appendChild(screen);
+
         document.getElementById('ai-loading-close').addEventListener('click', () => this.hideLoadingScreen());
     }
 
     showLoadingScreen() {
         const screen = document.getElementById('ai-loading-screen');
         if (!screen) return;
+
         screen.style.display = 'flex';
         const error = document.getElementById('ai-loading-error');
         const close = document.getElementById('ai-loading-close');
-        if (error) { error.style.display = 'none'; error.textContent = ''; }
-        if (close) close.style.display = 'none';
+
+        if (error) {
+            error.style.display = 'none';
+            error.textContent = '';
+        }
+
+        if (close) {
+            close.style.display = 'none';
+        }
+
         this._loadingStartedAt = Date.now();
         this._lastProgress = 0;
-        this.updateLoadingProgress(0, 'Avvio del motore WebGPU...');
+        this.updateLoadingProgress(0, 'Inizializzazione motore WebGPU...');
         this.startLoadingClock();
     }
 
     hideLoadingScreen() {
         const screen = document.getElementById('ai-loading-screen');
-        if (screen) screen.style.display = 'none';
-        if (this._loadingClock) { clearInterval(this._loadingClock); this._loadingClock = null; }
+        if (screen) {
+            screen.style.display = 'none';
+        }
+
+        if (this._loadingClock) {
+            clearInterval(this._loadingClock);
+            this._loadingClock = null;
+        }
     }
 
     startLoadingClock() {
-        if (this._loadingClock) clearInterval(this._loadingClock);
+        if (this._loadingClock) {
+            clearInterval(this._loadingClock);
+        }
+
         this._loadingClock = setInterval(() => {
             if (!this.isLoading) return;
             const elapsed = Math.floor((Date.now() - this._loadingStartedAt) / 1000);
             const time = document.getElementById('ai-loading-time');
-            if (time) time.textContent = `Tempo trascorso: ${elapsed} secondi`;
+            if (time) {
+                time.textContent = `Tempo trascorso: ${elapsed} secondi`;
+            }
         }, 1000);
     }
 
     updateLoadingProgress(progress, text = '') {
         const safeProgress = Math.max(0, Math.min(100, Number.isFinite(progress) ? progress : 0));
         this._lastProgress = safeProgress;
+
         const percent = document.getElementById('ai-loading-percent');
         const bar = document.getElementById('ai-loading-bar');
         const details = document.getElementById('ai-loading-details');
+
         if (percent) percent.textContent = `${Math.floor(safeProgress)}%`;
         if (bar) bar.style.width = `${safeProgress}%`;
         if (details && text) details.textContent = this.formatLoadingText(text);
@@ -824,13 +1566,18 @@ class AIDialogueManager {
     formatLoadingText(text) {
         if (!text) return 'Preparazione...';
         const value = String(text);
+
         const match = value.match(/(\d+(?:\.\d+)?)\s*MB\s*fetched/i);
         const percentMatch = value.match(/(\d+(?:\.\d+)?)%\s*completed/i);
-        if (match && percentMatch) return `${match[1]} MB scaricati · ${percentMatch[1]}% completato`;
-        if (/fetching param cache/i.test(value)) return 'Download dei dati del modello...';
-        if (/loading/i.test(value)) return 'Caricamento del modello...';
-        if (/shader/i.test(value)) return 'Preparazione della GPU...';
-        if (/compile/i.test(value)) return 'Kernel GPU in compilazione...';
+
+        if (match && percentMatch) {
+            return `${match[1]} MB scaricati · ${percentMatch[1]}% completato`;
+        }
+
+        if (/fetching param cache/i.test(value)) return 'Download file del modello in corso...';
+        if (/loading/i.test(value)) return 'Caricamento nella memoria GPU...';
+        if (/shader/i.test(value)) return 'Compilazione shader GPU...';
+
         return value.replace(/\s+/g, ' ').trim().slice(0, 100);
     }
 
@@ -838,129 +1585,140 @@ class AIDialogueManager {
         const details = document.getElementById('ai-loading-details');
         const errorBox = document.getElementById('ai-loading-error');
         const close = document.getElementById('ai-loading-close');
+
         let errorMessage = 'Errore sconosciuto.';
         if (error) {
             if (typeof error === 'string') errorMessage = error;
             else if (error.message) errorMessage = error.message;
             else if (error.toString) errorMessage = error.toString();
         }
-        const isWebGPUError = !navigator.gpu;
-        const isAdapterError = errorMessage.toLowerCase().includes('adapter') || errorMessage.toLowerCase().includes('gpu');
-        let userMessage = errorMessage;
-        if (isWebGPUError) {
-            userMessage = '❌ WebGPU non è disponibile in questo browser.\n\nSoluzioni:\n1. Usa Chrome 113+ o Edge 113+\n2. Abilita WebGPU in chrome://flags\n3. Aggiorna i driver della scheda video\n4. Usa un dispositivo con GPU dedicata';
-        } else if (isAdapterError) {
-            userMessage = '❌ La GPU non è compatibile con WebGPU.\n\nDettaglio: ' + errorMessage + '\n\nSoluzioni:\n1. Aggiorna i driver della scheda video\n2. Prova con un altro browser\n3. Verifica che la GPU supporti WebGPU';
+
+        if (details) details.textContent = 'Caricamento fallito.';
+        if (errorBox) {
+            errorBox.style.display = 'block';
+            errorBox.textContent = `Impossibile caricare l'IA locale WebLLM.\n${errorMessage}`;
         }
-        if (details) details.textContent = 'Il caricamento non è riuscito.';
-        if (errorBox) { errorBox.style.display = 'block'; errorBox.textContent = userMessage; }
         if (close) close.style.display = 'inline-block';
+
         console.error('[AI] Errore caricamento WebLLM:', error);
     }
 
-    async initializeWebLLM() {
+    async initializeWebLLM(options = {}) {
         if (!this.isAIActive) return false;
         if (this.isModelReady && this.engine) return true;
         if (this._initializationPromise) return this._initializationPromise;
-        this._initializationPromise = this._initializeWebLLMInternal();
-        try { return await this._initializationPromise; }
-        finally { this._initializationPromise = null; }
+
+        this._initializationPromise = this._initializeWebLLMInternal(options);
+        try {
+            return await this._initializationPromise;
+        } finally {
+            this._initializationPromise = null;
+        }
     }
 
     async _checkWebGPU() {
         if (typeof navigator === 'undefined' || !navigator.gpu) {
-            throw new Error('WebGPU non è disponibile in questo browser.');
+            throw new Error('WebGPU non supportato in questo browser. Usa Chrome o Edge aggiornati.');
         }
+
         let adapter = null;
-        try { adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' }); } catch (e) {}
-        if (!adapter) { try { adapter = await navigator.gpu.requestAdapter(); } catch (e) {} }
-        if (!adapter) { try { adapter = await navigator.gpu.requestAdapter({ powerPreference: 'low-power' }); } catch (e) {} }
-        if (!adapter) throw new Error('Nessun adapter GPU compatibile con WebGPU trovato.');
         try {
-            const device = await adapter.requestDevice();
-            if (device) { try { if (device.destroy) device.destroy(); } catch (e) {} }
-        } catch (e) {
-            throw new Error('Impossibile creare il device WebGPU: ' + e.message);
+            adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+        } catch (e) {}
+
+        if (!adapter) {
+            try {
+                adapter = await navigator.gpu.requestAdapter();
+            } catch (e) {}
         }
+
+        if (!adapter) {
+            throw new Error('Nessuna scheda grafica compatibile con WebGPU trovata.');
+        }
+
         return adapter;
     }
 
-    async _initializeWebLLMInternal() {
+async _initializeWebLLMInternal(options = {}) {
         if (this.isLoading) return false;
+
+        const silent = options.silent === true;
         this.isLoading = true;
         this.isModelReady = false;
         this.loadError = null;
         this._loadingCancelled = false;
-        this.showLoadingScreen();
 
-        try {
-            this.updateLoadingProgress(1, 'Verifica WebGPU...');
-            await this._checkWebGPU();
-            this.updateLoadingProgress(3, 'GPU compatibile. Carico WebLLM...');
-
-            if (!this.webllm) {
-                try { this.webllm = await import('https://esm.run/@mlc-ai/web-llm@0.2.79'); }
-                catch (e) { this.webllm = await import('https://esm.run/@mlc-ai/web-llm'); }
-            }
-
-            if (!this.webllm || !this.webllm.MLCEngine) {
-                throw new Error('WebLLM non caricato correttamente. MLCEngine non trovato.');
-            }
-
-            this.updateLoadingProgress(5, 'WebLLM pronto. Inizializzo engine...');
-
-            const wasCached = await this.isModelCached(this.selectedModel);
-            if (wasCached) this.updateLoadingProgress(6, 'Modello trovato in cache locale.');
-            else this.updateLoadingProgress(6, 'Modello non in cache. Download in corso...');
-
-            if (!this.engine) {
-                this.engine = new this.webllm.MLCEngine({
-                    initProgressCallback: report => this.handleModelProgress(report)
-                });
-            } else {
-                this.engine.setInitProgressCallback(report => this.handleModelProgress(report));
-            }
-
-            this.updateLoadingProgress(8, 'Caricamento del modello...');
-            await this.engine.reload(this.selectedModel);
-
-            if (this._loadingCancelled) throw new Error('Caricamento annullato.');
-
-            this._modelCachedAt = Date.now();
-            this.updateLoadingProgress(100, 'Modello pronto.');
-            this.isModelReady = true;
-            this.isLoading = false;
-            this.loadError = null;
-
-            const status = document.getElementById('ai-chat-status');
-            if (status) status.textContent = 'AI pronta';
-            this.setChatControlsReady();
-
-            setTimeout(() => this.hideLoadingScreen(), 500);
-            return true;
-        } catch (error) {
-            console.error('[AI] Errore inizializzazione:', error);
-            this.engine = null;
-            this.isModelReady = false;
-            this.isLoading = false;
-            this.loadError = error;
-            this.showLoadingError(error);
-            const status = document.getElementById('ai-chat-status');
-            if (status) status.textContent = 'AI offline';
-            this.setChatControlsReady();
-            return false;
+        if (!silent) {
+            this.showLoadingScreen();
         }
+
+
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+
+        while (attempt < maxRetries && !success && !this._loadingCancelled) {
+            attempt++;
+            try {
+                this.updateLoadingProgress(1, `Verifica WebGPU (Tentativo ${attempt}/${maxRetries})...`);
+                await this._checkWebGPU();
+
+                if (!this.webllm) {
+                    this.webllm = await import('https://esm.run/@mlc-ai/web-llm');
+                }
+
+                this.updateLoadingProgress(5, 'Inizializzazione motore e download modello...');
+
+
+                this.engine = await this.webllm.CreateMLCEngine(this.selectedModel, {
+                    initProgressCallback: (report) => this.handleModelProgress(report)
+                });
+
+                success = true;
+            } catch (error) {
+                console.warn(`[AI] Tentativo ${attempt} fallito:`, error);
+                if (attempt >= maxRetries) {
+                    throw error;
+                }
+
+                await new Bun.sleep(2000).catch(() => new Promise(r => setTimeout(r, 2000)));
+            }
+        }
+
+        if (!success) {
+            throw new Error('Impossibile completare il download del modello dopo vari tentativi.');
+        }
+
+        this.isModelReady = true;
+        this.isLoading = false;
+        this.loadError = null;
+        
+        if (!silent) {
+            setTimeout(() => this.hideLoadingScreen(), 500);
+        }
+        return true;
     }
 
     handleModelProgress(report) {
         if (!report) return;
+
         const rawText = report.text || report.message || '';
         let progress = Number(report.progress);
-        if (!Number.isFinite(progress)) progress = this.extractProgress(rawText);
-        if (progress <= 1 && progress > 0) progress *= 100;
-        if (!Number.isFinite(progress)) progress = this._lastProgress;
+
+        if (!Number.isFinite(progress)) {
+            progress = this.extractProgress(rawText);
+        }
+
+        if (progress <= 1 && progress > 0) {
+            progress *= 100;
+        }
+
+        if (!Number.isFinite(progress)) {
+            progress = this._lastProgress;
+        }
+
         progress = Math.max(this._lastProgress, Math.min(100, progress));
-        this.updateLoadingProgress(progress, rawText || 'Caricamento del modello...');
+        this.updateLoadingProgress(progress, rawText || 'Caricamento in corso...');
     }
 
     extractProgress(text) {
@@ -973,14 +1731,22 @@ class AIDialogueManager {
     setChatControlsReady() {
         const input = document.getElementById('ai-chat-input');
         const sendBtn = document.getElementById('ai-chat-send');
-        if (input) input.disabled = !this.isModelReady;
-        if (sendBtn) sendBtn.disabled = !this.isModelReady;
+
+        const customerConfig = this.currentCustomer && NPC_CONFIG[this.currentCustomer.name];
+        const canChat = this.isChatOpen && customerConfig && customerConfig.isCustomer === true;
+
+        if (input) input.disabled = !canChat;
+        if (sendBtn) sendBtn.disabled = !canChat;
     }
 
     createChatDOM() {
-        if (document.getElementById('ai-chat-container')) return;
+        if (document.getElementById('ai-chat-container')) {
+            return;
+        }
+
         const container = document.createElement('div');
         container.id = 'ai-chat-container';
+
         container.innerHTML = `
             <div id="ai-chat-header">
                 <span id="ai-chat-title">💬 Conversazione</span>
@@ -990,28 +1756,44 @@ class AIDialogueManager {
             </div>
             <div id="ai-chat-log"></div>
             <div id="ai-chat-input-area">
-                <input type="text" id="ai-chat-input" placeholder="Carica prima l'IA..." autocomplete="off" disabled />
+                <input type="text" id="ai-chat-input" placeholder="Scrivi una risposta..." autocomplete="off" disabled />
                 <button id="ai-chat-send" disabled>Invia</button>
             </div>
         `;
+
         document.body.appendChild(container);
+
         container.addEventListener('pointerdown', e => e.stopPropagation());
         container.addEventListener('pointerup', e => e.stopPropagation());
         container.addEventListener('click', e => e.stopPropagation());
-        document.getElementById('ai-chat-close').addEventListener('click', e => { e.stopPropagation(); this.closeChat(); });
-        document.getElementById('ai-chat-send').addEventListener('click', e => { e.stopPropagation(); this.sendMessage(); });
+
+        document.getElementById('ai-chat-close').addEventListener('click', e => {
+            e.stopPropagation();
+            this.closeChat();
+        });
+
+        document.getElementById('ai-chat-send').addEventListener('click', e => {
+            e.stopPropagation();
+            this.sendMessage();
+        });
     }
 
     setupKeyboardFix() {
         const chatInput = document.getElementById('ai-chat-input');
         if (!chatInput) return;
+
         chatInput.addEventListener('keydown', e => {
             e.stopImmediatePropagation();
-            if (e.key === 'Enter') { e.preventDefault(); this.sendMessage(); }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.sendMessage();
+            }
         }, true);
+
         chatInput.addEventListener('keyup', e => e.stopImmediatePropagation(), true);
         chatInput.addEventListener('keypress', e => e.stopImmediatePropagation(), true);
         chatInput.addEventListener('input', e => e.stopImmediatePropagation(), true);
+
         chatInput.addEventListener('focus', () => {
             this._chatInputFocused = true;
             if (this.scene?.input?.keyboard) {
@@ -1019,18 +1801,35 @@ class AIDialogueManager {
                 this.scene.input.keyboard.enabled = false;
             }
         });
+
         chatInput.addEventListener('blur', () => {
             this._chatInputFocused = false;
             if (this.scene?.input?.keyboard) {
-                if (this._phaserKeyboardWasEnabled !== false) this.scene.input.keyboard.enabled = true;
+                if (this._phaserKeyboardWasEnabled !== false) {
+                    this.scene.input.keyboard.enabled = true;
+                }
             }
         });
-        window.addEventListener('keydown', e => { if (this._chatInputFocused) e.stopImmediatePropagation(); }, true);
-        window.addEventListener('keyup', e => { if (this._chatInputFocused) e.stopImmediatePropagation(); }, true);
+
+        window.addEventListener('keydown', e => {
+            if (this._chatInputFocused) e.stopImmediatePropagation();
+        }, true);
+
+        window.addEventListener('keyup', e => {
+            if (this._chatInputFocused) e.stopImmediatePropagation();
+        }, true);
     }
 
     openChat(customer) {
         if (!customer) return;
+
+        const customerConfig = NPC_CONFIG[customer.name];
+        if (!customerConfig || customerConfig.isCustomer !== true) {
+            console.warn('[AI] Conversazione rifiutata: il personaggio non è un cliente.', customer.name);
+            return;
+        }
+
+        this._chatSessionId++;
         this.currentCustomer = customer;
         this.chatHistory = [];
         this.currentMemory = this.getMemory(customer.name);
@@ -1046,11 +1845,13 @@ class AIDialogueManager {
         const title = document.getElementById('ai-chat-title');
         const relation = document.getElementById('ai-chat-relation');
         const input = document.getElementById('ai-chat-input');
+
         if (!container || !log) return;
 
         log.innerHTML = '';
         container.style.display = 'flex';
         title.textContent = `💬 ${customer.name || 'Cliente'}`;
+
         const score = typeof customer.relationScore === 'number' ? customer.relationScore : 50;
         relation.textContent = `${Math.floor(score)}%`;
 
@@ -1061,6 +1862,7 @@ class AIDialogueManager {
             this._timeWasPaused = this.scene.time.paused;
             this.scene.time.paused = true;
         }
+
         if (this.scene.physics) {
             this._physicsWasPaused = this.scene.physics.world.isPaused;
             this.scene.physics.pause();
@@ -1070,37 +1872,52 @@ class AIDialogueManager {
         if (this.scene.customers) {
             this.scene.customers.forEach(c => {
                 if (!c || c === customer) return;
-                if (c.timerEvent && !c.timerEvent.paused) { c.timerEvent.paused = true; this._pausedCustomerTimers.push(c.timerEvent); }
-                if (c.movementTimeout && !c.movementTimeout.paused) { c.movementTimeout.paused = true; this._pausedCustomerTimers.push(c.movementTimeout); }
+                if (c.timerEvent && !c.timerEvent.paused) {
+                    c.timerEvent.paused = true;
+                    this._pausedCustomerTimers.push(c.timerEvent);
+                }
+                if (c.movementTimeout && !c.movementTimeout.paused) {
+                    c.movementTimeout.paused = true;
+                    this._pausedCustomerTimers.push(c.movementTimeout);
+                }
             });
         }
+
         if (customer.timerEvent) customer.timerEvent.paused = false;
         if (customer.movementTimeout) customer.movementTimeout.paused = false;
 
         if (this.scene.waitress?.body) {
             this.scene.waitress.body.setVelocity(0, 0);
-            if (typeof this.scene.waitress.body.stop === 'function') this.scene.waitress.body.stop();
+            if (typeof this.scene.waitress.body.stop === 'function') {
+                this.scene.waitress.body.stop();
+            }
         }
+
         if (this.scene.input?.keyboard) {
             this._phaserKeyboardWasEnabled = this.scene.input.keyboard.enabled;
             this.scene.input.keyboard.enabled = false;
         }
+
         this._chatInputFocused = true;
 
         this.appendMessage('system', `Inizio conversazione con ${customer.name || 'il cliente'}.`);
 
-        const config = NPC_CONFIG[customer.name] || {};
-        const initialGreeting = config.dialogueStyles?.greeting || `Ciao! Sono ${customer.name}.`;
+        const initialGreeting = customerConfig.dialogueStyles?.greeting || `Ciao! Sono ${customer.name}.`;
         this.appendMessage('customer', initialGreeting);
         this.chatHistory.push({ role: 'assistant', content: initialGreeting });
 
+        this._showPendingReplies(customer.name);
         this.setChatControlsReady();
+
         if (input) {
-            input.placeholder = this.isModelReady ? 'Scrivi una risposta...' : 'Preparazione dell\'IA...';
-            if (this.isModelReady) setTimeout(() => { input.focus(); input.select(); }, 150);
+            input.placeholder = 'Scrivi una risposta...';
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 150);
         }
 
-        if (this.isAIActive && !this.isModelReady && !this.isLoading) {
+        if (!this.isModelReady && !this.isLoading) {
             this.initializeWebLLM();
         }
     }
@@ -1109,70 +1926,88 @@ class AIDialogueManager {
         const container = document.getElementById('ai-chat-container');
         if (container) container.style.display = 'none';
 
-        if (this._bgTimer) {
-            clearTimeout(this._bgTimer);
-            this._bgTimer = null;
-            this._flushBackground();
-        }
-
         if (this._pausedCustomerTimers) {
-            this._pausedCustomerTimers.forEach(t => { if (t) t.paused = false; });
+            this._pausedCustomerTimers.forEach(t => {
+                if (t) t.paused = false;
+            });
             this._pausedCustomerTimers = [];
         }
+
         if (this.scene.time) this.scene.time.paused = this._timeWasPaused;
-        if (this.scene.physics) { if (!this._physicsWasPaused) this.scene.physics.resume(); }
-        if (this.scene.input?.keyboard) {
-            if (this._phaserKeyboardWasEnabled !== false) this.scene.input.keyboard.enabled = true;
+        if (this.scene.physics && !this._physicsWasPaused) this.scene.physics.resume();
+
+        if (this.scene.input?.keyboard && this._phaserKeyboardWasEnabled !== false) {
+            this.scene.input.keyboard.enabled = true;
         }
+
         this._chatInputFocused = false;
         this.currentCustomer = null;
         this.currentMemory = null;
         this.isChatOpen = false;
         this.scene.gameActive = true;
+
+        this._clearStreamingReply();
     }
 
-    async sendMessage() {
+    sendMessage() {
         const input = document.getElementById('ai-chat-input');
-        const sendBtn = document.getElementById('ai-chat-send');
-        if (!input) return;
-
-        if (!this.isModelReady || !this.engine) {
-            this.showLoadingScreen();
-            if (!this.isLoading) await this.initializeWebLLM();
-            return;
-        }
+        if (!input || !this.isChatOpen || !this.currentCustomer) return;
 
         const text = input.value.trim();
         if (!text) return;
+
         input.value = '';
         this.appendMessage('player', text);
         this.chatHistory.push({ role: 'user', content: text });
-        input.disabled = true;
-        if (sendBtn) sendBtn.disabled = true;
 
         try {
-            await this.handleAIResponse(text);
+            this.handleAIResponse(text);
         } catch (e) {
             this.appendMessage('system', '❌ Errore: ' + (e?.message || 'sconosciuto'));
-        } finally {
-            this.setChatControlsReady();
-            if (this.isChatOpen) setTimeout(() => input.focus(), 100);
+        }
+
+        if (this.isChatOpen) {
+            setTimeout(() => input.focus(), 0);
         }
     }
 
-    buildIdentityPrompt(cfg, customer) {
-        const relationship = typeof customer.relationScore === 'number'
-            ? Math.round(customer.relationScore)
-            : 50;
-        const memoryContext = this.currentMemory ? this.currentMemory.buildConceptContext() : '';
+    buildIdentityPrompt(cfg, customer, userMessage, memory = this.currentMemory) {
+        const relationship = typeof customer.relationScore === 'number' ? Math.round(customer.relationScore) : 50;
+        const memoryContext = memory ? memory.buildConceptContext() : '';
+        const liveNews = newsManager.getNewsContext();
 
-        return `Sei ${customer.name}, ${cfg.age || 'adulto'} anni. ${cfg.personality || 'Cliente del ristorante.'}
-Bio: ${cfg.bio || ''}
-Stai parlando con la cameriera. Relazione: ${relationship}/100. Ordine: ${customer.order || 'nessuno'}.
-${memoryContext ? 'Ricordi: ' + memoryContext : ''}
+        const lowerMsg = userMessage.toLowerCase();
+        const isAskingAboutNews = ["novità", "giornale", "notizie", "successo", "mondo", "oggi", "tv", "radio"].some(kw => lowerMsg.includes(kw));
 
-Rispondi in italiano, massimo 12 parole, una frase, prima persona. Nessun preambolo.
-Output: {"reply": "..."}`;
+        let newsInstruction = "";
+        if (isAskingAboutNews && liveNews) {
+            newsInstruction = `\n${liveNews}\nISTRUZIONE NOTIZIE: Il giocatore ti sta chiedendo del mondo/notizie. Mensiona BREVEMENTE una notizia di oggi esprimento un parere veloce da studentessa/personaggio.`;
+        }
+
+        return `Sei ${customer.name}, ${cfg.age || 'adulto'} anni. ${cfg.personality || 'Cliente del bar.'}
+CONTESTO FISICO: Ti trovi seduta/o AL BANCONE DI UN BAR/LOCALE. Stai parlando con la cameriera.
+PROFESSIONE E BIO: ${cfg.bio || 'Cliente abituale.'}
+Relazione attuale: ${relationship}/100. Ordine scelto: ${customer.order || 'nessuno'}.
+${memoryContext ? 'Ricordi recenti: ' + memoryContext : ''}${newsInstruction}
+
+DIVIETI ASSOLUTI (NON VIOLARE MAI):
+1. NON DIRE MAI che sei in un hotel, albergo o che devi prenotare stanze. Ti trovi in un BAR!
+2. NON INVENTARE mai altre materie o professioni non presenti nella tua bio.
+3. NON RISPONDERE MAI in lingua inglese. Rispondi SOLO ed ESCLUSIVAMENTE in italiano.
+4. NON USARE preamboli come "Certo,", "Guarda,", "In effetti,".
+5. NON SCRIVERE il tuo nome o etichette prima della frase (es. NO "Elena: ...").
+
+REGOLE DI RISPOSTA:
+- Parla in italiano fluido, naturale e diretto.
+- Rispondi in prima persona ("io").
+- Una sola frase breve (massimo 12-15 parole).
+
+ESEMPI CORRETTI:
+Cameriera: "Cosa ti porto?"
+Risposta: "Un caffè doppio ben caldo, sto crollando sugli appunti!"
+
+Cameriera: "Che hai fatto ultimamente?"
+Risposta: "Sono stata chiusa in biblioteca tutto il giorno a studiare!"`;
     }
 
     getRecentHistory() {
@@ -1181,38 +2016,30 @@ Output: {"reply": "..."}`;
 
     hasEnglishWords(text) {
         const englishWords = ['hey', 'hello', 'hi', 'ok', 'okay', 'yes', 'no problem', 'sure', 'wow', 'cool', 'sorry', 'please', 'thanks', 'thank you', 'bye', 'good', 'bad', 'nice', 'great', 'awesome', 'amazing', 'yeah', 'yep', 'nope', 'lol', 'omg', 'wtf', 'bro', 'dude', 'man', 'guys', 'love', 'like', 'hate', 'what', 'when', 'where', 'why', 'how', 'who', 'the', 'and', 'or', 'but', 'for', 'with', 'you', 'your', 'my', 'me', 'we', 'they', 'she', 'he', 'it'];
-        const lower = text.toLowerCase();
+        const lower = String(text || '').toLowerCase();
         const words = lower.split(/[\s,.!?;:]+/);
         return words.some(w => englishWords.includes(w));
     }
 
     hasAbbreviations(text) {
         const abbrevs = ['nn', 'cmq', 'xké', 'xke', 'sn', 'dv', 'ke', 'xk', 'xkè', 'qnd', 'qlc', 'qlk', 'tt', 'tvb', 'xò', 'xo', 'cs', 'cn', 'c6'];
-        const lower = text.toLowerCase();
+        const lower = String(text || '').toLowerCase();
         const words = lower.split(/[\s,.!?;:]+/);
         return words.some(w => abbrevs.includes(w));
     }
 
     hasMarkdown(text) {
-        return /\*|_|`|#|\[|\]|\|/.test(text);
+        return /\*|_|`|#|\[|\]|\|/.test(String(text || ''));
     }
 
     isTooShort(text) {
-        const cleaned = text.replace(/[^a-zA-ZàèéìòùÀÈÉÌÒÙ\s]/g, '').trim();
+        const cleaned = String(text || '').replace(/[^a-zA-ZàèéìòùÀÈÉÌÒÙ\s]/g, '').trim();
         return cleaned.length < 3;
-    }
-
-    isRepetitive(text, history) {
-        if (!history || history.length === 0) return false;
-        const lower = text.toLowerCase().trim();
-        return history.some(h => {
-            if (!h || !h.content) return false;
-            return h.content.toLowerCase().trim() === lower;
-        });
     }
 
     sanitizeReply(reply) {
         if (!reply) return '';
+
         reply = String(reply)
             .replace(/<think>[\s\S]*?<\/think>/gi, '')
             .replace(/<\|.*?\|>/g, '')
@@ -1222,29 +2049,35 @@ Output: {"reply": "..."}`;
             .replace(/#{1,6}\s/g, '')
             .replace(/\s+/g, ' ')
             .trim();
+
         reply = reply.replace(/^["“”'«»]|["“”'«»]$/g, '').trim();
-        reply = reply.replace(/^\s*(NPC|Personaggio|Assistente|Risposta|Reply|AI)\s*:\s*/i, '');
+        reply = reply.replace(/^(Elena|Maria|Francesco|Rosa|Sofia|Chiara|Massimo|Andrea|Marco|NPC|Personaggio|Assistente|Risposta|Reply|AI)\s*:\s*/i, '');
+
         reply = this.applyStrictGrammarCheck(reply);
         if (!reply) return '';
+
         if (reply.length > 280) {
             reply = reply.slice(0, 280);
             const lastEnd = Math.max(reply.lastIndexOf('.'), reply.lastIndexOf('!'), reply.lastIndexOf('?'));
-            if (lastEnd > 40) reply = reply.slice(0, lastEnd + 1);
+            if (lastEnd > 40) {
+                reply = reply.slice(0, lastEnd + 1);
+            }
         }
-        const forbidden = [/^come intelligenza artificiale/i, /^come modello linguistico/i, /^come assistente/i, /^non posso aiutarti/i, /^non posso rispondere/i, /^mi dispiace, ma non/i];
-        if (forbidden.some(p => p.test(reply))) return '';
-        return reply.trim();
-    }
 
-    applyGrammarFixes(text) {
-        let s = text;
-        s = s.replace(/\s{2,}/g, ' ');
-        s = s.replace(/\s+([,.!?;:])/g, '$1');
-        s = s.replace(/([,.!?;:])([A-Za-zÀ-ÿ])/g, '$1 $2');
-        s = s.replace(/([.!?])\s+([a-zà-ÿ])/g, (m, p1, p2) => `${p1} ${p2.toUpperCase()}`);
-        if (s.length > 0) s = s.charAt(0).toUpperCase() + s.slice(1);
-        if (!/[.!?…]$/.test(s)) s += '.';
-        return s.trim();
+        const forbidden = [
+            /^come intelligenza artificiale/i,
+            /^come modello linguistico/i,
+            /^come assistente/i,
+            /^non posso aiutarti/i,
+            /^non posso rispondere/i,
+            /^mi dispiace, ma non/i
+        ];
+
+        if (forbidden.some(p => p.test(reply))) {
+            return '';
+        }
+
+        return reply.trim();
     }
 
     applyStrictGrammarCheck(text) {
@@ -1270,8 +2103,14 @@ Output: {"reply": "..."}`;
         s = s.replace(/\s+([,.!?;:])/g, '$1');
         s = s.replace(/([,.!?;:])([A-Za-zÀ-ÿ])/g, '$1 $2');
         s = s.replace(/([.!?])\s+([a-zà-ÿ])/g, (m, p1, p2) => `${p1} ${p2.toUpperCase()}`);
-        if (s.length > 0) s = s.charAt(0).toUpperCase() + s.slice(1);
-        if (!/[.!?…]$/.test(s)) s += '.';
+
+        if (s.length > 0) {
+            s = s.charAt(0).toUpperCase() + s.slice(1);
+        }
+
+        if (!/[.!?…]$/.test(s)) {
+            s += '.';
+        }
 
         return s.trim();
     }
@@ -1282,101 +2121,21 @@ Output: {"reply": "..."}`;
             [/\bio\s+insegnano\b/gi, 'io insegno'],
             [/\bio\s+hanno\b/gi, 'io ho'],
             [/\bio\s+fanno\b/gi, 'io faccio'],
-            [/\bio\s+dicono\b/gi, 'io dico'],
-            [/\bio\s+vanno\b/gi, 'io vado'],
-            [/\bio\s+stanno\b/gi, 'io sto'],
-            [/\bio\s+possono\b/gi, 'io posso'],
-            [/\bio\s+devono\b/gi, 'io devo'],
-            [/\bio\s+vogliono\b/gi, 'io voglio'],
-            [/\bio\s+sei\b/gi, 'io sono'],
-            [/\bio\s+è\b/gi, 'io sono'],
-            [/\bio\s+era\b/gi, 'io ero'],
-            [/\bio\s+ha\b/gi, 'io ho'],
-            [/\bio\s+fa\b/gi, 'io faccio'],
-            [/\bio\s+dice\b/gi, 'io dico'],
-            [/\bio\s+va\b/gi, 'io vado'],
-            [/\bio\s+sta\b/gi, 'io sto'],
-            [/\bio\s+può\b/gi, 'io posso'],
-            [/\bio\s+deve\b/gi, 'io devo'],
-            [/\bio\s+vuole\b/gi, 'io voglio'],
             [/\bperche\b/gi, 'perché'],
             [/\bpiu\b/gi, 'più'],
             [/\bgia\b/gi, 'già'],
             [/\bcosi\b/gi, 'così'],
             [/\bpuo\b/gi, 'può'],
             [/\bpero\b/gi, 'però'],
-            [/\bqual'è\b/gi, "qual è"],
-            [/\bun\s+po\b/gi, "un po'"],
-            [/\bdaccordo\b/gi, "d'accordo"],
-            [/\bsopratutto\b/gi, 'soprattutto'],
-            [/\bgrazie\s+mica\b/gi, 'grazie mille'],
-            [/\bmica\s+grazie\b/gi, 'grazie mille'],
-            [/\bsì\s+mica\b/gi, 'sì certo']
+            [/\bqual'è\b/gi, 'qual è'],
+            [/\bun\s+po\b/gi, "un po'"]
         ];
+
         inline.forEach(([pattern, replacement]) => {
             s = s.replace(pattern, replacement);
         });
+
         return s;
-    }
-
-    async correctItalianWithLanguageTool(text) {
-        if (!this.languageToolEnabled || !text || text.length < 4) {
-            return text;
-        }
-
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), this.languageToolTimeout);
-
-            const params = new URLSearchParams();
-            params.append('text', text);
-            params.append('language', 'it-IT');
-            params.append('enabledOnly', 'false');
-            params.append('level', 'picky');
-
-            const response = await fetch(this.languageToolEndpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: params.toString(),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) return text;
-
-            const data = await response.json();
-            if (!data.matches || data.matches.length === 0) return text;
-
-            let corrected = text;
-            const matches = [...data.matches].sort((a, b) => b.offset - a.offset);
-
-            for (const match of matches) {
-                if (!match.replacements || match.replacements.length === 0) continue;
-
-                const ruleId = match.rule?.id || '';
-                const categoryId = match.rule?.category?.id || '';
-
-                const isGrammar = categoryId === 'GRAMMAR' ||
-                                  categoryId === 'TYPOS' ||
-                                  categoryId === 'PUNCTUATION' ||
-                                  categoryId === 'CASING' ||
-                                  categoryId === 'CONFUSED_WORDS' ||
-                                  categoryId === 'AGREEMENT' ||
-                                  ruleId.includes('AGREEMENT') ||
-                                  ruleId.includes('CONCORDANZA') ||
-                                  ruleId.includes('SUBJECT_VERB');
-
-                if (!isGrammar && categoryId !== '') continue;
-
-                const best = match.replacements[0].value;
-                corrected = corrected.slice(0, match.offset) + best + corrected.slice(match.offset + match.length);
-            }
-
-            return corrected;
-        } catch (e) {
-            return text;
-        }
     }
 
     isValidItalianReply(reply) {
@@ -1388,373 +2147,296 @@ Output: {"reply": "..."}`;
         return true;
     }
 
-    scoreReply(reply) {
-        let score = 100;
-        if (this.hasEnglishWords(reply)) score -= 60;
-        if (this.hasAbbreviations(reply)) score -= 40;
-        if (this.hasMarkdown(reply)) score -= 30;
-        if (reply.length < 8) score -= 25;
-        if (reply.length > 150) score -= 25;
-        if (reply.length >= 15 && reply.length <= 100) score += 15;
-        if (/[.!?]/.test(reply)) score += 5;
+    async generateReply(messages, temperature = 0.6, streamToChat = true) {
+        if (!this.engine || !this.isModelReady) return '';
 
-        const badConcordance = /\b(io)\s+(insegnano|hanno|fanno|dicono|vanno|stanno|possono|devono|vogliono)\b/i;
-        if (badConcordance.test(reply)) score -= 50;
+        const requestId = ++this._generationRequestId;
+        this._replyGenerationActive = true;
 
-        const thirdPluralSelf = /\b(insegnano|hanno|fanno|dicono|vanno)\s+(geografia|scienze|matematica|storia|italiano|inglese|un dottorato|una laurea|un master)\b/i;
-        if (thirdPluralSelf.test(reply)) score -= 50;
+        let timeoutId = null;
+        let timedOut = false;
+        let streamedText = '';
 
-        const words = reply.toLowerCase().split(/\s+/).filter(Boolean);
-        if (words.length > 3) {
-            const unique = new Set(words);
-            const ratio = unique.size / words.length;
-            if (ratio < 0.5) score -= 30;
-            if (ratio < 0.7) score -= 10;
-        }
-        if (words.length > 20) score -= 20;
-        if (/^(sì|no|ok|certo|capisco|va bene)[.!]?$/i.test(reply.trim())) score -= 40;
-
-        return score;
-    }
-
-    async generateReply(messages, temperature = 0.1) {
-        const response = await this.engine.chat.completions.create({
-            messages: messages,
-            temperature: temperature,
-            top_p: 0.8,
-            top_k: 25,
-            max_tokens: 80,
-            stream: false,
-            stop: ['\n', '}', 'Cameriera:', 'Tu:', 'NPC:', 'Utente:']
-        });
-
-        const raw = response?.choices?.[0]?.message?.content || '';
-        let reply = '';
+        const interrupt = () => {
+            try {
+                if (this.engine && typeof this.engine.interruptGenerate === 'function') {
+                    this.engine.interruptGenerate();
+                }
+            } catch (e) {}
+        };
 
         try {
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed.reply === 'string') reply = parsed.reply;
-        } catch (e) {
-            const m = raw.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-            if (m) reply = m[1].replace(/\\"/g, '"').replace(/\\n/g, ' ');
-            else reply = raw;
-        }
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    timedOut = true;
+                    interrupt();
+                    reject(new Error('TIMEOUT'));
+                }, this._replyTimeoutMs);
+            });
 
-        reply = this.sanitizeReply(reply);
-        return reply;
+            const generationPromise = (async () => {
+                const response = await this.engine.chat.completions.create({
+                    messages,
+                    temperature,
+                    top_p: 0.9,
+                    max_tokens: this._replyMaxTokens,
+                    stream: true
+                });
+
+                if (response && typeof response[Symbol.asyncIterator] === 'function') {
+                    for await (const chunk of response) {
+                        if (requestId !== this._generationRequestId) break;
+                        const piece = chunk?.choices?.[0]?.delta?.content ?? '';
+                        if (piece) {
+                            streamedText += piece;
+                            if (streamToChat) {
+                                this._updateStreamingReply(streamedText);
+                            }
+                        }
+                    }
+                    return streamedText;
+                }
+
+                return response?.choices?.[0]?.message?.content || '';
+            })();
+
+            const raw = await Promise.race([generationPromise, timeoutPromise]);
+            if (timeoutId) clearTimeout(timeoutId);
+
+            return this.sanitizeReply(raw);
+        } catch (e) {
+            if (timeoutId) clearTimeout(timeoutId);
+            console.warn('[AI] Generazione interrotta o errore:', e);
+            return '';
+        } finally {
+            this._replyGenerationActive = false;
+            this._clearStreamingReply();
+        }
     }
 
-    async generateBestReply(messages) {
-        try {
-            const reply = await this.generateReply(messages, 0.1);
-            if (reply && this.isValidItalianReply(reply)) {
-                return reply;
-            }
-            const retry = await this.generateReply(messages, 0.2);
-            if (retry && this.isValidItalianReply(retry)) {
-                return retry;
-            }
-        } catch (e) {
-            console.warn('[AI] generateBestReply fallita:', e);
+    _updateStreamingReply(text) {
+        const log = document.getElementById('ai-chat-log');
+        if (!log) return;
+
+        let div = document.getElementById('ai-streaming-reply');
+        if (!div) {
+            div = document.createElement('div');
+            div.id = 'ai-streaming-reply';
+            div.className = 'ai-msg customer';
+            div.textContent = '…';
+            log.appendChild(div);
         }
+
+        const cleaned = this.sanitizeReplyForStreaming(text);
+        div.textContent = cleaned || '…';
+        log.scrollTop = log.scrollHeight;
+    }
+
+    _clearStreamingReply() {
+        const div = document.getElementById('ai-streaming-reply');
+        if (div) div.remove();
+    }
+
+    sanitizeReplyForStreaming(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/<think>[\s\S]*?<\/think>/gi, '')
+            .replace(/<\|.*?\|>/g, '')
+            .replace(/^(Elena|Maria|Francesco|Rosa|Sofia|Chiara|Massimo|Andrea|Marco|NPC|AI)\s*:\s*/i, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    getCachedDialogueReply(npcName, userMessage) {
+        if (!this.dialogueDatabase || !this.dialogueDatabase.npcs) return '';
+        const npcData = this.dialogueDatabase.npcs[npcName];
+        if (!npcData || !Array.isArray(npcData.intents)) return '';
+
+        const normalizedInput = normalizeDialogueText(userMessage);
+
+        for (const intent of npcData.intents) {
+            const matches = Array.isArray(intent.keywords) && intent.keywords.some(keyword => {
+                const normalizedKeyword = normalizeDialogueText(keyword);
+                return normalizedKeyword && normalizedInput.includes(normalizedKeyword);
+            });
+
+            if (matches && Array.isArray(intent.replies) && intent.replies.length > 0) {
+                return intent.replies[Math.floor(Math.random() * intent.replies.length)];
+            }
+        }
+
         return '';
     }
 
-    async evaluateExchange(userMessage, npcReply) {
-        if (!this.engine || !this.isModelReady) return null;
-        const npcName = this.currentCustomer?.name || 'NPC';
-
-        const lower = (userMessage || '').toLowerCase();
-        const compliments = [
-            'bella', 'bello', 'belli', 'belle', 'complimenti', 'brava', 'bravo',
-            'gentile', 'carina', 'carino', 'simpatica', 'simpatico',
-            'che bella', 'che bello', 'che carina', 'che carino',
-            'mi piace', 'adoro', 'stupenda', 'stupendo',
-            'bellissima', 'bellissimo', 'fantastica', 'fantastico',
-            'dolce', 'preziosa', 'prezioso', 'unica', 'unico',
-            'sei grande', 'sei mitica', 'sei mitico'
-        ];
-        const insults = [
-            'stronzo', 'stronza', 'idiota', 'cretino', 'cretina',
-            'brutta', 'brutto', 'schifo', 'fa schifo', 'sei una merda',
-            'vaffanculo', 'cazzo', 'merda', 'puttana'
-        ];
-        const hasCompliment = compliments.some(w => lower.includes(w));
-        const hasInsult = insults.some(w => lower.includes(w));
-
-        let preDelta = 0;
-        if (hasCompliment && !hasInsult) preDelta = 5;
-        else if (hasInsult) preDelta = -8;
-
-        const prompt = `Sei un valutatore. Ricevi UNO scambio già avvenuto tra una cameriera e un cliente. Il tuo compito è dire se la cameriera è stata gentile, educata, professionale.
-
-SCAMBIO DA VALUTARE:
-Cameriera: "${userMessage}"
-${npcName}: "${npcReply}"
-
-REGOLE:
-- Se la cameriera fa complimenti, ringrazia, scherza amichevolmente, mostra interesse per il cliente: delta positivo (+3 a +8).
-- Se la cameriera è neutra, breve, solo informativa: delta 0.
-- Se la cameriera è scortese, insulta, ignora, risponde a monosillabi con disprezzo: delta negativo (-3 a -10).
-
-Rispondi SOLO con questo JSON, senza altro testo prima o dopo:
-{"delta": 0, "reason": "breve motivo"}`;
-
-        try {
-            const response = await this.engine.chat.completions.create({
-                messages: [
-                    { role: 'system', content: 'Sei un valutatore. Rispondi SOLO con il JSON richiesto, nessun testo extra, nessuna spiegazione.' },
-                    { role: 'user', content: prompt }
-                ],
-                temperature: 0.1,
-                max_tokens: 50,
-                stream: false,
-                stop: ['\n', '}']
-            });
-
-            const raw = response?.choices?.[0]?.message?.content || '';
-            let parsed = null;
-            try { parsed = JSON.parse(raw); } catch (e) {
-                const m = raw.match(/\{[^{}]*"delta"[^{}]*\}/);
-                if (m) { try { parsed = JSON.parse(m[0]); } catch (e2) {} }
-            }
-
-            if (parsed && typeof parsed.delta === 'number') {
-                let delta = Math.round(parsed.delta);
-                if (hasCompliment && !hasInsult && delta <= 0) {
-                    delta = Math.max(delta, preDelta);
-                }
-                if (hasInsult && delta > 0) {
-                    delta = Math.min(delta, preDelta);
-                }
-                return {
-                    delta: Math.max(-10, Math.min(10, delta)),
-                    reason: parsed.reason || ''
-                };
-            }
-        } catch (e) {}
-
-        if (preDelta !== 0) {
-            return {
-                delta: preDelta,
-                reason: hasCompliment ? 'Complimento ricevuto' : 'Risposta scortese'
-            };
+    _showPendingReplies(npcName) {
+        const pending = this.pendingNpcReplies[npcName] || [];
+        for (const item of pending) {
+            this.appendMessage('customer', item.reply);
+            this.chatHistory.push({ role: 'assistant', content: item.reply });
         }
-
-        return null;
+        delete this.pendingNpcReplies[npcName];
     }
 
-    async handleAIResponse(userMessage) {
-        if (!this.currentCustomer) return;
+    handleAIResponse(userMessage) {
+        const customer = this.currentCustomer;
+        if (!customer) return;
 
-        try {
-            const cfg = NPC_CONFIG[this.currentCustomer.name] || {};
-            const systemPrompt = this.buildIdentityPrompt(cfg, this.currentCustomer);
+        const config = NPC_CONFIG[customer.name];
+        if (!config || config.isCustomer !== true) return;
 
-            const messages = [
-                { role: 'system', content: systemPrompt },
-                ...this.getRecentHistory()
-            ];
+        const memory = this.currentMemory || this.getMemory(customer.name);
+        const history = this.getRecentHistory();
 
-            let reply = await this.generateBestReply(messages);
 
-            if (!reply || !this.isValidItalianReply(reply)) {
-                reply = 'Sì, capisco.';
-            }
+        const learnedReply = memory.getLearnedReply(userMessage);
+        const databaseReply = learnedReply || this.getCachedDialogueReply(customer.name, userMessage);
 
-            reply = this.applyStrictGrammarCheck(reply);
-            reply = this.sanitizeReply(reply);
-            if (!reply || !this.isValidItalianReply(reply)) {
-                reply = 'Sì, capisco.';
-            }
-
-            if (this.languageToolEnabled) {
-                try {
-                    const corrected = await this.correctItalianWithLanguageTool(reply);
-                    if (corrected && corrected.length > 0 && corrected.length < 280) {
-                        reply = this.sanitizeReply(corrected);
-                        reply = this.applyStrictGrammarCheck(reply);
-                    }
-                } catch (e) {}
-            }
-
-            if (!reply || !this.isValidItalianReply(reply)) {
-                reply = 'Sì, capisco.';
-            }
-
+        if (databaseReply) {
+            const reply = this.sanitizeReply(databaseReply);
             this.chatHistory.push({ role: 'assistant', content: reply });
-            if (this.chatHistory.length > 6) this.chatHistory = this.chatHistory.slice(-6);
-
             this.appendMessage('customer', reply);
+            memory.addExchange(userMessage, reply);
+            this.updateRelationshipFromSentiment(userMessage, reply);
+            return;
+        }
 
-            if (this.currentMemory) this.currentMemory.addExchange(userMessage, reply);
 
-            this._scheduleBackgroundProcessing(userMessage, reply);
-        } catch (error) {
-            this.appendMessage('system', '❌ Errore: ' + (error?.message || 'generazione fallita'));
+        const waitingPhrases = [
+            "Mmm, fammi pensare un attimo...",
+            "Fammi un secondo pensare...",
+            "Aspetta, sto riflettendo..."
+        ];
+        const initialWaiting = waitingPhrases[Math.floor(Math.random() * waitingPhrases.length)];
+        const placeholderDiv = this.appendMessage('customer', initialWaiting);
+
+        const historyEntry = { role: 'assistant', content: initialWaiting };
+        this.chatHistory.push(historyEntry);
+
+
+        this._queueBackgroundReply(userMessage, customer, memory, history, placeholderDiv, historyEntry, this._chatSessionId);
+    }
+
+    async _queueBackgroundReply(userMessage, customer, memory, history, placeholder, historyEntry, chatSessionId) {
+        if (!this.isAIActive) return;
+
+        const config = NPC_CONFIG[customer.name];
+        const systemPrompt = this.buildIdentityPrompt(config, customer, userMessage, memory);
+
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...history,
+            { role: 'user', content: userMessage }
+        ];
+
+        const generate = async () => {
+            if (this._destroyed || !this.isAIActive) return;
+
+            if (!this.isModelReady || !this.engine) {
+                const ready = await this.initializeWebLLM({ silent: false });
+                if (!ready) return;
+            }
+
+            const rawReply = await this.generateReply(messages, 0.6, true);
+            const corrected = this.sanitizeReply(rawReply);
+
+            if (!corrected || !this.isValidItalianReply(corrected)) return;
+
+            memory.addLearnedReply(userMessage, corrected);
+
+            if (this.isChatOpen && this._chatSessionId === chatSessionId && this.currentCustomer === customer && placeholder && placeholder.isConnected) {
+                placeholder.textContent = corrected;
+                historyEntry.content = corrected;
+                return;
+            }
+
+            if (!this.pendingNpcReplies[customer.name]) {
+                this.pendingNpcReplies[customer.name] = [];
+            }
+
+            this.pendingNpcReplies[customer.name].push({ userMessage, reply: corrected });
+        };
+
+        this._backgroundGenerationQueue = this._backgroundGenerationQueue.then(generate).catch(e => {
+            console.error('[AI] Errore generazione asincrona:', e);
+        });
+    }
+
+    extractFactsDeterministically(userText) {
+        if (!this.currentMemory || !userText) return;
+        const text = String(userText).trim();
+        if (!text) return;
+
+        const patterns = [
+            { regex: /\bmi chiamo\s+([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'-]{1,24})/i, format: m => `nome: ${m[1]}` },
+            { regex: /\bsono\s+(?:un|una)\s+([A-Za-zÀ-ÖØ-öø-ÿ' -]{2,35})/i, format: m => `professione: ${m[1].trim()}` },
+            { regex: /\blavoro\s+(?:come|da)\s+([A-Za-zÀ-ÖØ-öø-ÿ' -]{2,35})/i, format: m => `lavoro: ${m[1].trim()}` }
+        ];
+
+        for (const item of patterns) {
+            const match = text.match(item.regex);
+            if (!match) continue;
+            const fact = item.format(match).trim();
+            if (fact.length >= 4 && fact.length <= 80) {
+                if (!this.currentMemory.reinforceConcept(fact)) {
+                    this.currentMemory.addConcept(fact);
+                }
+            }
         }
     }
 
-    _scheduleBackgroundProcessing(userMessage, npcReply) {
-        this._bgPending.push({ userMessage, npcReply });
-
-        if (this._bgTimer) clearTimeout(this._bgTimer);
-        this._bgTimer = setTimeout(() => {
-            this._bgTimer = null;
-            this._flushBackground();
-        }, 6000);
-    }
-
-    async _flushBackground() {
-        if (this._bgPending.length === 0) return;
-        const pending = this._bgPending.splice(0);
-        if (!this.currentCustomer || !this.engine || !this.isModelReady) return;
-
-        const last = pending[pending.length - 1];
-        try {
-            await this.updateRelationshipFromSentiment(last.userMessage, last.npcReply);
-        } catch (e) {}
-
-        try {
-            if (this.currentMemory) {
-                const combined = pending.map(p => p.userMessage).join(' | ');
-                await this._extractFactsBatch(combined);
-
-                if (this.currentMemory.data.totalInteractions % 10 === 0) {
-                    await this.updateSummary();
-                }
-            }
-        } catch (e) {}
-    }
-
-    async _extractFactsBatch(userText) {
-        if (!this.currentMemory || !this.engine || !this.isModelReady) return;
-        try {
-            const response = await this.engine.chat.completions.create({
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Estrai concetti-chiave sulla cameriera in formato "chiave: valore" separati da virgola. Es: "nome: Giulia, lavoro: cameriera, cibo_preferito: pizza". Max 3 concetti. Se non ci sono fatti nuovi rispondi "NESSUNO".'
-                    },
-                    { role: 'user', content: userText }
-                ],
-                temperature: 0.1,
-                max_tokens: 50,
-                stream: false,
-                stop: ['\n']
-            });
-            const factsText = response?.choices?.[0]?.message?.content || '';
-            if (factsText && !factsText.toUpperCase().includes('NESSUNO')) {
-                factsText.split(',').map(f => f.trim())
-                    .filter(f => f.length > 3 && f.length < 80)
-                    .forEach(fact => {
-                        if (!this.currentMemory.reinforceConcept(fact)) {
-                            this.currentMemory.addConcept(fact);
-                        }
-                    });
-            }
-        } catch (e) {}
-    }
-
-    async updateRelationshipFromSentiment(userMessage, npcReply) {
+    updateRelationshipFromSentiment(userMessage, npcReply) {
         if (!this.currentCustomer) return;
-        const evaluation = await this.evaluateExchange(userMessage, npcReply);
-        if (!evaluation) return;
 
-        const delta = evaluation.delta;
+        const lower = String(userMessage || '').toLowerCase();
+        let delta = 0;
+
+        if (/\b(grazie|gentile|bello|brava|ottimo)\b/i.test(lower)) delta = 5;
+        if (/\b(stronzo|idiota|brutto|schifo)\b/i.test(lower)) delta = -8;
+
         if (typeof this.currentCustomer.relationScore !== 'number') {
             this.currentCustomer.relationScore = 50;
         }
+
         this.currentCustomer.relationScore = Math.max(0, Math.min(100, this.currentCustomer.relationScore + delta));
 
         const relationEl = document.getElementById('ai-chat-relation');
         if (relationEl) relationEl.textContent = `${Math.floor(this.currentCustomer.relationScore)}%`;
 
-        if (delta > 0) this.appendMessage('system', `❤️ +${delta} Sintonia`);
-        else if (delta < 0) this.appendMessage('system', `💔 ${delta} Sintonia`);
-        else this.appendMessage('system', `➖ 0 Sintonia`);
-
-        if (evaluation.reason) this.appendMessage('system', `📝 ${evaluation.reason}`);
-
-        if (this.currentMemory) this.currentMemory.setRelationship(this.currentCustomer.relationScore);
-
-        if (this.currentCustomer.name === 'Marco' && this.currentCustomer.relationScore <= 0) this.handleBreakup();
-        else if (this.currentCustomer.name === 'Elena' && this.currentCustomer.relationScore >= 100) this.handleAdoptionReady();
-        else if (this.currentCustomer.name === 'Andrea' && this.currentCustomer.relationScore >= 100) this.handleTechTips();
-    }
-
-    async updateMemoryAsync(userMessage, npcReply) {
-        this._scheduleBackgroundProcessing(userMessage, npcReply);
-    }
-
-    async updateSummary() {
-        if (!this.currentMemory || !this.engine) return;
-        const facts = this.currentMemory.data.facts;
-        if (facts.length < 5) return;
-
-        const factsText = facts.map(f => f.text).join(', ');
-
-        try {
-            const response = await this.engine.chat.completions.create({
-                messages: [
-                    { role: 'system', content: 'Comprimi questi concetti in una frase di massimo 20 parole, in italiano.' },
-                    { role: 'user', content: factsText }
-                ],
-                temperature: 0.2,
-                max_tokens: 60,
-                stream: false
-            });
-
-            const summary = response?.choices?.[0]?.message?.content || '';
-            if (summary && summary.length > 10) {
-                this.currentMemory.setSummary(summary);
-                this.currentMemory.data.facts = [];
-                this.currentMemory.save();
-            }
-        } catch (e) {}
-    }
-
-    handleBreakup() {
-        if (this.scene?.scene) {
-            this.scene.scene.showFloatingText(400, 200, '💔 MARCO TI HA LASCIATA! GAME OVER!', '#e74c3c');
-            this.scene.scene.gameActive = false;
-            setTimeout(() => this.scene.scene.start('GameOver'), 2000);
+        if (this.currentMemory) {
+            this.currentMemory.setRelationship(this.currentCustomer.relationScore);
         }
-    }
-
-    handleAdoptionReady() {
-        if (this.scene?.scene) this.scene.scene.showFloatingText(400, 200, '👶 Elena vuole parlarti di Ludovica!', '#ffd700');
-    }
-
-    handleTechTips() {
-        if (this.scene?.scene) this.scene.scene.showFloatingText(400, 200, '💡 Andrea: "Posso ottimizzare il tuo sistema di prenotazioni!"', '#2ecc71');
     }
 
     appendMessage(sender, text) {
         const log = document.getElementById('ai-chat-log');
         if (!log) return;
+
+        if (sender === 'customer') {
+            this._clearStreamingReply();
+        }
+
         const msgDiv = document.createElement('div');
         msgDiv.className = `ai-msg ${sender}`;
         msgDiv.textContent = sender === 'system' ? `[Sistema]: ${text}` : text;
+
         log.appendChild(msgDiv);
         log.scrollTop = log.scrollHeight;
+
+        return msgDiv;
     }
 
     destroy() {
+        this._destroyed = true;
         this.closeChat();
-        if (this._loadingClock) { clearInterval(this._loadingClock); this._loadingClock = null; }
-        if (this._bgTimer) { clearTimeout(this._bgTimer); this._bgTimer = null; }
-        this._bgPending = [];
+        if (this._loadingClock) clearInterval(this._loadingClock);
         this.engine = null;
         this.webllm = null;
-        this.currentCustomer = null;
-        this.currentMemory = null;
         this.isModelReady = false;
         this.isAIActive = false;
-        this.chatHistory = [];
-        this.npcMemories = {};
+
         const loading = document.getElementById('ai-loading-screen');
         if (loading) loading.remove();
+
         const chat = document.getElementById('ai-chat-container');
         if (chat) chat.remove();
     }
@@ -1764,10 +2446,4 @@ window.AIDialogueManager = AIDialogueManager;
 window.NPCManager = NPCManager;
 window.NPC_CONFIG = NPC_CONFIG;
 window.NPCMemory = NPCMemory;
-window.WEBLLM_MODELS = {
-    'Hermes-3-Llama-3.2-3B-q4f16_1-MLB': {
-        label: 'Hermes 3 Llama 3.2 3B',
-        size: '~2.3GB',
-        vramRequiredMB: 2263.69
-    }
-};
+window.WEBLLM_MODELS = WEBLLM_MODELS;

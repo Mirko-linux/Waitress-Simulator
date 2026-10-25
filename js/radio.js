@@ -20,6 +20,12 @@ class RadioSystem {
         this.checkPurchasedState();
         this.setupDeliveryCheck();
         this.setupPlacementPreview();
+        this.setupAudioEvents();
+        this.checkIveaDelivery();
+
+        if (this.isPurchased && this.isPlaced) {
+            this.radioBtn.setVisible(true);
+        }
     }
 
     createRadioUI() {
@@ -52,15 +58,23 @@ class RadioSystem {
     }
 
     setupFileInput() {
+        if (this.fileInput && this.fileInput.parentNode) {
+            this.fileInput.parentNode.removeChild(this.fileInput);
+        }
         this.fileInput = document.createElement('input');
         this.fileInput.type = 'file';
-        this.fileInput.accept = 'audio/mp3, audio/wav, audio/ogg, audio/flac';
+        this.fileInput.accept = 'audio/mp3, audio/wav, audio/ogg, audio/flac, audio/mpeg, .mp3, .wav, .ogg, .flac';
         this.fileInput.style.display = 'none';
+        this.fileInput.style.position = 'absolute';
+        this.fileInput.style.left = '-9999px';
         document.body.appendChild(this.fileInput);
+
         this.fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) this.loadAndPlayMusic(file);
         });
+
+        console.log('📁 fileInput creato e aggiunto al DOM');
     }
 
     setupDeliveryCheck() {
@@ -80,8 +94,44 @@ class RadioSystem {
                 this.isPurchased = state.isPurchased;
                 this.isPlaced = state.isPlaced;
                 this.deliveryPending = state.deliveryPending;
-                if (this.isPlaced && state.x && state.y) this.createPlacedRadio(state.x, state.y);
-            } catch(e) {}
+                if (this.isPlaced && state.x && state.y) {
+                    this.createPlacedRadio(state.x, state.y);
+                }
+            } catch(e) {
+                console.warn('Errore caricamento stato radio:', e);
+            }
+        }
+    }
+
+    checkIveaDelivery() {
+        if (!this.scene || !this.scene.mailSystem) return;
+
+        const ready = this.scene.mailSystem.getReadyDeliveries('restaurant');
+        const radioDelivery = ready.find(d =>
+            d.id === 'resto_radio' || d.id === 'house_radio'
+        );
+
+        if (radioDelivery) {
+            this.scene.mailSystem.consumeDelivery(radioDelivery);
+            this.scene.mailSystem.saveIveaDeliveries();
+
+            this.isPurchased = true;
+            this.deliveryPending = true;
+            this.saveState();
+
+            if (!this.packageSprite) {
+                this.spawnPackage();
+            }
+            return;
+        }
+
+        const pending = this.scene.mailSystem.getIveaDeliveriesFor('restaurant')
+            .find(d => d.id === 'resto_radio' || d.id === 'house_radio');
+
+        if (pending) {
+            this.isPurchased = true;
+            this.deliveryPending = true;
+            this.saveState();
         }
     }
 
@@ -97,7 +147,7 @@ class RadioSystem {
     }
 
     purchaseRadio() {
-        if (this.isPurchased) return;
+        if (this.isPurchased && !this.deliveryPending) return;
         this.isPurchased = true;
         this.deliveryPending = true;
         this.radioBtn.setVisible(false);
@@ -109,6 +159,7 @@ class RadioSystem {
         this.canPlace = true;
         this.radioBtn.setVisible(true);
         this.showPlacementHint();
+        this.saveState();
     }
 
     showPlacementHint() {
@@ -120,7 +171,7 @@ class RadioSystem {
             backgroundColor: '#000000aa',
             padding: { x: 10, y: 5 }
         }).setOrigin(0.5).setDepth(150).setScrollFactor(0);
-        
+
         this.scene.tweens.add({
             targets: hint,
             alpha: 0,
@@ -136,9 +187,13 @@ class RadioSystem {
             const worldPoint = pointer.positionToCamera(this.scene.cameras.main);
             if (!this.ghostSprite) {
                 if (this.scene.textures.exists('radio')) {
-                    this.ghostSprite = this.scene.add.image(worldPoint.x, worldPoint.y, 'radio').setAlpha(0.6);
+                    this.ghostSprite = this.scene.add.image(worldPoint.x, worldPoint.y, 'radio')
+                        .setAlpha(0.6)
+                        .setDisplaySize(30, 30);
                 } else {
-                    this.ghostSprite = this.scene.add.text(worldPoint.x, worldPoint.y, '📻', {fontSize: '24px'}).setAlpha(0.6);
+                    this.ghostSprite = this.scene.add.text(worldPoint.x, worldPoint.y, '📻', {
+                        fontSize: '24px'
+                    }).setAlpha(0.6);
                 }
             }
             this.ghostSprite.x = worldPoint.x;
@@ -167,19 +222,81 @@ class RadioSystem {
 
     createPlacedRadio(x, y) {
         if (this.radioSprite) return;
-        
+
+
+        const RADIO_DEPTH = 500;
+
         if (this.scene.textures.exists('radio')) {
-            this.radioSprite = this.scene.add.image(x, y, 'radio').setDepth(y).setDisplaySize(30, 30);
+            this.radioSprite = this.scene.add.image(x, y, 'radio')
+                .setDepth(RADIO_DEPTH)
+                .setDisplaySize(30, 30);
         } else {
-            this.radioSprite = this.scene.add.text(x, y, '📻', {fontSize: '24px'}).setOrigin(0.5).setDepth(y);
+            this.radioSprite = this.scene.add.text(x, y, '📻', {
+                fontSize: '24px'
+            }).setOrigin(0.5).setDepth(RADIO_DEPTH);
         }
-        
-        this.radioSprite.setInteractive({ useHandCursor: true });
-        this.radioSprite.on('pointerdown', () => {
-            this.toggleRadio();
-            this.radioBtn.setPosition(this.radioSprite.x, this.radioSprite.y - 40);
-            this.statusText.setPosition(this.radioSprite.x, this.radioSprite.y - 55);
+
+
+        this.radioSprite.setInteractive({
+            useHandCursor: true,
+            pixelPerfect: false
         });
+
+
+        if (this.radioSprite.input) {
+            this.radioSprite.input.hitArea = new Phaser.Geom.Rectangle(-20, -20, 40, 40);
+            this.radioSprite.input.hitAreaCallback = function (hitArea, x, y, gameObject) {
+                return x >= hitArea.x && x < hitArea.x + hitArea.width &&
+                       y >= hitArea.y && y < hitArea.y + hitArea.height;
+            };
+        }
+
+
+        this.scene.input.setTopOnly(false);
+
+        this.radioSprite.on('pointerdown', (pointer, localX, localY, event) => {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+
+            console.log('🖱️ Click sulla radio!');
+            console.log('  isPurchased:', this.isPurchased);
+            console.log('  isPlaced:', this.isPlaced);
+            console.log('  isPlaying:', this.isPlaying);
+
+            if (!this.isPurchased) {
+                this.statusText.setText('❌ Radio non acquistata');
+                return;
+            }
+            if (!this.isPlaced) {
+                this.statusText.setText('❌ Radio non posizionata');
+                return;
+            }
+
+            if (this.isPlaying) {
+                this.stopMusic();
+            } else {
+
+                if (!this.fileInput) {
+                    console.warn('⚠️ fileInput mancante, lo ricreo');
+                    this.setupFileInput();
+                }
+                if (!this.fileInput.parentNode) {
+                    console.warn('⚠️ fileInput non nel DOM, lo riaggiungo');
+                    document.body.appendChild(this.fileInput);
+                }
+
+                console.log('📁 Apro file picker');
+                try {
+                    this.fileInput.click();
+                } catch (e) {
+                    console.error('❌ Errore apertura file picker:', e);
+                }
+            }
+        });
+
+        this.radioBtn.setPosition(x, y - 40);
+        this.statusText.setPosition(x, y - 55);
     }
 
     async loadAndPlayMusic(file) {
@@ -205,6 +322,7 @@ class RadioSystem {
             this.statusText.setText(`🎵 Ora: ${file.name.substring(0, 20)}...`);
             this.applyPatienceBonus();
         } catch (error) {
+            console.error('Errore decodifica audio:', error);
             this.statusText.setText('❌ Errore formato audio');
             this.isPlaying = false;
         }
@@ -222,6 +340,9 @@ class RadioSystem {
         if (this.isPlaying) {
             this.stopMusic();
         } else {
+            if (!this.fileInput) {
+                this.setupFileInput();
+            }
             this.fileInput.click();
         }
     }
@@ -284,21 +405,39 @@ class RadioSystem {
         if (this.deliveryPending && !this.packageSprite) {
             this.spawnPackage();
         }
+
+        if (this.isPlaced && this.radioSprite && this.radioSprite.active) {
+            this.radioBtn.setPosition(this.radioSprite.x, this.radioSprite.y - 40);
+            this.statusText.setPosition(this.radioSprite.x, this.radioSprite.y - 55);
+        }
     }
 
     spawnPackage() {
         const entryX = 150;
         const entryY = 500;
+        const SIZE = 48;
 
         if (this.scene.textures.exists('pacco')) {
-            this.packageSprite = this.scene.add.image(entryX, entryY, 'pacco').setDepth(20).setDisplaySize(80, 80);
+            this.packageSprite = this.scene.add.image(entryX, entryY, 'pacco')
+                .setDepth(20)
+                .setDisplaySize(SIZE, SIZE);
         } else {
-            this.packageSprite = this.scene.add.text(entryX, entryY, '📦', {fontSize: '64px'}).setOrigin(0.5).setDepth(20);
+            this.packageSprite = this.scene.add.text(entryX, entryY, '📦', {
+                fontSize: '40px'
+            }).setOrigin(0.5).setDepth(20);
         }
 
-        this.packageInteractZone = this.scene.add.zone(entryX, entryY, 90, 90).setDepth(19).setInteractive({ useHandCursor: true });
+        this.packageInteractZone = this.scene.add.zone(entryX, entryY, 70, 70)
+            .setDepth(19)
+            .setInteractive({ useHandCursor: true });
+
         this.packageInteractZone.on('pointerdown', () => {
-            const dist = Phaser.Math.Distance.Between(this.scene.waitress.x, this.scene.waitress.y, entryX, entryY);
+            const dist = Phaser.Math.Distance.Between(
+                this.scene.waitress.x,
+                this.scene.waitress.y,
+                entryX,
+                entryY
+            );
             if (dist <= 120) {
                 this.pickUpPackage();
             } else {
@@ -306,20 +445,53 @@ class RadioSystem {
             }
         });
 
-        this.packageGlow = this.scene.add.graphics().setDepth(18).fillStyle(0x3498db, 0.25).fillCircle(entryX, entryY, 60);
-        this.scene.tweens.add({ targets: this.packageGlow, alpha: 0.05, duration: 800, yoyo: true, repeat: -1 });
+        this.packageGlow = this.scene.add.graphics()
+            .setDepth(18)
+            .fillStyle(0x3498db, 0.25)
+            .fillCircle(entryX, entryY, 38);
 
-        this.packageSprite.setScale(0.3);
+        this.scene.tweens.add({
+            targets: this.packageGlow,
+            alpha: 0.05,
+            duration: 800,
+            yoyo: true,
+            repeat: -1
+        });
+
+        this.packageSprite.setDisplaySize(SIZE * 0.3, SIZE * 0.3);
         this.packageSprite.y = 580;
-        this.scene.tweens.add({ targets: this.packageSprite, y: entryY, scaleX: 1, scaleY: 1, duration: 500, ease: 'Back.easeOut' });
+
+        this.scene.tweens.add({
+            targets: this.packageSprite,
+            y: entryY,
+            displayWidth: SIZE,
+            displayHeight: SIZE,
+            duration: 500,
+            ease: 'Back.easeOut'
+        });
+
+        if (this.scene.showFloatingText) {
+            this.scene.showFloatingText(entryX, entryY - 50,
+                '📻 Pacco consegnato! Clicca per ritirare', '#3498db');
+        }
     }
 
     pickUpPackage() {
         if (this.packageSprite) {
-            this.scene.tweens.add({ targets: this.packageSprite, scaleX: 0, scaleY: 0, alpha: 0, duration: 300, ease: 'Back.easeIn', onComplete: () => {
-                this.packageSprite.destroy();
-                this.packageSprite = null;
-            }});
+            this.scene.tweens.add({
+                targets: this.packageSprite,
+                scaleX: 0,
+                scaleY: 0,
+                alpha: 0,
+                duration: 300,
+                ease: 'Back.easeIn',
+                onComplete: () => {
+                    if (this.packageSprite) {
+                        this.packageSprite.destroy();
+                        this.packageSprite = null;
+                    }
+                }
+            });
         }
         if (this.packageInteractZone) {
             this.packageInteractZone.destroy();
@@ -329,23 +501,42 @@ class RadioSystem {
             this.packageGlow.destroy();
             this.packageGlow = null;
         }
+
         this.deliveryPending = false;
-        this.completeDelivery();
+        this.isPurchased = true;
+        this.canPlace = true;
+        this.radioBtn.setVisible(true);
+        this.showPlacementHint();
         this.saveState();
+
+        if (this.scene.showFloatingText) {
+            this.scene.showFloatingText(400, 300,
+                '📻 Radio pronta! Clicca sulla mappa per posizionarla',
+                '#2ecc71');
+        }
+        if (window.triggerSfx) window.triggerSfx('coin');
     }
 
     setupAudioEvents() {
         this.scene.events.on('shutdown', () => {
             if (this.isPlaying) this.stopMusic();
-            if (this.fileInput && this.fileInput.parentNode) this.fileInput.parentNode.removeChild(this.fileInput);
+
+
         });
     }
 
     destroy() {
+        if (this.isPlaying) this.stopMusic();
         if (this.radioBtn) this.radioBtn.destroy();
         if (this.statusText) this.statusText.destroy();
         if (this.radioSprite) this.radioSprite.destroy();
         if (this.ghostSprite) this.ghostSprite.destroy();
+        if (this.packageSprite) this.packageSprite.destroy();
+        if (this.packageInteractZone) this.packageInteractZone.destroy();
+        if (this.packageGlow) this.packageGlow.destroy();
+        if (this.fileInput && this.fileInput.parentNode) {
+            this.fileInput.parentNode.removeChild(this.fileInput);
+        }
     }
 }
 

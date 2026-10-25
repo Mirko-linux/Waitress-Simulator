@@ -114,8 +114,7 @@ class SaveMenu {
             });
             nextY += 60;
             createBtn(nextY, "🔄 NUOVA PARTITA", 0xe74c3c, () => {
-                this.closeMenu();
-                this.newGame();
+                this.showNewGameConfirmation();
             });
             nextY += 60;
         } else {
@@ -179,12 +178,71 @@ class SaveMenu {
         this.aiStatusLabel = null;
     }
 
+    showNewGameConfirmation() {
+        const confirmationItems = [];
+        const backdrop = this.scene.add.rectangle(400, 300, 800, 600, 0x000000, 0.65)
+            .setInteractive()
+            .setDepth(209);
+        confirmationItems.push(backdrop);
+
+        const confirmation = this.scene.add.rectangle(400, 300, 520, 220, 0x221111, 0.98)
+            .setStrokeStyle(2, 0xe74c3c)
+            .setDepth(210);
+        confirmationItems.push(confirmation);
+
+        const title = this.scene.add.text(400, 235, '⚠️ SOVRASCRIVERE IL SALVATAGGIO?', {
+            fontSize: '20px', color: '#ff6b6b', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5).setDepth(211);
+        confirmationItems.push(title);
+
+        const message = this.scene.add.text(400, 280,
+            'La partita salvata verrà eliminata e non potrà essere recuperata.', {
+            fontSize: '14px', color: '#ffffff', align: 'center',
+            wordWrap: { width: 440 }, fontFamily: 'Fredoka'
+        }).setOrigin(0.5).setDepth(211);
+        confirmationItems.push(message);
+
+        const closeConfirmation = () => {
+            confirmationItems.forEach(item => item.destroy());
+        };
+
+        const createConfirmationButton = (x, text, color, callback) => {
+            const button = this.scene.add.rectangle(x, 355, 190, 44, color)
+                .setDepth(211)
+                .setInteractive({ useHandCursor: true });
+            const label = this.scene.add.text(x, 355, text, {
+                fontSize: '14px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka'
+            }).setOrigin(0.5).setDepth(212);
+            confirmationItems.push(button, label);
+            button.on('pointerdown', () => {
+                triggerSfx('click');
+                closeConfirmation();
+                callback();
+            });
+            button.on('pointerover', () => button.setFillStyle(0xe59866));
+            button.on('pointerout', () => button.setFillStyle(color));
+        };
+
+        createConfirmationButton(295, 'SÌ, NUOVA PARTITA', 0xe74c3c, () => {
+            this.closeMenu();
+            this.newGame();
+        });
+        createConfirmationButton(505, 'ANNULLA', 0x555555, () => {});
+    }
+
     async newGame() {
         await window.SaveManager.deleteSave();
         localStorage.removeItem('waitress_save_data');
         localStorage.removeItem('waitress_crime_data');
         localStorage.removeItem('waitress_story_data');
         localStorage.removeItem('waitress_quest_data');
+
+
+        localStorage.removeItem('waitress_identity_created');
+        localStorage.removeItem('waitress_nickname');
+        localStorage.removeItem('waitress_birth_day');
+        localStorage.removeItem('waitress_birth_month');
+        localStorage.removeItem('waitress_birth_year');
 
         await window.SaveManager.clearNPCMemories();
 
@@ -226,13 +284,16 @@ class SaveMenu {
 
         createSmallBtn(280, 330, "✅ SÌ", 0x27ae60, () => {
             localStorage.setItem('waitress_tutorial_done', 'false');
-            this.scene.scene.start('Game');
+            window.FORCE_TUTORIAL = true;
+            window.START_TUTORIAL_DIRECTLY = true;
+            this.scene.scene.start('NewPlayer');
         });
         createSmallBtn(520, 330, "❌ NO", 0xe74c3c, () => {
             localStorage.setItem('waitress_tutorial_done', 'true');
+            window.FORCE_TUTORIAL = false;
             GAME.level = 1;
             GAME.customersTarget = 6 + GAME.level * 4;
-            this.scene.scene.start('Game');
+            this.scene.scene.start('NewPlayer');
         });
     }
 }

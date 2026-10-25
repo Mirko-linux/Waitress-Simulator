@@ -27,10 +27,18 @@ class CrimeSystem {
 
         this.clanMemberSprite = null;
         this.clanMemberShadow = null;
+        this.clanMemberBubble = null;
         this.clanMemberActive = false;
+        this._clanMoveTimer = null;
         this.clanSheetCode = null;
         this.clanSheetExpiry = 0;
         this.clanSecondTaskActive = false;
+        this._clanDialogActive = false;
+
+
+        this.clanCallDeliveredToday = false;
+        this.clanCallDay = -1;
+        this.clanRefusedPermanently = false;
 
         this._inspectionActive = false;
         this._inspectionPolice = null;
@@ -83,6 +91,11 @@ class CrimeSystem {
                 this.poisonedCustomerName = data.poisonedCustomerName || null;
                 this.poisoningHappened = data.poisoningHappened || false;
                 this.missionTargetName = data.missionTargetName || null;
+
+
+                this.clanCallDeliveredToday = data.clanCallDeliveredToday || false;
+                this.clanCallDay = data.clanCallDay || -1;
+                this.clanRefusedPermanently = data.clanRefusedPermanently || false;
             } catch(e) {}
         }
     }
@@ -108,7 +121,10 @@ class CrimeSystem {
             clanSecondTaskActive: this.clanSecondTaskActive,
             poisonedCustomerName: this.poisonedCustomerName,
             poisoningHappened: this.poisoningHappened,
-            missionTargetName: this.missionTargetName
+            missionTargetName: this.missionTargetName,
+            clanCallDeliveredToday: this.clanCallDeliveredToday,
+            clanCallDay: this.clanCallDay,
+            clanRefusedPermanently: this.clanRefusedPermanently
         }));
         this.updateInventoryUI();
     }
@@ -135,6 +151,9 @@ class CrimeSystem {
         this.poisonedCustomerName = null;
         this.poisoningHappened = false;
         this.missionTargetName = null;
+        this.clanCallDeliveredToday = false;
+        this.clanCallDay = -1;
+        this.clanRefusedPermanently = false;
         this.syncSuspicionToGame();
         this.updateInventoryUI();
     }
@@ -258,31 +277,31 @@ class CrimeSystem {
             this.scene.spawnEvent.paused = true;
         }
 
-        this.spawnInspectionPolice();
+        this.spawnInspectionPolice(false);
     }
 
-    spawnInspectionPolice() {
+    spawnInspectionPolice(silent) {
         const playerObj = this.scene.waitress || this.scene.player || { x: 400, y: 300 };
 
         const police = {
-            name: 'Poliziotto',
+            name: 'Finanziere',
             hasDirectionalTextures: true,
-            textureUp: 'Poliziotto_Dietro',
-            textureDown: 'Poliziotto_Avanti',
-            textureLeft: 'Poliziotto_Sinistra',
-            textureRight: 'Poliziotto_Destra',
+            textureUp: 'Finanza_Dietro',
+            textureDown: 'Finanza_Avanti',
+            textureLeft: 'Finanza_Sinistra',
+            textureRight: 'Finanza_Destra',
             x: 240,
             y: 592,
             sprite: null,
             shadow: null,
-            speed: 90,
+            speed: silent ? 120 : 90,
             movementData: null,
             isInspection: true
         };
 
-        if (!this.scene.textures.exists('Poliziotto_Avanti')) {
+        if (!this.scene.textures.exists('Finanza_Avanti')) {
             police.shadow = this.scene.add.ellipse(police.x, police.y + 10, 20, 5, 0x000000, 0.25).setDepth(police.y - 1);
-            police.sprite = this.scene.add.text(police.x, police.y, '👮', {
+            police.sprite = this.scene.add.text(police.x, police.y, '🕵️', {
                 fontSize: '32px'
             }).setOrigin(0.5).setDepth(police.y);
             police.isEmoji = true;
@@ -423,7 +442,7 @@ class CrimeSystem {
 
         this.scene.time.delayedCall(3000, () => {
             this.endInspection();
-            this.arrest('polizia', 'tentata_fuga', 7);
+            this.arrest('finanza', 'tentata_fuga', 7);
         });
     }
 
@@ -543,7 +562,7 @@ class CrimeSystem {
 
             if (saveTampered) {
                 this.endInspection();
-                this.arrest('polizia', 'manomissione_file', 5);
+                this.arrest('finanza', 'manomissione_file', 5);
                 return;
             }
 
@@ -553,13 +572,13 @@ class CrimeSystem {
                     this.arrest('finanza', 'contraffazione', 3);
                 } else if (this.hasPoison) {
                     this.endInspection();
-                    this.arrest('polizia', 'detenzione_veleno', 2);
+                    this.arrest('finanza', 'detenzione_veleno', 2);
                 } else if (this.inventory.includes('clan_sheet')) {
                     this.endInspection();
-                    this.arrest('polizia', 'associazione_delinquere', 5);
+                    this.arrest('finanza', 'associazione_delinquere', 5);
                 } else {
                     this.endInspection();
-                    this.arrest('polizia', 'detenzione_illegale', 1);
+                    this.arrest('finanza', 'detenzione_illegale', 1);
                 }
             } else if (hasIllegalItems && hiding) {
                 if (typeof this.scene.showFloatingText === 'function') {
@@ -625,7 +644,7 @@ class CrimeSystem {
                 }
                 this.scene.time.delayedCall(1500, () => {
                     this.endInspection();
-                    this.arrest('polizia', 'avvelenamento', 6);
+                    this.arrest('finanza', 'avvelenamento', 6);
                 });
                 return;
             }
@@ -643,7 +662,7 @@ class CrimeSystem {
                     }
                     this.scene.time.delayedCall(1500, () => {
                         this.endInspection();
-                        this.arrest('polizia', 'avvelenamento', 5);
+                        this.arrest('finanza', 'avvelenamento', 5);
                     });
                 }
                 return;
@@ -726,8 +745,8 @@ class CrimeSystem {
         if (this.scene.physics) this.scene.physics.pause();
 
         let text;
-        if (authority === 'polizia') {
-            text = this.getPoliceText(crimeType, days, fine);
+        if (authority === 'finanza') {
+            text = this.getFinanceText(crimeType, days, fine);
         } else {
             text = this.getFinanceText(crimeType, days, fine);
         }
@@ -791,10 +810,10 @@ class CrimeSystem {
         });
     }
 
-    getPoliceText(crimeType, days, fine) {
+    getFinanceText(crimeType, days, fine) {
         const texts = {
             'manomissione_file':
-                "PROCURA DELLA REPUBBLICA DI PALERMO\n\n" +
+                "CORPO DI FINANZA - COMANDO PROVINCIALE\n\n" +
                 "Mandato di Arresto Esecutivo\n\n" +
                 "La S.V. è in arresto per il reato di\n" +
                 "Frode Informatica e Alterazione di Dati.\n\n" +
@@ -806,7 +825,7 @@ class CrimeSystem {
                 "La cameriera è in stato di fermo.",
 
             'avvelenamento':
-                "PROCURA DELLA REPUBBLICA DI PALERMO\n\n" +
+                "CORPO DI FINANZA - COMANDO PROVINCIALE\n\n" +
                 "Mandato di Arresto Esecutivo\n\n" +
                 "La S.V. è in arresto per il reato di\n" +
                 "Lesioni Dolose con Somministrazione\n" +
@@ -819,7 +838,7 @@ class CrimeSystem {
                 "La cameriera è in stato di fermo.",
 
             'detenzione_veleno':
-                "PROCURA DELLA REPUBBLICA DI PALERMO\n\n" +
+                "CORPO DI FINANZA - COMANDO PROVINCIALE\n\n" +
                 "Mandato di Arresto Esecutivo\n\n" +
                 "La S.V. è in arresto per il reato di\n" +
                 "Detenzione di Sostanze Nocive\n" +
@@ -832,7 +851,7 @@ class CrimeSystem {
                 "La cameriera è in stato di fermo.",
 
             'detenzione_illegale':
-                "PROCURA DELLA REPUBBLICA DI PALERMO\n\n" +
+                "CORPO DI FINANZA - COMANDO PROVINCIALE\n\n" +
                 "Mandato di Arresto Esecutivo\n\n" +
                 "La S.V. è in arresto per il reato di\n" +
                 "Detenzione di Oggetti di Provenienza\n" +
@@ -845,7 +864,7 @@ class CrimeSystem {
                 "La cameriera è in stato di fermo.",
 
             'corruzione':
-                "PROCURA DELLA REPUBBLICA DI PALERMO\n\n" +
+                "CORPO DI FINANZA - COMANDO PROVINCIALE\n\n" +
                 "Mandato di Arresto Esecutivo\n\n" +
                 "La S.V. è in arresto per il reato di\n" +
                 "Corruzione di Pubblico Ufficiale.\n\n" +
@@ -857,7 +876,7 @@ class CrimeSystem {
                 "La cameriera è in stato di fermo.",
 
             'associazione_delinquere':
-                "PROCURA DELLA REPUBBLICA DI PALERMO\n\n" +
+                "CORPO DI FINANZA - COMANDO PROVINCIALE\n\n" +
                 "Mandato di Arresto Esecutivo\n\n" +
                 "La S.V. è in arresto per il reato di\n" +
                 "Associazione a Delinquere.\n\n" +
@@ -869,7 +888,7 @@ class CrimeSystem {
                 "La cameriera è in stato di fermo.",
 
             'tentata_fuga':
-                "PROCURA DELLA REPUBBLICA DI PALERMO\n\n" +
+                "CORPO DI FINANZA - COMANDO PROVINCIALE\n\n" +
                 "Mandato di Arresto Esecutivo\n\n" +
                 "La S.V. è in arresto per il reato di\n" +
                 "Resistenza a Pubblico Ufficiale\n" +
@@ -879,13 +898,8 @@ class CrimeSystem {
                 "Il fatto è punito ai sensi dell'Art. 337 C.P.\n\n" +
                 `PENA: ${days} GIORNI DI RECLUSIONE\n` +
                 `MULTA: ${fine}€\n\n` +
-                "La cameriera è in stato di fermo."
-        };
-        return texts[crimeType] || texts['detenzione_illegale'];
-    }
+                "La cameriera è in stato di fermo.",
 
-    getFinanceText(crimeType, days, fine) {
-        const texts = {
             'frode_fiscale':
                 "CORPO DI FINANZA - COMANDO PROVINCIALE\n\n" +
                 "Verbale di Contestazione\n\n" +
@@ -1144,15 +1158,7 @@ class CrimeSystem {
         }
     }
 
-    triggerClanCall() {
-        if (this.clanMissionCompleted || this.hasAcceptedClanMission) return;
 
-        if (this.scene.phone) {
-            this.scene.phone.triggerCall('clan');
-        } else {
-            this.acceptClanMission();
-        }
-    }
 
     acceptClanMission() {
         if (this.hasAcceptedClanMission) return;
@@ -1165,134 +1171,422 @@ class CrimeSystem {
             this.spawnClanMember();
             if (typeof this.scene.showFloatingText === 'function') {
                 this.scene.showFloatingText(400, 260, '🧔‍♂️ Un uomo sospetto attende nell\'angolo...', '#ff4444');
-                this.scene.showFloatingText(400, 290, '💬 Avvicinati per parlargli', '#ffd700');
             }
         });
     }
 
-    spawnClanMember() {
-        if (this.clanMemberSprite) return;
-        this.clanMemberActive = true;
+spawnClanMember() {
+    if (this.clanMemberSprite) return;
+    this.clanMemberActive = true;
 
-        const startX = 240;
-        const startY = 580;
-        const targetX = 80;
-        const targetY = 520;
+    const startX = 240;
+    const startY = 580;
+    const targetX = 80;
+    const targetY = 520;
+
+
+    this.clanMemberShadow = this.scene.add.ellipse(startX, startY + 10, 22, 6, 0x000000, 0.3).setDepth(startY - 1);
+
+
+    if (this.scene.textures.exists('Criminale_Avanti')) {
+        this.clanMemberSprite = this.scene.add.image(startX, startY, 'Criminale_Avanti')
+            .setDisplaySize(45, 45)
+            .setDepth(startY)
+            .setInteractive({ useHandCursor: true });
+    } else {
+        this.clanMemberSprite = this.scene.add.text(startX, startY, '🧔‍♂️', { fontSize: '32px' })
+            .setOrigin(0.5)
+            .setDepth(startY)
+            .setInteractive({ useHandCursor: true });
+    }
+
+
+    const waypoints = [
+        { x: startX, y: startY },
+        { x: 200, y: 540 },
+        { x: 120, y: 540 },
+        { x: targetX, y: targetY }
+    ];
+
+    let currentWp = 1;
+
+
+    if (this._clanMoveTimer) {
+        this._clanMoveTimer.remove();
+        this._clanMoveTimer = null;
+    }
+
+    this._clanMoveTimer = this.scene.time.addEvent({
+        delay: 16,
+        loop: true,
+        callback: () => {
+
+            if (!this.clanMemberSprite || !this.clanMemberSprite.active) {
+                if (this._clanMoveTimer) {
+                    this._clanMoveTimer.remove();
+                    this._clanMoveTimer = null;
+                }
+                return;
+            }
+
+
+            if (currentWp >= waypoints.length) {
+                if (this._clanMoveTimer) {
+                    this._clanMoveTimer.remove();
+                    this._clanMoveTimer = null;
+                }
+                this.onClanMemberArrived();
+                return;
+            }
+
+            const dest = waypoints[currentWp];
+            if (!dest) {
+                if (this._clanMoveTimer) {
+                    this._clanMoveTimer.remove();
+                    this._clanMoveTimer = null;
+                }
+                this.onClanMemberArrived();
+                return;
+            }
+
+            const dx = dest.x - this.clanMemberSprite.x;
+            const dy = dest.y - this.clanMemberSprite.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist <= 3) {
+                this.clanMemberSprite.x = dest.x;
+                this.clanMemberSprite.y = dest.y;
+
+                if (this.clanMemberShadow) {
+                    this.clanMemberShadow.x = this.clanMemberSprite.x;
+                    this.clanMemberShadow.y = this.clanMemberSprite.y + 10;
+                }
+
+                currentWp++;
+
+
+                if (currentWp >= waypoints.length) {
+                    if (this._clanMoveTimer) {
+                        this._clanMoveTimer.remove();
+                        this._clanMoveTimer = null;
+                    }
+                    this.onClanMemberArrived();
+                }
+                return;
+            }
+
+            const speed = 70;
+            const step = Math.min(dist, speed * (16 / 1000));
+            const ratio = step / dist;
+            this.clanMemberSprite.x += dx * ratio;
+            this.clanMemberSprite.y += dy * ratio;
+            this.clanMemberSprite.setDepth(this.clanMemberSprite.y);
+
+            if (this.clanMemberShadow) {
+                this.clanMemberShadow.x = this.clanMemberSprite.x;
+                this.clanMemberShadow.y = this.clanMemberSprite.y + 10;
+            }
+
+
+            if (this.scene.textures.exists('Criminale_Sinistra') && this.scene.textures.exists('Criminale_Destra')) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    this.clanMemberSprite.setTexture(dx > 0 ? 'Criminale_Destra' : 'Criminale_Sinistra');
+                } else {
+                    this.clanMemberSprite.setTexture(dy > 0 ? 'Criminale_Avanti' : 'Criminale_Dietro');
+                }
+                this.clanMemberSprite.setDisplaySize(45, 45);
+            }
+        }
+    });
+}
+    onClanMemberArrived() {
+        if (!this.clanMemberSprite) return;
+
 
         if (this.scene.textures.exists('Criminale_Avanti')) {
-            this.clanMemberShadow = this.scene.add.ellipse(startX, startY + 10, 22, 6, 0x000000, 0.3).setDepth(startY - 1);
-            this.clanMemberSprite = this.scene.add.image(startX, startY, 'Criminale_Avanti')
-                .setDisplaySize(45, 45)
-                .setDepth(startY)
-                .setInteractive({ useHandCursor: true });
-        } else {
-            this.clanMemberShadow = this.scene.add.ellipse(startX, startY + 10, 22, 6, 0x000000, 0.3).setDepth(startY - 1);
-            this.clanMemberSprite = this.scene.add.text(startX, startY, '🧔‍♂️', { fontSize: '32px' })
-                .setOrigin(0.5)
-                .setDepth(startY)
-                .setInteractive({ useHandCursor: true });
+            this.clanMemberSprite.setTexture('Criminale_Avanti');
+            this.clanMemberSprite.setDisplaySize(45, 45);
         }
 
+
+        this.clanMemberBubble = this.scene.add.image(
+            this.clanMemberSprite.x,
+            this.clanMemberSprite.y - 45,
+            'bubble_mission'
+        ).setDisplaySize(38, 38).setOrigin(0.5).setDepth(this.clanMemberSprite.y + 5);
+
+        this.clanMemberBubble.setInteractive({ useHandCursor: true });
+
         this.scene.tweens.add({
-            targets: [this.clanMemberSprite, this.clanMemberShadow],
-            x: targetX,
-            y: (target) => target === this.clanMemberShadow ? targetY + 10 : targetY,
-            duration: 3000,
-            ease: 'Linear',
-            onUpdate: () => {
-                if (this.clanMemberSprite) {
-                    this.clanMemberSprite.setDepth(this.clanMemberSprite.y);
-                }
-            },
-            onComplete: () => {
-                if (this.clanMemberSprite && this.scene.textures.exists('Criminale_Avanti')) {
-                    this.clanMemberSprite.setTexture('Criminale_Avanti');
-                }
-            }
+            targets: this.clanMemberBubble,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            duration: 700,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
         });
 
-        this.clanMemberSprite.on('pointerdown', () => {
-            const playerObj = this.scene.waitress || this.scene.player || { x: 0, y: 0 };
+        this.clanMemberBubble.on('pointerdown', (pointer, localX, localY, event) => {
+            if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+            if (this.scene.isPhoneActive) return;
+
+            const playerObj = this.scene.waitress || this.scene.player;
+            if (!playerObj) return;
+
             const dist = Phaser.Math.Distance.Between(
-                playerObj.x,
-                playerObj.y,
-                this.clanMemberSprite.x,
-                this.clanMemberSprite.y
+                playerObj.x, playerObj.y,
+                this.clanMemberSprite.x, this.clanMemberSprite.y
             );
-            if (dist <= 80) {
-                this.talkToClanMember();
+
+            if (dist <= 90) {
+                this.openClanDialog();
             } else {
                 if (typeof this.scene.showFloatingText === 'function') {
                     this.scene.showFloatingText(400, 250, 'Avvicinati all\'uomo nell\'angolo', '#ffd700');
                 }
             }
         });
-    }
 
-    talkToClanMember() {
-        if (this.clanMissionCompleted) {
-            if (typeof this.scene.showFloatingText === 'function') {
-                this.scene.showFloatingText(400, 250, 'Il clan ti ha già pagato.', '#999999');
-            }
-            return;
-        }
-
-        if (!this.hasClanSheet) {
-            this.hasClanSheet = true;
-            if (!this.inventory.includes('clan_sheet')) {
-                this.inventory.push('clan_sheet');
-            }
-            this.saveCrimeData();
-            
-            if (typeof this.scene.showFloatingText === 'function') {
-                this.scene.showFloatingText(400, 250, '📄 Il mafioso ti consegna un foglio con un codice!', '#ffd700');
-                this.scene.showFloatingText(400, 280, '💻 Vai a casa e usa hiddenvault.com sul PC', '#3498db');
-            }
-            
-            this.makeClanMemberLeave();
-            return;
-        }
-
-        const hasBoughtFromDarkWeb = this.darkWebAccessCount > 0;
-        if (!hasBoughtFromDarkWeb) {
-            if (typeof this.scene.showFloatingText === 'function') {
-                this.scene.showFloatingText(400, 250, '🧔‍♂️ "Usa quel codice su Hidden Vault prima."', '#ff4444');
-            }
-            return;
-        }
-
-        this.completeClanMission();
-    }
-
-    makeClanMemberLeave() {
-        if (!this.clanMemberSprite) return;
-
-        const exitX = 240;
-        const exitY = 592;
-
-        if (this.scene.textures.exists('Criminale_Destra')) {
-            this.clanMemberSprite.setTexture('Criminale_Destra');
-        }
-
-        this.scene.tweens.add({
-            targets: [this.clanMemberSprite, this.clanMemberShadow],
-            x: exitX,
-            y: (target) => target === this.clanMemberShadow ? exitY + 10 : exitY,
-            duration: 2500,
-            ease: 'Linear',
-            onComplete: () => {
-                if (this.clanMemberSprite) {
-                    this.clanMemberSprite.destroy();
-                    this.clanMemberSprite = null;
-                }
-                if (this.clanMemberShadow) {
-                    this.clanMemberShadow.destroy();
-                    this.clanMemberShadow = null;
-                }
-                this.clanMemberActive = false;
+        this.clanMemberSprite.on('pointerdown', () => {
+            const playerObj = this.scene.waitress || this.scene.player;
+            if (!playerObj) return;
+            const dist = Phaser.Math.Distance.Between(
+                playerObj.x, playerObj.y,
+                this.clanMemberSprite.x, this.clanMemberSprite.y
+            );
+            if (dist <= 90) {
+                this.openClanDialog();
             }
         });
+
+        if (typeof this.scene.showFloatingText === 'function') {
+            this.scene.showFloatingText(400, 250, '💬 Clicca sulla bubble per parlare', '#ffd700');
+        }
     }
+
+    openClanDialog() {
+        if (this._clanDialogActive) return;
+        this._clanDialogActive = true;
+
+        if (this.clanMemberBubble) {
+            this.clanMemberBubble.destroy();
+            this.clanMemberBubble = null;
+        }
+
+        if (!this.scene.scene.get('ClanDialog')) {
+            this.scene.scene.add('ClanDialog', window.ClanDialogScene, false);
+        }
+
+        this.scene.scene.launch('ClanDialog', {
+            mode: 'face',
+            onAccept: () => {
+                this.onClanDialogAccepted();
+            },
+            onRefuse: (postponed) => {
+                this.onClanDialogRefused(postponed);
+            },
+            onComplete: () => {
+                this._clanDialogActive = false;
+            }
+        });
+
+        this.scene.scene.pause();
+    }
+
+    onClanDialogAccepted() {
+        if (this.scene.scene.isPaused()) {
+            this.scene.scene.resume();
+        }
+
+        if (typeof this.scene.showFloatingText === 'function') {
+            this.scene.showFloatingText(400, 260, '🤝 Hai accettato la missione del clan.', '#9b59b6');
+            this.scene.showFloatingText(400, 300, '📄 Il mafioso ti consegna un foglio con un codice...', '#ffd700');
+        }
+
+        this.hasClanSheet = true;
+        if (!this.inventory.includes('clan_sheet')) {
+            this.inventory.push('clan_sheet');
+        }
+        this.saveCrimeData();
+
+        this.scene.time.delayedCall(2500, () => {
+            this.makeClanMemberLeave();
+        });
+    }
+
+    onClanDialogRefused(postponed) {
+        if (this.scene.scene.isPaused()) {
+            this.scene.scene.resume();
+        }
+
+        if (postponed) {
+            if (typeof this.scene.showFloatingText === 'function') {
+                this.scene.showFloatingText(400, 260, '🤔 Hai chiesto tempo. Il clan tornerà domani.', '#f39c12');
+            }
+
+            this.clanCallDeliveredToday = false;
+            this.clanRefusedPermanently = false;
+            this.saveCrimeData();
+        } else {
+            if (typeof this.scene.showFloatingText === 'function') {
+                this.scene.showFloatingText(400, 260, '❌ Hai rifiutato. Il clan non dimentica.', '#e74c3c');
+            }
+            this.clanBetrayed = true;
+            this.clanRefusedPermanently = true;
+            this.addSuspicion(25, 'clan');
+            this.saveCrimeData();
+
+
+
+            if (this.scene.kitchen && typeof this.scene.kitchen.triggerVandalism === 'function') {
+                this.scene.kitchen.triggerVandalism();
+            }
+
+
+            window.GAME.score = Math.max(0, window.GAME.score - 300);
+            if (typeof this.scene.updateHUD === 'function') this.scene.updateHUD();
+
+
+            if (typeof this.scene.showFloatingText === 'function') {
+                this.scene.showFloatingText(400, 300, '💥 Il locale è stato vandalizzato! -300€', '#ff0000');
+                this.scene.showFloatingText(400, 330, '🔥 "Ci vediamo presto, cameriera."', '#ff4444');
+            }
+
+
+            if (this.scene.phone) {
+                this.scene.phone.clanCallDelivered = true;
+                this.scene.phone.clanRefusedPermanently = true;
+            }
+        }
+
+        this.scene.time.delayedCall(2500, () => {
+            this.makeClanMemberLeave();
+        });
+    }
+ makeClanMemberLeave() {
+    if (!this.clanMemberSprite) return;
+
+    if (this.clanMemberBubble) {
+        this.clanMemberBubble.destroy();
+        this.clanMemberBubble = null;
+    }
+
+    const exitX = 240;
+    const exitY = 592;
+
+    const waypoints = [
+        { x: this.clanMemberSprite.x, y: this.clanMemberSprite.y },
+        { x: 120, y: 540 },
+        { x: 200, y: 540 },
+        { x: exitX, y: exitY }
+    ];
+
+    let currentWp = 1;
+
+
+    if (this._clanMoveTimer) {
+        this._clanMoveTimer.remove();
+        this._clanMoveTimer = null;
+    }
+
+    this._clanMoveTimer = this.scene.time.addEvent({
+        delay: 16,
+        loop: true,
+        callback: () => {
+            if (!this.clanMemberSprite || !this.clanMemberSprite.active) {
+                if (this._clanMoveTimer) {
+                    this._clanMoveTimer.remove();
+                    this._clanMoveTimer = null;
+                }
+                this._cleanupClanMember();
+                return;
+            }
+
+            if (currentWp >= waypoints.length) {
+                if (this._clanMoveTimer) {
+                    this._clanMoveTimer.remove();
+                    this._clanMoveTimer = null;
+                }
+                this._cleanupClanMember();
+                return;
+            }
+
+            const dest = waypoints[currentWp];
+            if (!dest) {
+                if (this._clanMoveTimer) {
+                    this._clanMoveTimer.remove();
+                    this._clanMoveTimer = null;
+                }
+                this._cleanupClanMember();
+                return;
+            }
+
+            const dx = dest.x - this.clanMemberSprite.x;
+            const dy = dest.y - this.clanMemberSprite.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist <= 3) {
+                this.clanMemberSprite.x = dest.x;
+                this.clanMemberSprite.y = dest.y;
+
+                if (this.clanMemberShadow) {
+                    this.clanMemberShadow.x = this.clanMemberSprite.x;
+                    this.clanMemberShadow.y = this.clanMemberSprite.y + 10;
+                }
+
+                currentWp++;
+
+                if (currentWp >= waypoints.length) {
+                    if (this._clanMoveTimer) {
+                        this._clanMoveTimer.remove();
+                        this._clanMoveTimer = null;
+                    }
+                    this._cleanupClanMember();
+                }
+                return;
+            }
+
+            const speed = 70;
+            const step = Math.min(dist, speed * (16 / 1000));
+            const ratio = step / dist;
+            this.clanMemberSprite.x += dx * ratio;
+            this.clanMemberSprite.y += dy * ratio;
+            this.clanMemberSprite.setDepth(this.clanMemberSprite.y);
+
+            if (this.clanMemberShadow) {
+                this.clanMemberShadow.x = this.clanMemberSprite.x;
+                this.clanMemberShadow.y = this.clanMemberSprite.y + 10;
+            }
+
+            if (this.scene.textures.exists('Criminale_Sinistra') && this.scene.textures.exists('Criminale_Destra')) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    this.clanMemberSprite.setTexture(dx > 0 ? 'Criminale_Destra' : 'Criminale_Sinistra');
+                } else {
+                    this.clanMemberSprite.setTexture(dy > 0 ? 'Criminale_Avanti' : 'Criminale_Dietro');
+                }
+                this.clanMemberSprite.setDisplaySize(45, 45);
+            }
+        }
+    });
+}
+
+_cleanupClanMember() {
+    if (this.clanMemberSprite) {
+        try { this.clanMemberSprite.destroy(); } catch(e) {}
+        this.clanMemberSprite = null;
+    }
+    if (this.clanMemberShadow) {
+        try { this.clanMemberShadow.destroy(); } catch(e) {}
+        this.clanMemberShadow = null;
+    }
+    if (this.clanMemberBubble) {
+        try { this.clanMemberBubble.destroy(); } catch(e) {}
+        this.clanMemberBubble = null;
+    }
+    this.clanMemberActive = false;
+    this._clanMoveTimer = null;
+}
 
     completeClanMission() {
         if (this.clanMissionCompleted) return;
@@ -1313,8 +1607,6 @@ class CrimeSystem {
             this.scene.showFloatingText(400, 250, '💰 Il clan ti paga: +500€', '#2ecc71');
             this.scene.showFloatingText(400, 280, '⚠️ Ora sei dentro. Non puoi più uscire.', '#ff4444');
         }
-
-        this.makeClanMemberLeave();
     }
 
     betrayClan() {

@@ -46,13 +46,13 @@ class HouseScene extends Phaser.Scene {
         this.allHtmlInputs = [];
         this.scrollOffsetY = 0;
         this.purchasedSpritesGroup = null;
-        this.iveaPendingDeliveries = [];
         this.iveaPackageSprite = null;
         this.iveaPackageZone = null;
         this.iveaPackageGlow = null;
         this.iveaPlacementMode = false;
         this.iveaItemToPlace = null;
         this.iveaPlacementPreview = null;
+        this.scrollThumb = null;
         this.crime = null;
         this.coffeeUsedToday = false;
         this.coffeeInProgress = false;
@@ -69,6 +69,8 @@ class HouseScene extends Phaser.Scene {
         this.isLeaving = false;
 
         this.calendarMonthOffset = 0;
+
+        this.mailSystem = null;
     }
 
     preload() {
@@ -87,7 +89,7 @@ class HouseScene extends Phaser.Scene {
 
         this.load.audio('caffe', [
             'assets/audio/caffe.wav',
-            'assets/audio/caffè.wav'
+            'assets/audio/caffè.wav'
         ]);
     }
 
@@ -130,7 +132,6 @@ class HouseScene extends Phaser.Scene {
         }
 
         this.loadHouseData();
-        this.loadIveaDeliveries();
         this.createTilemap();
         this.createPlayer();
         this.createObjects();
@@ -141,6 +142,33 @@ class HouseScene extends Phaser.Scene {
 
         if (typeof CrimeSystem !== 'undefined') {
             this.crime = new CrimeSystem(this);
+        }
+
+        if (typeof MailSystem !== 'undefined') {
+            this.mailSystem = new MailSystem(this);
+            this.mailSystem.spawnMailbox();
+
+            const currentLevel = window.GAME.level || 1;
+
+            if (currentLevel >= 2 && !this.mailSystem.iveaFlyerDelivered) {
+                this.time.delayedCall(3000, () => {
+                    this.mailSystem.deliverIveaFlyer();
+                });
+            } else if (this.mailSystem.iveaFlyerDelivered && !this.mailSystem.iveaFlyerRead) {
+                this.time.delayedCall(1500, () => {
+                    this.mailSystem.deliverIveaFlyer();
+                });
+            }
+
+            if (currentLevel >= 5 && !this.mailSystem.letterDelivered) {
+                this.time.delayedCall(6000, () => {
+                    this.mailSystem.deliverLetter();
+                });
+            } else if (this.mailSystem.hasLetter && !this.mailSystem.letterRead) {
+                this.time.delayedCall(1500, () => {
+                    this.mailSystem.deliverLetter();
+                });
+            }
         }
 
         this.cameras.main.setBounds(0, 0, 800, 600);
@@ -230,59 +258,49 @@ class HouseScene extends Phaser.Scene {
         });
     }
 
-    loadIveaDeliveries() {
-        try {
-            const raw = localStorage.getItem('waitress_ivea_deliveries');
-            this.iveaPendingDeliveries = raw ? JSON.parse(raw) : [];
-        } catch(e) {
-            this.iveaPendingDeliveries = [];
-        }
+    checkIveaDeliveries() {
+        if (!this.mailSystem) return;
+        if (this.iveaPackageSprite) return;
 
-        const now = Date.now();
-        this.iveaPendingDeliveries.forEach(delivery => {
-            if (delivery.target === 'restaurant') return;
-            const elapsed = now - delivery.orderTime;
-            const remaining = Math.max(0, delivery.deliveryTime - elapsed);
-            this.time.delayedCall(remaining, () => this.spawnIveaPackage(delivery));
+        const ready = this.mailSystem.getReadyDeliveries('house')
+            .filter(delivery => 
+                delivery.target === 'house' || 
+                !delivery.target
+            );
+        
+        if (ready.length === 0) return;
+
+        const delivery = ready[0];
+        this.mailSystem.consumeDelivery(delivery);
+        this.spawnIveaPackage(delivery);
+    }
+
+    checkUpgradeDeliveries() {
+        if (!this.mailSystem) return;
+
+        const ready = this.mailSystem.getReadyDeliveries('upgrade')
+            .filter(delivery => 
+                delivery.target === 'upgrade' || 
+                delivery.target === 'house' ||
+                !delivery.target
+            );
+
+        if (ready.length === 0) return;
+
+        ready.forEach(delivery => {
+            this.mailSystem.consumeDelivery(delivery);
+
+            const savedUpgrades = JSON.parse(localStorage.getItem('waitress_house_upgrades') || '{}');
+            savedUpgrades[delivery.id] = (savedUpgrades[delivery.id] || 0) + 1;
+            localStorage.setItem('waitress_house_upgrades', JSON.stringify(savedUpgrades));
+
+            this.showFloatingText(400, 300,
+                `⚙️ ${delivery.name} installato!`,
+                '#2ecc71');
         });
     }
 
-    saveIveaDeliveries() {
-        localStorage.setItem('waitress_ivea_deliveries', JSON.stringify(this.iveaPendingDeliveries));
-    }
-
-    queueIveaDelivery(item) {
-        const deliveryTime = 120000;
-        const delivery = {
-            id: item.id,
-            name: item.name,
-            emoji: item.emoji,
-            price: item.price,
-            target: item.target || 'house',
-            orderTime: Date.now(),
-            deliveryTime: deliveryTime
-        };
-
-        this.iveaPendingDeliveries.push(delivery);
-        this.saveIveaDeliveries();
-
-        if (delivery.target === 'house') {
-            this.time.delayedCall(deliveryTime, () => {
-                if (this.scene && this.scene.isActive()) {
-                    this.spawnIveaPackage(delivery);
-                }
-            });
-        }
-
-        this.showMessage(`📦 Ordine effettuato: ${item.name}!`, '#2ecc71');
-    }
-
     spawnIveaPackage(delivery) {
-        if (delivery.target === 'restaurant') return;
-
-        this.iveaPendingDeliveries = this.iveaPendingDeliveries.filter(d => d.orderTime !== delivery.orderTime);
-        this.saveIveaDeliveries();
-
         const entryX = 200;
         const entryY = 520;
 
@@ -352,6 +370,8 @@ class HouseScene extends Phaser.Scene {
                 this.openIveaPackage(delivery);
             }
         });
+
+        this.showFloatingText(entryX, entryY - 60, '📦 Consegna IVEA!', '#3498db');
     }
 
     openIveaPackage(delivery) {
@@ -452,6 +472,9 @@ class HouseScene extends Phaser.Scene {
             { id: 'crib', name: 'Culla', emoji: '🛏️' },
             { id: 'double_bed', name: 'Letto Matrimoniale', emoji: '🛋️' },
             { id: 'alarm_system', name: 'Allarme Antifurto', emoji: '🚨' },
+            { id: 'desk', name: 'Scrivania', emoji: '🪑' },
+            { id: 'bookshelf', name: 'Libreria', emoji: '📚' },
+            { id: 'modem', name: 'Modem Wi-Fi', emoji: '📶' },
             { id: 'resto_tv', name: 'Televisione', emoji: '📺' },
             { id: 'resto_radio', name: 'Radio', emoji: '📻' },
             { id: 'resto_plant', name: 'Pianta', emoji: '🪴' },
@@ -633,14 +656,31 @@ class HouseScene extends Phaser.Scene {
         this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
             if (this.isComputerOpen && this.scrollableContentContainer) {
                 if (this.currentMenuTab === 'upgrades' || this.currentMenuTab === 'ivea' || this.currentMenuTab === 'hiddenvault') {
-                    this.scrollOffsetY = Phaser.Math.Clamp(this.scrollOffsetY - deltaY * 0.5, -250, 0);
+                    this.scrollOffsetY = Phaser.Math.Clamp(this.scrollOffsetY - deltaY * 0.5, -550, 0);
                     this.scrollableContentContainer.setY(this.scrollOffsetY);
+
+                    if (this.scrollThumb) {
+                        const progress = -this.scrollOffsetY / 550;
+                        this.scrollThumb.y = 220 + (progress * 260);
+                    }
                 }
             }
         });
     }
 
     update() {
+        if (this.mailSystem && typeof this.mailSystem.checkDeadline === 'function') {
+            this.mailSystem.checkDeadline();
+        }
+
+        if (this.mailSystem && typeof this.checkIveaDeliveries === 'function') {
+            this.checkIveaDeliveries();
+        }
+
+        if (this.mailSystem && typeof this.checkUpgradeDeliveries === 'function') {
+            this.checkUpgradeDeliveries();
+        }
+
         if (!this.player || !this.player.body || this.isComputerOpen || this.isTyping || this.iveaPlacementMode) {
             if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
             return;
@@ -774,7 +814,7 @@ class HouseScene extends Phaser.Scene {
             const playPromise = audio.play();
             if (playPromise && typeof playPromise.catch === 'function') {
                 playPromise.catch(() => {
-                    const altAudio = new Audio('assets/audio/caffè.wav');
+                    const altAudio = new Audio('assets/audio/caffè.wav');
                     altAudio.volume = 0.7;
                     altAudio.play().catch(() => {});
                 });
@@ -1013,6 +1053,26 @@ class HouseScene extends Phaser.Scene {
 
             container.add([cell, dayText, badge]);
 
+            if (d === 11) {
+                let briscolaState = null;
+                try {
+                    const raw = localStorage.getItem('waitress_briscola_state');
+                    if (raw) briscolaState = JSON.parse(raw);
+                } catch(e) {}
+
+                if (briscolaState && briscolaState.completed) {
+                    const briscolaBadge = this.add.text(x + 22, y - 18, '🏆', {
+                        fontSize: '12px', color: '#2ecc71'
+                    }).setOrigin(0.5);
+                    container.add(briscolaBadge);
+                } else if (briscolaState && briscolaState.failed && !briscolaState.completed) {
+                    const briscolaBadge = this.add.text(x + 22, y - 18, '🃏', {
+                        fontSize: '12px', color: '#e74c3c'
+                    }).setOrigin(0.5);
+                    container.add(briscolaBadge);
+                }
+            }
+
             if (isPast || isToday) {
                 cell.setInteractive({ useHandCursor: true });
 
@@ -1033,6 +1093,11 @@ class HouseScene extends Phaser.Scene {
             fontSize: '10px', color: '#aaaaaa', fontFamily: 'Fredoka'
         }).setOrigin(0.5));
 
+        container.add(this.add.text(400, 520,
+            '🃏 Briscola da recuperare   🏆 Briscola completata', {
+            fontSize: '10px', color: '#aaaaaa', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
         const closeBtn = this.add.text(670, 65, '✖', {
             fontSize: '28px', color: '#e74c3c', fontStyle: 'bold'
         }).setInteractive({ useHandCursor: true });
@@ -1042,6 +1107,17 @@ class HouseScene extends Phaser.Scene {
 
     startReplayDay(gameDay) {
         if (window.triggerSfx) window.triggerSfx('click');
+
+        let briscolaState = null;
+        try {
+            const raw = localStorage.getItem('waitress_briscola_state');
+            if (raw) briscolaState = JSON.parse(raw);
+        } catch(e) {}
+
+        if (briscolaState && briscolaState.failed && !briscolaState.completed) {
+            briscolaState.failed = false;
+            localStorage.setItem('waitress_briscola_state', JSON.stringify(briscolaState));
+        }
 
         localStorage.setItem('waitress_replay_day', String(gameDay));
         localStorage.setItem('waitress_original_day', String(window.GAME.level || 1));
@@ -1228,13 +1304,15 @@ class HouseScene extends Phaser.Scene {
             this.computerUIContainer = null;
         }
         this.scrollableContentContainer = null;
+        this.scrollThumb = null;
         this.clearHtmlInputs();
     }
 
     isCustomPanel() {
         return this.currentMenuTab === 'calendar' ||
                this.currentMenuTab === 'displaycase' ||
-               this.currentMenuTab === 'wardrobe';
+               this.currentMenuTab === 'wardrobe' ||
+               this.currentMenuTab === 'tax';
     }
 
     renderComputerUI() {
@@ -1265,9 +1343,16 @@ class HouseScene extends Phaser.Scene {
                 { id: 'search', label: 'WEB' }
             ];
 
+            if (this.mailSystem && this.mailSystem.knowsHowToDeclare) {
+                tabs.push({ id: 'tax', label: '📊 FISCO' });
+            }
+
+            const tabSpacing = 500 / tabs.length;
+            const startX = 400 - (500 / 2) + (tabSpacing / 2);
+
             tabs.forEach((tab, i) => {
-                const x = 190 + i * 140;
-                const btn = this.add.rectangle(x, 115, 125, 28, this.currentMenuTab === tab.id ? 0xd27d2d : 0x2c1a11).setInteractive({ useHandCursor: true });
+                const x = startX + i * tabSpacing;
+                const btn = this.add.rectangle(x, 115, tabSpacing - 15, 28, this.currentMenuTab === tab.id ? 0xd27d2d : 0x2c1a11).setInteractive({ useHandCursor: true });
                 const btnText = this.add.text(x, 115, tab.label, { fontSize: '11px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0.5);
                 btn.on('pointerdown', () => { this.currentMenuTab = tab.id; this.scrollOffsetY = 0; this.renderComputerUI(); });
                 this.computerUIContainer.add(btn);
@@ -1284,6 +1369,7 @@ class HouseScene extends Phaser.Scene {
         else if (this.currentMenuTab === 'calendar') this.renderCalendarContent();
         else if (this.currentMenuTab === 'displaycase') this.renderDisplayCaseContent();
         else if (this.currentMenuTab === 'wardrobe') this.renderWardrobeContent();
+        else if (this.currentMenuTab === 'tax') this.renderTaxContent();
     }
 
     renderUpgradesContent() {
@@ -1318,8 +1404,11 @@ class HouseScene extends Phaser.Scene {
             const nameTxt = this.add.text(150, yPos - 8, upg.name, { fontSize: '13px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0, 0.5);
             const descTxt = this.add.text(150, yPos + 8, `${upg.desc} (Lv. ${currentLvl}/${upg.maxLevel})`, { fontSize: '10px', color: '#aaaaaa', fontFamily: 'Fredoka' }).setOrigin(0, 0.5);
 
-            const buyBtn = this.add.rectangle(610, yPos, 70, 26, isMaxed ? 0x555555 : 0x27ae60).setInteractive({ useHandCursor: true });
-            const btnText = this.add.text(610, yPos, isMaxed ? 'MAX' : `${cost}€`, { fontSize: '11px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0.5);
+            let btnColor = isMaxed ? 0x555555 : 0x27ae60;
+            let btnLabel = isMaxed ? 'MAX' : `${cost}€`;
+
+            const buyBtn = this.add.rectangle(610, yPos, 70, 26, btnColor).setInteractive({ useHandCursor: true });
+            const btnText = this.add.text(610, yPos, btnLabel, { fontSize: '11px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0.5);
 
             this.scrollableContentContainer.add([card, nameTxt, descTxt, buyBtn, btnText]);
 
@@ -1327,8 +1416,10 @@ class HouseScene extends Phaser.Scene {
                 buyBtn.on('pointerdown', () => {
                     if (window.GAME.score >= cost) {
                         window.GAME.score -= cost;
-                        savedUpgrades[upg.id] = (savedUpgrades[upg.id] || 0) + 1;
-                        localStorage.setItem('waitress_house_upgrades', JSON.stringify(savedUpgrades));
+
+                        const savedUpgradesUpdate = JSON.parse(localStorage.getItem('waitress_house_upgrades') || '{}');
+                        savedUpgradesUpdate[upg.id] = (savedUpgradesUpdate[upg.id] || 0) + 1;
+                        localStorage.setItem('waitress_house_upgrades', JSON.stringify(savedUpgradesUpdate));
 
                         const saveData = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
                         if (saveData.data) saveData.data.score = window.GAME.score;
@@ -1336,6 +1427,8 @@ class HouseScene extends Phaser.Scene {
                         localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
 
                         this.updateHouseHUD();
+                        this.showFloatingText(400, 350, `✅ ${upg.name} attivato!`, '#2ecc71');
+                        if (window.triggerSfx) window.triggerSfx('coin');
                         this.renderComputerUI();
                     }
                 });
@@ -1424,8 +1517,8 @@ class HouseScene extends Phaser.Scene {
 
         const searchDatabase = {
             'polizia': '🌐 Accesso al casellario giudiziale in corso.',
-            'hiddenvault.com': '🌐 Accesso al Dark Web consentito...',
-            'hiddenvault': '🌐 Accesso al Dark Web consentito...',
+            'hiddenvault.com': '🌐 Accesso al sito consentito...',
+            'hiddenvault': 'Accesso al sito consentito...',
             'ivea': '🛋️ Apertura IVEA Store in corso...',
             'default': '🔍 Nessun risultato trovato.'
         };
@@ -1434,16 +1527,16 @@ class HouseScene extends Phaser.Scene {
             const query = searchInput.value.trim().toLowerCase();
             const result = searchDatabase[query] || searchDatabase['default'];
             resultsText.setText(result);
-
-            if (query === 'ivea') {
+            
+            if (query === 'hiddenvault.com' || query === 'hiddenvault') {
                 this.time.delayedCall(400, () => {
-                    this.currentMenuTab = 'ivea';
+                    this.currentMenuTab = 'hiddenvault';
                     this.scrollOffsetY = 0;
                     this.renderComputerUI();
                 });
-            } else if (query === 'hiddenvault.com' || query === 'hiddenvault') {
+            } else if (query === 'ivea') {
                 this.time.delayedCall(400, () => {
-                    this.currentMenuTab = 'hiddenvault';
+                    this.currentMenuTab = 'ivea';
                     this.scrollOffsetY = 0;
                     this.renderComputerUI();
                 });
@@ -1477,7 +1570,10 @@ class HouseScene extends Phaser.Scene {
             { id: 'house_radio', name: 'Radio', price: 75, emoji: '📻', desc: 'Diffonde musica d\'ambiente nel locale.', target: 'house' },
             { id: 'crib', name: 'Culla', price: 200, emoji: '🛏️', desc: 'Culla per bimbi piccoli', target: 'house' },
             { id: 'double_bed', name: 'Letto Matrimoniale', price: 350, emoji: '🛋️', desc: 'Grande letto per una grande famiglia.', target: 'house' },
-            { id: 'alarm_system', name: 'Allarme Antifurto', price: 300, emoji: '🚨', desc: 'Protegge la tua casa da intrusioni e furti.', target: 'house' }
+            { id: 'alarm_system', name: 'Allarme Antifurto', price: 300, emoji: '🚨', desc: 'Una sicurezza aggiuntiva non fa male.', target: 'house' },
+            { id: 'desk', name: 'Scrivania', price: 100, emoji: '🪑', desc: 'Utile per porre oggetti, studiare o lavorare.', target: 'house' },
+            { id: 'bookshelf', name: 'Libreria', price: 200, emoji: '📚', desc: 'La cultura libera la mente, è constatato.', target: 'house' },
+            { id: 'modem', name: 'Modem Wi-Fi', price: 300, emoji: '📶', desc: 'Garantisce una connessione stabile.', target: 'house' }
         ];
 
         const itemsRistorante = [
@@ -1503,7 +1599,9 @@ class HouseScene extends Phaser.Scene {
         activeList.forEach((item, i) => {
             const yPos = 250 + i * 55;
             const purchased = purchasedList.includes(item.id);
-            const isPending = this.iveaPendingDeliveries.some(d => d.id === item.id);
+            const isPending = this.mailSystem &&
+                this.mailSystem.getIveaDeliveriesFor(item.target || 'house')
+                    .some(d => d.id === item.id);
 
             const card = this.add.rectangle(400, yPos, 520, 48, 0x1f2937).setStrokeStyle(1, 0x374151);
             const icon = this.add.text(150, yPos, item.emoji || '📦', { fontSize: '22px' }).setOrigin(0.5);
@@ -1529,11 +1627,42 @@ class HouseScene extends Phaser.Scene {
                         localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
 
                         this.updateHouseHUD();
-                        this.queueIveaDelivery(item);
+                        if (this.mailSystem) {
+                            this.mailSystem.queueIveaDelivery({
+                                id: item.id,
+                                name: item.name,
+                                emoji: item.emoji,
+                                price: item.price,
+                                target: item.target || 'house'
+                            });
+                        }
                         this.renderComputerUI();
                     }
                 });
             }
+        });
+
+        const trackX = 680;
+        const trackY = 220;
+        const trackHeight = 290;
+
+        const scrollTrack = this.add.rectangle(trackX, trackY + trackHeight / 2, 8, trackHeight, 0x222222)
+            .setStrokeStyle(1, 0x444444);
+        
+        const progress = -this.scrollOffsetY / 550;
+        this.scrollThumb = this.add.rectangle(trackX, trackY + (progress * 260), 8, 30, 0xffda1a)
+            .setInteractive({ useHandCursor: true });
+
+        this.computerUIContainer.add([scrollTrack, this.scrollThumb]);
+
+        this.input.setDraggable(this.scrollThumb);
+        this.scrollThumb.on('drag', (pointer, dragX, dragY) => {
+            const clampedY = Phaser.Math.Clamp(dragY, trackY, trackY + 260);
+            this.scrollThumb.y = clampedY;
+            
+            const normProgress = (clampedY - trackY) / 260;
+            this.scrollOffsetY = -normProgress * 550;
+            this.scrollableContentContainer.setY(this.scrollOffsetY);
         });
     }
 
@@ -1572,7 +1701,9 @@ class HouseScene extends Phaser.Scene {
                 (item.id === 'compartment' && this.crime.hasSecretCompartment)
             ) : false;
 
-            const isPending = this.iveaPendingDeliveries.some(d => d.id === item.id);
+            const isPending = this.mailSystem &&
+                this.mailSystem.getIveaDeliveriesFor('restaurant')
+                    .some(d => d.id === item.id);
 
             const card = this.add.rectangle(400, yPos, 520, 48, 0x0f172a).setStrokeStyle(1, 0x1e293b);
             const icon = this.add.text(150, yPos, item.emoji, { fontSize: '22px' }).setOrigin(0.5);
@@ -1607,15 +1738,17 @@ class HouseScene extends Phaser.Scene {
                                 this.crime.darkWebAccessCount++;
                                 this.crime.saveCrimeData();
                             }
-                            this.showMessage(`🧪 Veleno aggiunto all'inventario!`, '#e74c3c');
+                            this.showFloatingText(400, 350, `Ordine aggiunto all'inventario!`, '#e74c3c');
                         } else {
-                            this.queueIveaDelivery({
-                                id: item.id,
-                                name: item.name,
-                                emoji: item.emoji,
-                                price: item.price,
-                                target: 'restaurant'
-                            });
+                            if (this.mailSystem) {
+                                this.mailSystem.queueIveaDelivery({
+                                    id: item.id,
+                                    name: item.name,
+                                    emoji: item.emoji,
+                                    price: item.price,
+                                    target: 'restaurant'
+                                });
+                            }
                             if (this.crime) {
                                 this.crime.addSuspicion(20, 'darkweb');
                                 this.crime.darkWebAccessCount++;
@@ -1627,6 +1760,74 @@ class HouseScene extends Phaser.Scene {
                 });
             }
         });
+    }
+
+    renderTaxContent() {
+        const container = this.computerUIContainer;
+
+        if (!this.mailSystem && typeof MailSystem !== 'undefined') {
+            this.mailSystem = new MailSystem(this);
+        }
+
+        if (!this.mailSystem) return;
+
+        const daysOverdue = this.mailSystem.getDaysOverdue();
+        const due = this.mailSystem.isDeclarationDue();
+
+        container.add(this.add.text(400, 160, 'DICHIARAZIONE DEI REDDITI', {
+            fontSize: '22px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0.5));
+
+        if (due && daysOverdue > 0) {
+            container.add(this.add.text(400, 195,
+                `⚠️ Sono passati ${daysOverdue} giorni...`, {
+                fontSize: '13px', color: '#e74c3c', fontStyle: 'bold', fontFamily: 'Fredoka'
+            }).setOrigin(0.5));
+        }
+
+        const realIncome = this.mailSystem.getRealIncome();
+        const illegalIncome = this.mailSystem.getIllegalIncome();
+
+        const summaryBg = this.add.rectangle(400, 260, 500, 100, 0x1a1a1a)
+            .setStrokeStyle(1, 0x444444);
+
+        container.add(this.add.text(200, 225, `💼 Reddito legale: ${realIncome - illegalIncome}€`, {
+            fontSize: '13px', color: '#2ecc71', fontFamily: 'Fredoka'
+        }).setOrigin(0, 0.5));
+
+        container.add(this.add.text(200, 250, `🕶️ Reddito illecito: ${illegalIncome}€`, {
+            fontSize: '13px', color: '#e74c3c', fontFamily: 'Fredoka'
+        }).setOrigin(0, 0.5));
+
+        container.add(this.add.text(200, 275, `💰 Totale reale: ${realIncome}€`, {
+            fontSize: '14px', color: '#ffd700', fontStyle: 'bold', fontFamily: 'Fredoka'
+        }).setOrigin(0, 0.5));
+
+        container.add(this.add.text(200, 300, `📉 Evaso finora: ${this.mailSystem.taxEvasionTotal}€`, {
+            fontSize: '13px', color: '#f39c12', fontFamily: 'Fredoka'
+        }).setOrigin(0, 0.5));
+
+        const declareBtn = this.add.rectangle(400, 360, 260, 44, due ? 0xe74c3c : 0x27ae60)
+            .setStrokeStyle(2, 0xffffff).setInteractive({ useHandCursor: true });
+
+        const declareTxt = this.add.text(400, 360,
+            due ? '📝 COMPILA DICHIARAZIONE' : '📝 APRI DICHIARAZIONE',
+            { fontSize: '14px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Fredoka' }).setOrigin(0.5);
+
+        declareBtn.on('pointerdown', () => {
+            this.closeComputerHub();
+            this.time.delayedCall(200, () => {
+                this.mailSystem.openDeclarationUI();
+            });
+        });
+
+        container.add([summaryBg, declareBtn, declareTxt]);
+
+        const closeBtn = this.add.text(670, 65, '✖', {
+            fontSize: '28px', color: '#e74c3c', fontStyle: 'bold'
+        }).setInteractive({ useHandCursor: true });
+        closeBtn.on('pointerdown', () => this.closeComputerHub());
+        container.add(closeBtn);
     }
 
     closeComputerHub() {

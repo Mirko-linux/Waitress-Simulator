@@ -21,7 +21,7 @@ const LOCAL_LANGUAGES = {
 
 const LOCAL_AUTO_TRANSLATIONS = {
     "it": {
-        // MENU
+
         "GIOCA": "▶ GIOCA",
         "IMPOSTAZIONI": "⚙ IMPOSTAZIONI",
         "CREDITI": "ℹ CREDITI",
@@ -66,7 +66,7 @@ const LOCAL_AUTO_TRANSLATIONS = {
         "CREDITS_LICENSE": "📝 LICENZA",
         "INTELLIGENZA ARTIFICIALE": "🧠 INTELLIGENZA ARTIFICIALE",
         
-        // ERRORI
+
         "ERR_CLOSE_TABLE": "🚫 Avvicinati al tavolo!",
         "ERR_ALREADY_ORDER": "❌ Hai già una comanda!",
         "ERR_SINK_FULL": "🚨 Lavello sovraccarico! Lava i piatti!",
@@ -82,7 +82,7 @@ const LOCAL_AUTO_TRANSLATIONS = {
         "MOVE_CLOSER_WASD": "Avvicinati con WASD!",
         "MOVE_CLOSER_ARROWS": "Avvicinati con le Frecce!",
         
-        // MESSAGGI DI GIOCO
+
         "MSG_ORDER_TAKEN": "📝 Comanda Scritta!",
         "MSG_ORDER_REC": "📝 Ordine preso!",
         "MSG_SERVED": "🍽️ Servito!",
@@ -103,7 +103,7 @@ const LOCAL_AUTO_TRANSLATIONS = {
         "ORDER_TAKEN": "Ordine preso!",
         "WASHING_PLATE": "🧹 Piatto depositato!",
         
-        // TUTORIAL
+
         "TUTORIAL_TITLE": "🎯 TUTORIAL - GIORNO 0",
         "TUTORIAL_STEP_1": "👋 Benvenuta, Cameriera!\nUsa WASD per muoverti.\nVai al tavolo del cliente per prendere l'ordine.",
         "TUTORIAL_STEP_2": "📝 Ottimo! Hai preso l'ordine.\nOra vai al bancone in cucina\nper consegnarlo allo Chef.",
@@ -118,7 +118,7 @@ const LOCAL_AUTO_TRANSLATIONS = {
         "TUTORIAL_WAIT": "⏳ Aspetta che lo Chef cucini...",
         "TUTORIAL_FOLLOW_ARROWS": "⚠️ Segui le frecce del tutorial!",
         
-        // SISTEMI
+
         "AI_CHAT_TITLE": "💬 Chat con {name}",
         "AI_CHAT_GREETING": "Ciao! Come posso aiutarti?",
         "AI_CHAT_CLOSE": "Chiudi chat",
@@ -128,7 +128,7 @@ const LOCAL_AUTO_TRANSLATIONS = {
         "AI_CHAT_ERROR": "⚠️ Errore: riprova più tardi",
         "AI_CHAT_FALLBACK": "📝 Sono in modalità offline!",
         
-        // RADIO
+
         "RADIO_TITLE": "📻 Radio",
         "RADIO_PLAY": "▶ Play",
         "RADIO_STOP": "⏹ Stop",
@@ -139,14 +139,14 @@ const LOCAL_AUTO_TRANSLATIONS = {
         "RADIO_STATION_2": "🎵 Canzone 2",
         "RADIO_STATION_3": "🎵 Canzone 3",
         
-        // TELEFONO
+
         "PHONE_RINGING": "📞 Il telefono sta squillando!",
         "PHONE_ANSWER": "📞 Rispondi?",
         "PHONE_CALL": "📞 In chiamata...",
         "PHONE_MESSAGE": "📱 Nuovo messaggio!",
         "PHONE_DELIVERY": "📦 Consegna speciale arriva in 3 clienti!",
         
-        // CIBI
+
         "FOOD_PIZZA": "🍕 Pizza",
         "FOOD_PATATINE": "🍟 Patatine",
         "FOOD_PANINO": "🍔 Panino",
@@ -2309,7 +2309,7 @@ const LOCAL_AUTO_TRANSLATIONS = {
     }
 };
 
-// Funzioni di utilità
+
 function getLanguages() {
     return LOCAL_LANGUAGES;
 }
@@ -2319,7 +2319,7 @@ function getCurrentLang() {
 }
 
 function t(key) {
-    // Se esiste una funzione window.t definita altrove, usala
+
     if (typeof window.t === 'function' && window.t !== t) {
         const res = window.t(key);
         if (res !== key) return res;
@@ -2365,10 +2365,10 @@ function setLanguage(langCode) {
     }
 }
 
-// Imposta la lingua corrente all'avvio
+
 window.CURRENT_LANG = localStorage.getItem('waitress_game_lang') || 'it';
 
-// Esponi tutto al window object
+
 window.LANGUAGES = LOCAL_LANGUAGES;
 window.AUTO_TRANSLATIONS = LOCAL_AUTO_TRANSLATIONS;
 window.t = t;

@@ -88,18 +88,19 @@ class SupplierSystem {
 
         const entryX = 150;
         const entryY = 500;
+        const SIZE = 48;
 
         if (this.scene.textures.exists('pacco')) {
             this.packageSprite = this.scene.add.image(entryX, entryY, 'pacco')
                 .setDepth(20)
-                .setDisplaySize(80, 80);
+                .setDisplaySize(SIZE, SIZE);
         } else {
             this.packageSprite = this.scene.add.text(entryX, entryY, '📦', {
-                fontSize: '64px'
+                fontSize: '40px'
             }).setOrigin(0.5).setDepth(20);
         }
 
-        this.packageInteractZone = this.scene.add.zone(entryX, entryY, 90, 90)
+        this.packageInteractZone = this.scene.add.zone(entryX, entryY, 70, 70)
             .setDepth(19)
             .setInteractive({ useHandCursor: true });
 
@@ -120,7 +121,7 @@ class SupplierSystem {
         this.packageGlow = this.scene.add.graphics()
             .setDepth(18)
             .fillStyle(0x3498db, 0.25)
-            .fillCircle(entryX, entryY, 60);
+            .fillCircle(entryX, entryY, 38);
 
         this.scene.tweens.add({
             targets: this.packageGlow,
@@ -130,14 +131,16 @@ class SupplierSystem {
             repeat: -1
         });
 
-        this.packageSprite.setScale(0.3);
+
+
+        this.packageSprite.setDisplaySize(SIZE * 0.3, SIZE * 0.3);
         this.packageSprite.y = 580;
 
         this.scene.tweens.add({
             targets: this.packageSprite,
             y: entryY,
-            scaleX: 1,
-            scaleY: 1,
+            displayWidth: SIZE,
+            displayHeight: SIZE,
             duration: 500,
             ease: 'Back.easeOut'
         });
@@ -158,18 +161,19 @@ class SupplierSystem {
 
         const entryX = 150;
         const entryY = 500;
+        const SIZE = 48;
 
         if (this.scene.textures.exists('pacco')) {
             this.externalPackageSprite = this.scene.add.image(entryX, entryY, 'pacco')
                 .setDepth(20)
-                .setDisplaySize(80, 80);
+                .setDisplaySize(SIZE, SIZE);
         } else {
             this.externalPackageSprite = this.scene.add.text(entryX, entryY, '📦', {
-                fontSize: '64px'
+                fontSize: '40px'
             }).setOrigin(0.5).setDepth(20);
         }
 
-        this.externalPackageZone = this.scene.add.zone(entryX, entryY, 90, 90)
+        this.externalPackageZone = this.scene.add.zone(entryX, entryY, 70, 70)
             .setDepth(19)
             .setInteractive({ useHandCursor: true });
 
@@ -190,7 +194,7 @@ class SupplierSystem {
         this.externalPackageGlow = this.scene.add.graphics()
             .setDepth(18)
             .fillStyle(0xf39c12, 0.25)
-            .fillCircle(entryX, entryY, 60);
+            .fillCircle(entryX, entryY, 38);
 
         this.scene.tweens.add({
             targets: this.externalPackageGlow,
@@ -200,14 +204,14 @@ class SupplierSystem {
             repeat: -1
         });
 
-        this.externalPackageSprite.setScale(0.3);
+        this.externalPackageSprite.setDisplaySize(SIZE * 0.3, SIZE * 0.3);
         this.externalPackageSprite.y = 580;
 
         this.scene.tweens.add({
             targets: this.externalPackageSprite,
             y: entryY,
-            scaleX: 1,
-            scaleY: 1,
+            displayWidth: SIZE,
+            displayHeight: SIZE,
             duration: 500,
             ease: 'Back.easeOut'
         });
@@ -235,8 +239,10 @@ class SupplierSystem {
                 duration: 300,
                 ease: 'Back.easeIn',
                 onComplete: () => {
-                    this.externalPackageSprite.destroy();
-                    this.externalPackageSprite = null;
+                    if (this.externalPackageSprite) {
+                        this.externalPackageSprite.destroy();
+                        this.externalPackageSprite = null;
+                    }
                 }
             });
         }
@@ -252,8 +258,23 @@ class SupplierSystem {
 
         this.externalPackageSpawned = false;
 
-        if (window.HOUSE_STATE && !window.HOUSE_STATE.purchased.includes(itemData.id)) {
-            window.HOUSE_STATE.purchased.push(itemData.id);
+        if (itemData.target === 'restaurant' || !itemData.target) {
+            if (itemData.id === 'resto_tv' || itemData.id === 'resto_radio' ||
+                itemData.id === 'resto_plant' || itemData.id === 'smoke_detector' ||
+                itemData.id === 'fake_pos' || itemData.id === 'vpn' || itemData.id === 'compartment') {
+                if (window.HOUSE_STATE && !window.HOUSE_STATE.purchased.includes(itemData.id)) {
+                    window.HOUSE_STATE.purchased.push(itemData.id);
+                }
+            }
+
+            if (this.scene.crime) {
+                if (itemData.id === 'fake_pos') this.scene.crime.hasFakePOS = true;
+                if (itemData.id === 'vpn') this.scene.crime.hasVPN = true;
+                if (itemData.id === 'compartment') this.scene.crime.hasSecretCompartment = true;
+                if (itemData.id === 'fake_pos' || itemData.id === 'vpn' || itemData.id === 'compartment') {
+                    this.scene.crime.saveCrimeData();
+                }
+            }
         }
 
         try {
@@ -264,14 +285,6 @@ class SupplierSystem {
                 saveData.housePurchased = window.HOUSE_STATE.purchased;
             }
             localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
-        } catch(e) {}
-
-        try {
-            const customPositions = JSON.parse(localStorage.getItem('waitress_ivea_positions') || '{}');
-            if (itemData.x !== undefined && itemData.y !== undefined) {
-                customPositions[itemData.id] = { x: itemData.x, y: itemData.y };
-                localStorage.setItem('waitress_ivea_positions', JSON.stringify(customPositions));
-            }
         } catch(e) {}
 
         if (this.scene.showFloatingText) {
@@ -318,8 +331,10 @@ class SupplierSystem {
                 duration: 300,
                 ease: 'Back.easeIn',
                 onComplete: () => {
-                    this.packageSprite.destroy();
-                    this.packageSprite = null;
+                    if (this.packageSprite) {
+                        this.packageSprite.destroy();
+                        this.packageSprite = null;
+                    }
                 }
             });
         }
@@ -378,32 +393,21 @@ class SupplierSystem {
     checkExternalDeliveries() {
         if (this.externalPackageSpawned) return;
 
-        let deliveries = [];
-        try {
-            deliveries = JSON.parse(localStorage.getItem('waitress_ivea_deliveries') || '[]');
-        } catch(e) {
-            return;
-        }
+        const mailSystem = this.scene.mailSystem;
+        if (!mailSystem || typeof mailSystem.getReadyDeliveries !== 'function') return;
 
-        const now = Date.now();
-        const restaurantDeliveries = deliveries.filter(d => d.target === 'restaurant');
+        const ready = mailSystem.getReadyDeliveries('restaurant');
+        if (ready.length === 0) return;
 
-        for (const delivery of restaurantDeliveries) {
-            const elapsed = now - delivery.orderTime;
-            if (elapsed >= delivery.deliveryTime) {
-                const remaining = deliveries.filter(d => d.orderTime !== delivery.orderTime);
-                localStorage.setItem('waitress_ivea_deliveries', JSON.stringify(remaining));
+        const delivery = ready[0];
+        mailSystem.consumeDelivery(delivery);
 
-                this.spawnExternalPackage({
-                    id: delivery.id,
-                    name: delivery.name,
-                    emoji: delivery.emoji || '📦',
-                    x: delivery.x,
-                    y: delivery.y
-                });
-                break;
-            }
-        }
+        this.spawnExternalPackage({
+            id: delivery.id,
+            name: delivery.name,
+            emoji: delivery.emoji || '📦',
+            target: 'restaurant'
+        });
     }
 
     destroy() {

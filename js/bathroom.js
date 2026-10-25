@@ -2,11 +2,11 @@ class BathroomSystem {
     constructor(scene) {
         this.scene = scene;
         
-        // --- IMPOSTAZIONI DI GIOCO ---
+
         this.baseIncrementRate = 0.40; 
         this.femaleMultiplier = 1.8;   
         
-        // --- COORDINATE DEL BAGNO ---
+
         this.bathroomX = 620;
         this.bathroomY = 440;
         this.bathroomWidth = 150;
@@ -17,13 +17,13 @@ class BathroomSystem {
         this.wcX = this.bathroomX + 95;
         this.wcY = this.bathroomY + 60;
 
-        // --- STATO DEL BAGNO ---
+
         this.bathroomOccupied = false;
         this.occupiedText = null;
         this.customersInQueue = [];
         this.currentCustomerInBathroom = null;
         
-        // --- AUDIO SCARICO ---
+
         this.flushSound = null;
         
         this.createBathroomGraphics();
@@ -98,11 +98,11 @@ class BathroomSystem {
         if (!this.scene || !this.scene.gameActive) return;
         const deltaSec = delta / 1000;
 
-        // Scansiona i clienti NON in bagno
+
         this.scene.customers.forEach(customer => {
             if (!customer || customer.isDead || customer.isInBathroom || this.scene.tutorialActive) return;
 
-            // --- BUG FIX 2: UN CLIENTE CHE STA MANGIANDO NON VA IN BAGNO ---
+
             if (customer.table && customer.table.status === 'mangia') return;
 
             if (customer.bladder === undefined || customer.bladder === null) {
@@ -117,7 +117,7 @@ class BathroomSystem {
 
             this.updateBathroomBubble(customer);
 
-            // --- CONTROLLO SOGLIA (60%) ---
+
             if (customer.bladder >= 60) {
                 this.goToBathroom(customer);
             }
@@ -126,16 +126,16 @@ class BathroomSystem {
         this.processQueue();
     }
 
-    // --- BUG FIX 1: MUOVI LA GRAFICA, NON SOLO L'OGGETTO ---
+
     moveCustomerGraphics(customer, targetX, targetY, duration, onComplete) {
-        // Muove TUTTE le parti grafiche del cliente insieme
+
         const targets = [];
         
         if (customer.emoji) targets.push(customer.emoji);
         if (customer.sprite) targets.push(customer.sprite);
         if (customer.shadow) targets.push(customer.shadow);
         
-        // Se non ci sono elementi grafici (cliente eliminato), esci
+
         if (targets.length === 0) {
             if (onComplete) onComplete();
             return;
@@ -148,7 +148,7 @@ class BathroomSystem {
             duration: duration,
             ease: 'Quad.easeInOut',
             onComplete: () => {
-                // Aggiorna anche le coordinate logiche
+
                 customer.x = targetX;
                 customer.y = targetY;
                 if (onComplete) onComplete();
@@ -176,9 +176,9 @@ class BathroomSystem {
 
     goToBathroom(customer) {
         if (customer.isInBathroom || customer.isDead) return;
-        if (customer.table && customer.table.status === 'mangia') return; // Non mandare chi mangia
+        if (customer.table && customer.table.status === 'mangia') return;
 
-        // Se il bagno è occupato, mettilo in coda
+
         if (this.bathroomOccupied) {
             if (!this.customersInQueue.includes(customer)) {
                 this.customersInQueue.push(customer);
@@ -186,50 +186,50 @@ class BathroomSystem {
             return;
         }
 
-        // Occupa il bagno
+
         this.bathroomOccupied = true;
         this.currentCustomerInBathroom = customer;
         customer.isInBathroom = true;
         this.occupiedText.setVisible(true);
         
-        // Rimuovi l'icona del water
+
         if (customer.bubbleIcon) {
             customer.bubbleIcon.destroy();
             customer.bubbleIcon = null;
         }
 
-        // Salva posizione originale
+
         const originalX = customer.x;
         const originalY = customer.y;
 
-        // --- FASE 1: MUOVI LA GRAFICA VERSO L'INGRESSO ---
+
         this.moveCustomerGraphics(customer, this.entryX, this.entryY, 300, () => {
-            // --- FASE 2: ENTRA E SCOMPARE ---
+
             customer.x = this.wcX;
             customer.y = this.wcY;
 
-            // Nascondi i grafici
+
             if (customer.sprite) customer.sprite.setVisible(false);
             if (customer.emoji) customer.emoji.setVisible(false);
             if (customer.shadow) customer.shadow.setVisible(false);
             if (customer.orderBubble) customer.orderBubble.setVisible(false);
             if (customer.chatBubble) customer.chatBubble.setVisible(false);
             
-            // METTI IN PAUSA IL TIMER
+
             if (customer.timerEvent) customer.timerEvent.paused = true;
 
-            // AUDIO SCARICO
+
             if (this.flushSound) {
                 this.flushSound.play();
             }
 
-            // Tempo in bagno
+
             const stayTime = Phaser.Math.Between(2000, 4000);
 
             this.scene.time.delayedCall(stayTime, () => {
-                // --- BUG FIX 3: CONTROLLA CHE IL CLIENTE SIA ANCORA VIVO ---
+
                 if (!customer || customer.isDead) {
-                    // Il cliente è stato eliminato: libera il bagno
+
                     this.bathroomOccupied = false;
                     this.occupiedText.setVisible(false);
                     this.currentCustomerInBathroom = null;
@@ -237,7 +237,7 @@ class BathroomSystem {
                     return;
                 }
 
-                // --- FASE 3: ESCE E TORNA AL TAVOLO ---
+
                 this.bathroomOccupied = false;
                 this.occupiedText.setVisible(false);
                 this.currentCustomerInBathroom = null;
@@ -245,26 +245,26 @@ class BathroomSystem {
                 customer.isInBathroom = false;
                 customer.bladder = 0; 
                 
-                // Riprendi il timer
+
                 if (customer.timerEvent) customer.timerEvent.paused = false;
 
-                // Rendi visibili i grafici
+
                 if (customer.sprite) customer.sprite.setVisible(true);
                 if (customer.emoji) customer.emoji.setVisible(true);
                 if (customer.shadow) customer.shadow.setVisible(true);
                 if (customer.orderBubble) customer.orderBubble.setVisible(true);
                 if (customer.chatBubble) customer.chatBubble.setVisible(true);
 
-                // Torna al tavolo (muovendo la grafica)
+
                 this.moveCustomerGraphics(customer, originalX, originalY, 300, () => {
-                    // Controlla la coda
+
                     this.processQueue();
                 });
             });
         });
     }
 
-    // --- BUG FIX 4: RIMUOVI IL CLIENTE DALLA CODA ---
+
     removeCustomerFromQueue(customer) {
         const index = this.customersInQueue.indexOf(customer);
         if (index > -1) {

@@ -1,10 +1,6 @@
-// price.js - Sistema Prezzi con Inflazione Progressiva
-
 class PriceSystem {
     constructor(scene) {
         this.scene = scene;
-        
-        // Prezzi base dei piatti (in Euro)
         this.basePrices = {
             'Pizza': 7.00,
             'Patatine': 3.50,
@@ -23,12 +19,11 @@ class PriceSystem {
             'Fritto Misto': 5.00,
             'Pasta al Pesto': 4.50,
             "Panino con la milza": 5.00,
+            'Moroni': 4.00
         };
         
         this.inflationRate = 0.01;
         this.maxInflation = 0.50; 
-        
-        // Affitto base della casa
         this.baseRent = 50; 
         
         this.loadInflationData();
@@ -39,14 +34,14 @@ class PriceSystem {
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                this.currentLevel = data.level || 0;
+                this.currentLevel = data.level || 1;
                 this.currentInflation = data.inflation || 0;
             } catch(e) {
-                this.currentLevel = 0;
+                this.currentLevel = 1;
                 this.currentInflation = 0;
             }
         } else {
-            this.currentLevel = 0;
+            this.currentLevel = 1;
             this.currentInflation = 0;
         }
     }
@@ -58,30 +53,28 @@ class PriceSystem {
         }));
     }
     
-    // Aggiorna l'inflazione quando il giocatore completa un giorno
+
     updateInflation(level) {
         this.currentLevel = level;
-        this.currentInflation = Math.min(this.maxInflation, this.currentLevel * this.inflationRate);
+        this.currentInflation = Math.min(this.maxInflation, (this.currentLevel - 1) * this.inflationRate);
         this.saveInflationData();
         
-        // Avviso nella console
         console.log(`📈 Inflazione al livello ${level}: +${(this.currentInflation * 100).toFixed(2)}%`);
     }
     
-    // Calcola il prezzo di un piatto con l'inflazione
+
     getFoodPrice(foodName) {
         const base = this.basePrices[foodName] || 5.00;
         const inflatedPrice = base * (1 + this.currentInflation);
         return Math.round(inflatedPrice * 100) / 100;
     }
     
-    // Calcola l'affitto con l'inflazione
-    getRentPrice(baseRent) {
+
+    getRentPrice(baseRent = 50) {
         const inflatedRent = baseRent * (1 + this.currentInflation);
         return Math.round(inflatedRent * 100) / 100;
     }
     
-    // Mostra l'inflazione come percentuale
     getInflationPercentage() {
         return (this.currentInflation * 100).toFixed(2);
     }

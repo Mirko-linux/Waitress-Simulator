@@ -173,32 +173,18 @@
         }
     };
 
-    let HOUSE_STATE = {
-        purchased: [],
-        items: [
-            { id: 'bed', name: 'Letto Comodo', price: 60, emoji: '🛏️', x: 180, y: 160, desc: 'Dormi meglio! Velocità corsa nel locale aumentata (+20%)' },
-            { id: 'tv', name: 'Smart TV', price: 100, emoji: '📺', x: 400, y: 140, desc: 'Rilassati! Aumenta la pazienza di base dei clienti del 25%' },
-            { id: 'sofa', name: 'Divano Rosso', price: 50, emoji: '🛋️', x: 400, y: 350, desc: 'Un tocco di comfort nel soggiorno' },
-            { id: 'plant', name: 'Monstera Gigante', price: 25, emoji: '🪴', x: 620, y: 160, desc: 'Purifica l\'aria e abbellisce la stanza' },
-            { id: 'rug', name: 'Tappeto Soffice', price: 30, emoji: '🧶', x: 400, y: 375, desc: 'Tiene i piedi al caldo la mattina' },
-            { id: 'coffee', name: 'Macchina Espresso', price: 140, emoji: '☕', x: 620, y: 280, desc: 'Caffeina pura! Tempo di lavaggio stoviglie ridotto del 45%' }
-        ]
-    };
-
-    window.HOUSE_STATE = HOUSE_STATE;
-
     function applyUpgrades() {
         CONFIG.waitress.speed = 300;
         CONFIG.customers.patienceDuration = 25000;
         CONFIG.dishes.washDuration = 1200;
 
-        if (HOUSE_STATE.purchased.includes('bed')) {
+        if (window.HOUSE_STATE && window.HOUSE_STATE.purchased.includes('bed')) {
             CONFIG.waitress.speed = 360;
         }
-        if (HOUSE_STATE.purchased.includes('tv')) {
+        if (window.HOUSE_STATE && window.HOUSE_STATE.purchased.includes('tv')) {
             CONFIG.customers.patienceDuration = 32000;
         }
-        if (HOUSE_STATE.purchased.includes('coffee')) {
+        if (window.HOUSE_STATE && window.HOUSE_STATE.purchased.includes('coffee')) {
             CONFIG.dishes.washDuration = 700;
         }
     }
@@ -357,11 +343,18 @@
             
             this.load.image('phone', 'assets/Sala/phone.png');
             this.load.image('pacco', 'assets/Sala/pacco.png');
+            this.load.image('Moroni_Piena', 'assets/Moroni/Moroni_Piena.png');
+            this.load.image('Moroni_Vuota', 'assets/Moroni/Moroni_Vuota.png');
             this.load.image('radio', 'assets/Sala/radio.png');
+            this.load.image('Criminale_Avanti', 'assets/NPC/Criminale/Criminale_Avanti.png');
+            this.load.image('Criminale_Dietro', 'assets/NPC/Criminale/Cameriera_Dietro.png');
+            this.load.image('Criminale_Sinistra', 'assets/NPC/Criminale/Criminale_Sinistra.png');
+            this.load.image('Criminale_Destra', 'assets/NPC/Criminale/Criminale_Destra.png');
             
             this.load.audio('vibrazione', 'assets/audio/vibrazione.wav');
             this.load.audio('scarico', 'assets/audio/scarico.mp3');
             this.load.audio('chiesa', 'assets/audio/chiesa.mp3');
+            this.load.audio('tarantella', 'assets/audio/tarantella.mp3');
             this.load.audio('colonna_sonora', 'assets/audio/colonna_sonora.mp3');
             this.load.audio('npc_call_center', 'assets/audio/Chiamata/npc_call_center.mp3');
             this.load.audio('npc_call_center_1', 'assets/audio/Chiamata/npc_call_center_1.mp3');
@@ -372,7 +365,7 @@
             this.load.image('Lavello_vuoto', 'assets/Lavello/Lavello_vuoto.png');
             this.load.image('Lavello_mezzopieno', 'assets/Lavello/Lavello_mezzopieno.png');
             this.load.image('Lavello_pieno', 'assets/Lavello/Lavello_pieno.png');
-            this.load.image('bubble_dialog', 'assets/UI/bubble_dialog.png');
+            this.load.image('bubble_dialog', 'assets/UI/bubbles/bubble_dialog.png');
             this.load.image('Cestino_Vuoto', 'assets/Cestino/Cestino_Vuoto.png');
 
             this.load.image('cameriera_avanti', 'assets/Cameriera/Cameriera_Avanti.png');
@@ -406,13 +399,20 @@
             this.load.image('Poliziotto_Dietro', 'assets/NPC/Poliziotto/Poliziotto_Dietro.png');
             this.load.image('Poliziotto_Sinistra', 'assets/NPC/Poliziotto/Poliziotto_Sinistra.png');
             this.load.image('Poliziotto_Destra', 'assets/NPC/Poliziotto/Poliziotto_Destra.png');
-
+            this.load.image('Finanza_Avanti', 'assets/NPC/Finanza/Finanza_Avanti.png');
+            this.load.image('Finanza_Dietro', 'assets/NPC/Finanza/Finanza_Dietro.png');
+            this.load.image('Finanza_Sinistra', 'assets/NPC/Finanza/Finanza_Sinistra.png');
+            this.load.image('Finanza_Destra', 'assets/NPC/Finanza/Finanza_Destra.png');
+            this.load.image('Nipote_Rosa_Avanti', 'assets/NPC/Nipote_Rosa/Nipote_Rosa_Avanti.png');
+            this.load.image('Nipote_Rosa_Dietro', 'assets/NPC/Nipote_Rosa/Nipote_Rosa_Dietro.png');
+            this.load.image('Nipote_Rosa_Sinistra', 'assets/NPC/Nipote_Rosa/Nipote_Rosa_Sinistra.png');
+            this.load.image('Nipote_Rosa_Destra', 'assets/NPC/Nipote_Rosa/Nipote_Rosa_Destra.png');
             this.load.image('bubble_order', 'assets/UI/bubbles/bubble_order.png');
             this.load.image('bubble_talk', 'assets/UI/bubbles/bubble_talk.png');
             this.load.image('bubble_happy', 'assets/UI/bubbles/bubble_happy.png');
             this.load.image('bubble_angry', 'assets/UI/bubbles/bubble_angry.png');
             this.load.image('bubble_sad', 'assets/UI/bubbles/bubble_sad.png');
-            this.load.image('bubble_cash', 'assets/UI/engine/bubble_cash.png');
+            this.load.image('bubble_cash', 'assets/UI/bubbles/bubble_cash.png');
             this.load.image('bubble_pee', 'assets/UI/bubbles/bubble_pee.png');
             this.load.image('bubble_music', 'assets/UI/bubbles/bubble_music.png');
             this.load.image('bubble_mission', 'assets/UI/bubbles/bubble_mission.png');
@@ -505,7 +505,8 @@
             this.inspectionActive = false;
             this.sponsorSystem = null;
             this.trashBin = null;
-            this.trashBinLabel = null;
+            this.taxSystem = null;
+            this.taxHudText = null;
             
             this.waitressHasOrder = false;
             this.waitressHasFood = false;
@@ -514,8 +515,18 @@
             this.levelEarnings = 0;
 
             this.isCheater = false;
-            this.arrestTriggered = false;
-            this.policeNPC = null;
+            this.mailSystem = null;
+
+            this.placementMode = false;
+            this.placementGhost = null;
+            this.pendingRestaurantItem = null;
+
+            this.iveaRestaurantPackageSprite = null;
+            this.iveaRestaurantPackageZone = null;
+            this.iveaRestaurantPackageGlow = null;
+
+            this.sponsorBlocksCustomers = false;
+            this.briscolaSystem = null;
         }
         
         cleanupCustomers() {
@@ -579,13 +590,13 @@
             GAME.wastePenalty = 0;
             this.isPhoneActive = false;
             this.isPaused = false;
-            this.arrestTriggered = false;
-            this.policeNPC = null;
             this.packageClickZone = null;
             this.packageTooltip = null;
             this.trayIndicator = null;
             this.trashBin = null;
-            this.trashBinLabel = null;
+            this.taxSystem = null;
+            this.taxHudText = null;
+            this.mailSystem = null;
             this.waitressState = { tray: [], targetX: 300, targetY: 300 };
             this.pendingAction = null;
             this.currentCustomer = null;
@@ -595,6 +606,31 @@
             this.hiddenCompartment = null;
             this.inspectionActive = false;
             this.sponsorSystem = null;
+            this.placementMode = false;
+            this.placementGhost = null;
+            this.pendingRestaurantItem = null;
+            this.iveaRestaurantPackageSprite = null;
+            this.iveaRestaurantPackageZone = null;
+            this.iveaRestaurantPackageGlow = null;
+            this.sponsorBlocksCustomers = false;
+
+            if (this.briscolaSystem) {
+                this.briscolaSystem = null;
+            }
+
+            try {
+                const rawSponsor = localStorage.getItem('waitress_sponsor_state');
+                if (rawSponsor) {
+                    const st = JSON.parse(rawSponsor);
+                    if (st.active && st.day !== GAME.level) {
+                        st.active = false;
+                        st.beersRemaining = 0;
+                        st.cratesRemaining = 0;
+                        st.beersSoldThisLevel = 0;
+                        localStorage.setItem('waitress_sponsor_state', JSON.stringify(st));
+                    }
+                }
+            } catch(e) {}
 
             this.playerNickname = localStorage.getItem('waitress_nickname') || 'Cameriera';
 
@@ -619,6 +655,13 @@
             if (A.isSystemEnabled('crimeSystem') && typeof window.CrimeSystem === 'function') {
                 this.crime = new window.CrimeSystem(this);
             }
+            if (typeof window.MailSystem === 'function') {
+                this.mailSystem = new window.MailSystem(this);
+            }
+            if (typeof window.TaxSystem === 'function') {
+                this.taxSystem = new window.TaxSystem(this);
+                this.taxSystem.createTaxHUD();
+            }
             if (A.isSystemEnabled('storySystem') && typeof window.StorySystem === 'function') {
                 this.story = new window.StorySystem(this);
             }
@@ -630,13 +673,6 @@
             }
             if (A.isSystemEnabled('npcManager') && window.NPCManager && !this.aiManager) {
                 this.npcManager = new window.NPCManager(this);
-            }
-
-            if (typeof window.SponsorSystem === 'function') {
-                this.sponsorSystem = new window.SponsorSystem(this);
-                if (this.sponsorSystem.isAvailable(GAME.level)) {
-                    this.sponsorSystem.startMission();
-                }
             }
 
             if (GAME.arcadeMode) {
@@ -704,6 +740,9 @@
 
                 if (savedData.housePurchased && window.HOUSE_STATE) {
                     window.HOUSE_STATE.purchased = savedData.housePurchased;
+                }
+                if (savedData.restaurantPurchased && window.RESTAURANT_STATE) {
+                    window.RESTAURANT_STATE.purchased = savedData.restaurantPurchased;
                 }
                 if (savedData.settings) {
                     GAME.settings = { ...GAME.settings, ...savedData.settings };
@@ -794,6 +833,22 @@
             this.createPassPiatti();
             this.createHiddenCompartment();
 
+            if (typeof window.SponsorSystem === 'function') {
+                this.sponsorSystem = new window.SponsorSystem(this);
+                if (this.sponsorSystem.isAvailable(GAME.level)) {
+                    this.sponsorSystem.startMission();
+                }
+            }
+
+            if (typeof window.BriscolaSystem === 'function') {
+                this.briscolaSystem = new window.BriscolaSystem(this);
+                if (this.briscolaSystem.isAvailable(GAME.level) && !this.briscolaSystem.state.completed) {
+                    this.time.delayedCall(500, () => {
+                        this.briscolaSystem.startMission();
+                    });
+                }
+            }
+
             const tutorialSkipped = localStorage.getItem('waitress_tutorial_done') === 'true';
             window.FORCE_TUTORIAL = !tutorialSkipped;
 
@@ -805,9 +860,13 @@
                 if (GAME.customersTarget === 0) {
                     GAME.customersTarget = 6 + GAME.level * 4;
                 }
-                if (!this.isCheater) {
+                if (!this.isCheater && !this.sponsorBlocksCustomers) {
                     this.startSpawning();
                 }
+            }
+
+            if (!GAME.arcadeMode && this.briscolaSystem && !this.tutorialActive) {
+                this.briscolaSystem.showScheduledNPC();
             }
 
             this.createBanconeZone();
@@ -838,12 +897,6 @@
                     }
                 });
             });
-
-            if (this.isCheater) {
-                this.time.delayedCall(1000, () => {
-                    this.spawnPoliceArrest();
-                });
-            }
         }
 
         createHiddenCompartment() {
@@ -906,6 +959,8 @@
         startSpawning() {
             if (this.tutorialActive) return;
             if (this.isCheater) return;
+            if (this.sponsorBlocksCustomers) return;
+            if (this.briscolaSystem && this.briscolaSystem.missionStarted && !this.briscolaSystem.missionComplete && !this.briscolaSystem.missionFailed) return;
 
             this.customers = [];
             this.tables.forEach(t => {
@@ -952,7 +1007,7 @@
             this.spawnEvent = this.time.addEvent({
                 delay: spawnInterval,
                 callback: () => { 
-                    if (this.gameActive) {
+                    if (this.gameActive && !this.sponsorBlocksCustomers) {
                         this.trySpawnCustomer();
                     }
                 },
@@ -966,9 +1021,11 @@
         }
 
         trySpawnCustomer() {
-            if (!this.tutorialActive && !this.isCheater) {
-                this.spawnCustomer();
-            }
+            if (this.tutorialActive) return;
+            if (this.isCheater) return;
+            if (this.sponsorBlocksCustomers) return;
+            if (this.briscolaSystem && this.briscolaSystem.missionStarted && !this.briscolaSystem.missionComplete && !this.briscolaSystem.missionFailed) return;
+            this.spawnCustomer();
         }
 
         getFreeTable() {
@@ -987,161 +1044,13 @@
             return freeTables[randomIndex];
         }
 
-        spawnPoliceArrest() {
-            if (!this.isCheater || this.arrestTriggered) return;
-            this.arrestTriggered = true;
-            this.gameActive = false;
-            this.tutorialActive = false;
-            
-            if (this.spawnEvent) this.spawnEvent.remove();
-            
-            const police = {
-                name: 'Poliziotto',
-                hasDirectionalTextures: true,
-                textureUp: 'Poliziotto_Dietro',
-                textureDown: 'Poliziotto_Avanti',
-                textureLeft: 'Poliziotto_Sinistra',
-                textureRight: 'Poliziotto_Destra',
-                x: ENTRANCE_X,
-                y: ENTRANCE_Y,
-                sprite: null,
-                shadow: null,
-                speed: 70,
-                movementData: null
-            };
-            
-            if (!this.textures.exists('Poliziotto_Avanti')) {
-                police.shadow = this.add.ellipse(police.x, police.y + 10, 20, 5, 0x000000, 0.25).setDepth(police.y - 1);
-                police.sprite = this.add.text(police.x, police.y, '👮', {
-                    fontSize: '32px'
-                }).setOrigin(0.5).setDepth(police.y);
-                police.isEmoji = true;
-            } else {
-                police.shadow = this.add.ellipse(police.x, police.y + 10, 20, 5, 0x000000, 0.25).setDepth(police.y - 1);
-                police.sprite = this.add.image(police.x, police.y, police.textureDown)
-                    .setDisplaySize(UNIFORM_SIZE, UNIFORM_SIZE)
-                    .setDepth(police.y);
-            }
-            
-            const targetX = this.waitress.x;
-            const targetY = this.waitress.y;
-            const waypoints = [
-                { x: ENTRANCE_X, y: ENTRANCE_Y },
-                { x: 240, y: 500 },
-                { x: targetX, y: targetY }
-            ];
-            
-            police.movementData = {
-                waypoints: waypoints,
-                currentWaypoint: 1,
-                destination: waypoints[1],
-                movementComplete: false
-            };
-            
-            this.policeNPC = police;
-            
-            this.showFloatingText(400, 300, '🚔 La Polizia è arrivata!', '#ff0000');
-            triggerSfx('alert');
-        }
-
-        arrestWaitress() {
-            if (!this.policeNPC || !this.waitress) {
-                this.policeNPC = this.policeNPC || { isEmoji: true, sprite: null };
-            }
-            
-            if (this.waitress && this.waitress.setTint) {
-                this.waitress.setTint(0x888888);
-            }
-            if (this.policeNPC && this.policeNPC.sprite && !this.policeNPC.isEmoji && this.policeNPC.textureDown) {
-                this.policeNPC.sprite.setTexture(this.policeNPC.textureDown);
-            }
-            
-            this.time.paused = true;
-            this.physics.pause();
-            
-            const arrestText = this.add.text(400, 300, 
-                "PROCURA DELLA REPUBBLICA DI PALERMO\n\n" +
-                "Mandato di Arresto Esecutivo\n\n" +
-                "La S.V. è in arresto per il reato di\n" +
-                "Frode Informatica e Alterazione di Dati.\n\n" +
-                "Le sue azioni sono state registrate.\n" +
-                "Ogni tentativo di manomissione è punito\n" +
-                "ai sensi dell'Art. 615-ter C.P.\n\n" +
-                "La cameriera è in stato di fermo.", 
-                {
-                    fontSize: '15px',
-                    color: '#ffffff',
-                    align: 'center',
-                    fontFamily: 'Fredoka',
-                    lineSpacing: 6,
-                    backgroundColor: '#000000',
-                    padding: { x: 20, y: 20 }
-                }
-            ).setOrigin(0.5).setDepth(5000).setAlpha(0);
-
-            this.tweens.add({
-                targets: arrestText,
-                alpha: 1,
-                duration: 800,
-                ease: 'Power2'
-            });
-
-            triggerSfx('alert');
-
-            this.time.delayedCall(6000, () => {
-                localStorage.removeItem('waitress_save_data');
-                localStorage.removeItem('waitress_tutorial_done');
-                localStorage.removeItem('waitress_cheater_flag');
-                if (window.HOUSE_STATE) window.HOUSE_STATE.purchased = [];
-                window.location.reload();
-            });
-        }
-
-        updatePoliceMovement(delta) {
-            if (!this.policeNPC || !this.policeNPC.movementData || !this.policeNPC.sprite) return;
-            
-            const data = this.policeNPC.movementData;
-            if (data.movementComplete) return;
-            
-            const dx = data.destination.x - this.policeNPC.sprite.x;
-            const dy = data.destination.y - this.policeNPC.sprite.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance <= 4) {
-                this.policeNPC.sprite.x = data.destination.x;
-                this.policeNPC.sprite.y = data.destination.y;
-                
-                if (data.waypoints && data.currentWaypoint < data.waypoints.length - 1) {
-                    data.currentWaypoint++;
-                    data.destination = data.waypoints[data.currentWaypoint];
-                    return;
-                }
-                
-                data.movementComplete = true;
-                this.arrestWaitress();
-                return;
-            }
-            
-            const speed = this.policeNPC.speed || 70;
-            const step = Math.min(distance, speed * (delta / 1000));
-            const ratio = step / distance;
-            
-            this.policeNPC.sprite.x += dx * ratio;
-            this.policeNPC.sprite.y += dy * ratio;
-            this.policeNPC.sprite.setDepth(this.policeNPC.sprite.y);
-            
-            if (this.policeNPC.shadow) {
-                this.policeNPC.shadow.x = this.policeNPC.sprite.x;
-                this.policeNPC.shadow.y = this.policeNPC.sprite.y + 10;
-            }
-            
-            if (!this.policeNPC.isEmoji) {
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    this.policeNPC.sprite.setTexture(dx > 0 ? this.policeNPC.textureRight : this.policeNPC.textureLeft);
-                } else {
-                    this.policeNPC.sprite.setTexture(dy > 0 ? this.policeNPC.textureDown : this.policeNPC.textureUp);
-                }
-            }
+        isWithinInteractionRange(x, y) {
+            return Phaser.Math.Distance.Between(
+                this.waitress.x,
+                this.waitress.y,
+                x,
+                y
+            ) <= CONFIG.waitress.interactRange;
         }
 
         playCallCenterAudio() {
@@ -1368,6 +1277,11 @@
                     if (this.isPhoneActive) {
                         return;
                     }
+
+                    if (tableData.briscolaGuest && this.briscolaSystem) {
+                        this.briscolaSystem.interactWithNPC();
+                        return;
+                    }
                     
                     const dist = Phaser.Math.Distance.Between(
                         this.waitress.x,
@@ -1455,10 +1369,6 @@
                     this.showFloatingText(trashX, trashY - 40, 'Avvicinati al cestino!', '#ffd700');
                 }
             });
-
-            this.trashBinLabel = this.add.text(trashX, trashY - 40, '🗑️', {
-                fontSize: '18px'
-            }).setOrigin(0.5).setDepth(trashY + 1);
         }
 
         disposeFood() {
@@ -1947,7 +1857,8 @@
                 dirtyPlates: 0,
                 isCheater: GAME.isCheater || false,
                 settings: GAME.settings,
-                housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
+                housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : [],
+                restaurantPurchased: window.RESTAURANT_STATE ? window.RESTAURANT_STATE.purchased : []
             };
             localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
             if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
@@ -2093,6 +2004,7 @@
         spawnCustomer() {
             if (this.isCheater) return;
             if (this.tutorialActive) return;
+            if (this.sponsorBlocksCustomers) return;
 
             const table = this.getFreeTable();
 
@@ -2130,10 +2042,6 @@
             if (!customer.order) {
                 const foods = Object.keys(FOOD_TEXTURES);
                 customer.order = foods[Phaser.Math.Between(0, foods.length - 1)];
-            }
-
-            if (customer.order === 'Birra' && this.sponsorSystem && this.sponsorSystem.state && this.sponsorSystem.state.active && this.sponsorSystem.state.beersRemaining > 0) {
-                customer.order = 'Birra';
             }
 
             customer.table = table;
@@ -3246,6 +3154,13 @@
                         return String(item.food).trim().toLowerCase() === 'moroni';
                     });
                 }
+
+                if (foodIndex > -1 && this.sponsorSystem && this.sponsorSystem.isMissionActive()) {
+                    const servedItem = this.waitressState.tray[foodIndex];
+                    if (servedItem && String(servedItem.food).trim().toLowerCase() === 'moroni') {
+                        this.sponsorSystem.notifyMoroniSold();
+                    }
+                }
                 
                 if (foodIndex > -1) {
                     triggerSfx('serve');
@@ -3640,6 +3555,11 @@
             if (!this.gameActive || this.isPaused || this.isPhoneActive) return;
             if (this.isCheater) return;
 
+            if (this.placementMode) {
+                this.confirmPlacement();
+                return;
+            }
+
             const passDist = Phaser.Math.Distance.Between(this.waitress.x, this.waitress.y, 595, 420);
             if (passDist <= CONFIG.waitress.interactRange + 30) {
                 this.handleCounterInteraction();
@@ -3763,18 +3683,233 @@
                 onComplete: () => txt.destroy()
             });
         }
-        
+
+        startPlacementMode(itemId, textureKey) {
+            if (this.placementMode) {
+                this.cancelPlacement();
+            }
+
+            this.placementMode = true;
+            this.pendingRestaurantItem = { id: itemId, texture: textureKey };
+
+            const initialX = this.waitress.x + 60;
+            const initialY = this.waitress.y;
+
+            this.placementGhost = this.add.image(initialX, initialY, textureKey)
+                .setAlpha(0.6)
+                .setDepth(500)
+                .setDisplaySize(48, 48);
+
+            this.showFloatingText(this.waitress.x, this.waitress.y - 60,
+                '🎯 Muoviti e premi SPAZIO per posizionare (ESC per annullare)',
+                '#ffd700');
+        }
+
+        updatePlacementGhost() {
+            if (!this.placementMode || !this.placementGhost || !this.waitress) return;
+
+            const ghostX = this.waitress.x + 60;
+            const ghostY = this.waitress.y;
+
+            this.placementGhost.x = ghostX;
+            this.placementGhost.y = ghostY;
+            this.placementGhost.setDepth(ghostY + 1);
+        }
+
+        confirmPlacement() {
+            if (!this.placementMode || !this.pendingRestaurantItem) {
+                this.cancelPlacement();
+                return;
+            }
+
+            const itemId = this.pendingRestaurantItem.id;
+            const textureKey = this.pendingRestaurantItem.texture;
+
+            const ghostX = this.placementGhost ? this.placementGhost.x : this.waitress.x + 60;
+            const ghostY = this.placementGhost ? this.placementGhost.y : this.waitress.y;
+
+            if (!Array.isArray(RESTAURANT_STATE.purchased)) RESTAURANT_STATE.purchased = [];
+
+            const already = RESTAURANT_STATE.purchased.some(p => 
+                (typeof p === 'string' ? p : p.id) === itemId
+            );
+
+            if (!already) {
+                RESTAURANT_STATE.purchased.push({
+                    id: itemId,
+                    x: ghostX,
+                    y: ghostY,
+                    texture: textureKey
+                });
+            }
+
+            if (this.placementGhost) {
+                this.placementGhost.destroy();
+                this.placementGhost = null;
+            }
+
+            if (this.textures.exists(textureKey)) {
+                this.add.image(ghostX, ghostY, textureKey)
+                    .setDisplaySize(48, 48)
+                    .setDepth(ghostY);
+            }
+
+            this.placementMode = false;
+            this.pendingRestaurantItem = null;
+
+            this.showFloatingText(ghostX, ghostY - 40,
+                '📦 Mobile posizionato nel Ristorante!',
+                '#2ecc71');
+            triggerSfx('pickup');
+
+            const saveData = {
+                score: GAME.score,
+                level: GAME.level,
+                customersServed: GAME.customersServed,
+                lives: GAME.lives,
+                dirtyPlates: GAME.dirtyPlates,
+                isCheater: GAME.isCheater || false,
+                settings: GAME.settings,
+                housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : [],
+                restaurantPurchased: window.RESTAURANT_STATE ? window.RESTAURANT_STATE.purchased : []
+            };
+            localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
+            if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
+                window.SaveManager.saveGame(saveData);
+            }
+        }
+
+        cancelPlacement() {
+            if (this.placementGhost) {
+                this.placementGhost.destroy();
+                this.placementGhost = null;
+            }
+            this.placementMode = false;
+            this.pendingRestaurantItem = null;
+            this.showFloatingText(this.waitress.x, this.waitress.y - 40,
+                '❌ Posizionamento annullato',
+                '#999999');
+        }
+
+        restoreRestaurantFurniture() {
+            if (!Array.isArray(RESTAURANT_STATE.purchased)) return;
+
+            RESTAURANT_STATE.purchased.forEach(item => {
+                if (!item || !item.texture) return;
+                if (!this.textures.exists(item.texture)) return;
+
+                this.add.image(item.x, item.y, item.texture)
+                    .setDisplaySize(48, 48)
+                    .setDepth(item.y);
+            });
+        }
+
+        spawnIveaRestaurantPackage(delivery) {
+            const entryX = 150;
+            const entryY = 500;
+            const SIZE = 48;
+
+            if (this.textures.exists('pacco')) {
+                this.iveaRestaurantPackageSprite = this.add.image(entryX, entryY, 'pacco')
+                    .setDepth(20)
+                    .setDisplaySize(SIZE, SIZE);
+            } else {
+                this.iveaRestaurantPackageSprite = this.add.text(entryX, entryY, '📦', {
+                    fontSize: '40px'
+                }).setOrigin(0.5).setDepth(20);
+            }
+
+            this.iveaRestaurantPackageGlow = this.add.graphics()
+                .setDepth(18)
+                .fillStyle(0xf39c12, 0.25)
+                .fillCircle(entryX, entryY, 38);
+
+            this.tweens.add({
+                targets: this.iveaRestaurantPackageGlow,
+                alpha: 0.05,
+                duration: 800,
+                yoyo: true,
+                repeat: -1
+            });
+
+            this.iveaRestaurantPackageSprite.setDisplaySize(SIZE * 0.3, SIZE * 0.3);
+            this.iveaRestaurantPackageSprite.y = 580;
+
+            this.tweens.add({
+                targets: this.iveaRestaurantPackageSprite,
+                y: entryY,
+                displayWidth: SIZE,
+                displayHeight: SIZE,
+                duration: 500,
+                ease: 'Back.easeOut'
+            });
+
+            this.iveaRestaurantPackageZone = this.add.zone(entryX, entryY, 70, 70)
+                .setDepth(19)
+                .setInteractive({ useHandCursor: true });
+
+            this.iveaRestaurantPackageZone.on('pointerdown', () => {
+                const dist = Phaser.Math.Distance.Between(
+                    this.waitress.x, this.waitress.y, entryX, entryY
+                );
+                if (dist <= 120) {
+                    this.openIveaRestaurantPackage(delivery);
+                } else {
+                    this.showFloatingText(entryX, entryY - 50, 'Avvicinati al pacco IVEA!', '#ffd700');
+                }
+            });
+
+            this.showFloatingText(entryX, entryY - 60, `📦 Consegna IVEA: ${delivery.name}`, '#f39c12');
+        }
+
+        openIveaRestaurantPackage(delivery) {
+            if (this.iveaRestaurantPackageSprite) {
+                this.iveaRestaurantPackageSprite.destroy();
+                this.iveaRestaurantPackageSprite = null;
+            }
+            if (this.iveaRestaurantPackageZone) {
+                this.iveaRestaurantPackageZone.destroy();
+                this.iveaRestaurantPackageZone = null;
+            }
+            if (this.iveaRestaurantPackageGlow) {
+                this.iveaRestaurantPackageGlow.destroy();
+                this.iveaRestaurantPackageGlow = null;
+            }
+
+            if (window.RESTAURANT_STATE) {
+                const textureKey = this.textures.exists(delivery.id) ? delivery.id : 'pacco';
+                this.startPlacementMode(delivery.id, textureKey);
+                this.showFloatingText(400, 300,
+                    `🎯 Posiziona ${delivery.name} con SPAZIO (ESC per annullare)`,
+                    '#ffd700');
+            }
+        }
+
         update(time, delta) {
+            if (this.taxSystem && this.taxSystem.isDeclarationDue() && !this.taxSystem.auditActive) {
+                if (this.taxHudText) {
+                    if (Math.floor(this.time.now / 1000) % 2 === 0) {
+                        this.taxHudText.setVisible(true);
+                    } else {
+                        this.taxHudText.setVisible(false);
+                    }
+                }
+            }
+
+            if (this.placementMode) {
+                this.updatePlacementGhost();
+            }
+
             if (this.sponsorSystem && typeof this.sponsorSystem.update === 'function') {
                 this.sponsorSystem.update(delta);
             }
 
-            if (this.isCheater && this.policeNPC) {
-                this.updatePoliceMovement(delta);
+            if (this.briscolaSystem && typeof this.briscolaSystem.update === 'function') {
+                this.briscolaSystem.update(delta);
             }
 
-            if (this.isCheater && this.gameActive && !this.arrestTriggered) {
-                return;
+            if (this.briscolaSystem && this.briscolaSystem.missionStarted && !this.briscolaSystem.missionComplete && !this.briscolaSystem.missionFailed) {
+                this.sponsorBlocksCustomers = true;
             }
             
             if (!this.gameActive && !this.isPaused) return;
@@ -3787,6 +3922,10 @@
                     this.crime.saveCrimeData();
                     this.showFloatingText(400, 250, '📄 Il foglio del clan è scaduto.', '#ff4444');
                 }
+            }
+
+            if (this.mailSystem && typeof this.mailSystem.checkDeadline === 'function') {
+                this.mailSystem.checkDeadline();
             }
 
             this.checkPoliceInspection();
@@ -3819,6 +3958,7 @@
 
             if (!this.tutorialActive) {
                 if (this.kitchen && typeof this.kitchen.update === 'function') this.kitchen.update();
+                if (this.supplier && typeof this.supplier.update === 'function') this.supplier.update();
                 if (this.bathroom && typeof this.bathroom.update === 'function') this.bathroom.update(time, delta);
                 if (this.phone && typeof this.phone.update === 'function') this.phone.update(time, delta);
             }
@@ -3880,8 +4020,19 @@
                 }
             });
 
+            if (this.mailSystem && !this.iveaRestaurantPackageSprite) {
+                const ready = this.mailSystem.getReadyDeliveries('restaurant')
+                    .filter(d => d.target === 'restaurant');
+
+                if (ready.length > 0) {
+                    const delivery = ready[0];
+                    this.mailSystem.consumeDelivery(delivery);
+                    this.spawnIveaRestaurantPackage(delivery);
+                }
+            }
+
             if (this.supplier && this.supplier.packageSprite && this.supplier.packageSprite.active) {
-                this.supplier.packageSprite.setDisplaySize(55, 55);
+                this.supplier.packageSprite.setDisplaySize(48, 48);
                 
                 if (!this.supplier.packageGlow) {
                     this.supplier.packageGlow = this.add.circle(
@@ -3901,15 +4052,15 @@
                     this.supplier.packageGlow.x = this.supplier.packageSprite.x;
                     this.supplier.packageGlow.y = this.supplier.packageSprite.y;
                 }
-                
+
                 if (!this.packageClickZone && this.supplier.packageSprite.active) {
                     const pkg = this.supplier.packageSprite;
-                    this.packageClickZone = this.add.zone(pkg.x, pkg.y, 60, 60)
-                        .setRectangleDropZone(60, 60)
+                    this.packageClickZone = this.add.zone(pkg.x, pkg.y, 90, 90)
+                        .setRectangleDropZone(90, 90)
                         .setInteractive({ useHandCursor: true })
                         .setDepth(pkg.depth + 1);
-                    
-                    this.packageTooltip = this.add.text(pkg.x, pkg.y - 45, '📦 CLICCA PER RITIRARE!', {
+
+                    this.packageTooltip = this.add.text(pkg.x, pkg.y - 60, '📦 CLICCA PER RITIRARE!', {
                         fontSize: '11px',
                         color: '#ffd700',
                         fontStyle: 'bold',
@@ -3917,36 +4068,24 @@
                         backgroundColor: '#000000aa',
                         padding: { x: 6, y: 3 }
                     }).setOrigin(0.5).setDepth(pkg.depth + 2);
-                    
+
                     this.packageClickZone.on('pointerdown', () => {
                         if (this.isPhoneActive || this.isPaused) return;
-                        
+
                         const dist = Phaser.Math.Distance.Between(
                             this.waitress.x, this.waitress.y,
                             this.supplier.packageSprite.x, this.supplier.packageSprite.y
                         );
-                        
-                        if (dist <= 80) {
-                            this.supplier.pickUpPackage();
-                            this.showFloatingText(
-                                this.supplier.packageSprite.x,
-                                this.supplier.packageSprite.y - 30,
-                                '📦 PACCO RITIRATO!',
-                                '#2ecc71'
-                            );
-                            triggerSfx('coin');
-                            
-                            if (this.packageClickZone) {
-                                this.packageClickZone.destroy();
-                                this.packageClickZone = null;
-                            }
-                            if (this.packageTooltip) {
-                                this.packageTooltip.destroy();
-                                this.packageTooltip = null;
-                            }
-                            if (this.supplier.packageGlow) {
-                                this.supplier.packageGlow.destroy();
-                                this.supplier.packageGlow = null;
+
+                        if (dist <= 120) {
+                            const ok = this.supplier.pickUpPackage();
+                            if (ok) {
+                                this.showFloatingText(
+                                    this.supplier.packageSprite ? this.supplier.packageSprite.x : 150,
+                                    470,
+                                    '📦 SCORTE RIFORNITE!',
+                                    '#2ecc71'
+                                );
                             }
                         } else {
                             this.showFloatingText(
@@ -3958,13 +4097,13 @@
                         }
                     });
                 }
-                
+
                 if (this.packageClickZone && this.supplier.packageSprite.active) {
                     this.packageClickZone.x = this.supplier.packageSprite.x;
                     this.packageClickZone.y = this.supplier.packageSprite.y;
                     if (this.packageTooltip) {
                         this.packageTooltip.x = this.supplier.packageSprite.x;
-                        this.packageTooltip.y = this.supplier.packageSprite.y - 45;
+                        this.packageTooltip.y = this.supplier.packageSprite.y - 60;
                     }
                 }
             } else if (this.packageClickZone) {
@@ -3999,6 +4138,10 @@
                 this.quest.update();
             }
 
+            if (this.taxSystem && typeof this.taxSystem.updateTaxHUD === 'function') {
+                this.taxSystem.updateTaxHUD();
+            }
+
             if (this.crime) {
                 if (typeof this.crime.update === 'function') {
                     this.crime.update(time, delta);
@@ -4022,10 +4165,22 @@
             }
 
             if (Phaser.Input.Keyboard.JustDown(this.keys.k) && this.keys.shift.isDown) {
-                GAME.customersServed = GAME.customersTarget;
-                GAME.score += 100;
-                this.showFloatingText(400, 250, '🔑 Trucco attivato!', '#ffd700');
-                this.levelComplete();
+                const briscolaAvailable = this.briscolaSystem
+                    && this.briscolaSystem.isAvailable(GAME.level)
+                    && !this.briscolaSystem.state.completed
+                    && !this.briscolaSystem.state.failed
+                    && !this.briscolaSystem.missionStarted
+                    && !this.briscolaSystem.pendingBriscola
+                    && !this.briscolaSystem.briscolaRunning;
+
+                if (briscolaAvailable) {
+                    this.briscolaSystem.startMission();
+                } else {
+                    GAME.customersServed = GAME.customersTarget;
+                    GAME.score += 100;
+                    this.showFloatingText(400, 250, '🔑 Trucco attivato!', '#ffd700');
+                    this.levelComplete();
+                }
                 return;
             }
 
@@ -4076,10 +4231,15 @@
                 return;
             }
 
+            if (!this.isPhoneActive && this.placementMode && Phaser.Input.Keyboard.JustDown(this.keys.esc)) {
+                this.cancelPlacement();
+                return;
+            }
+
             if (!this.isPhoneActive && (
                 Phaser.Input.Keyboard.JustDown(this.keys.esc) ||
                 Phaser.Input.Keyboard.JustDown(this.keys.p)
-            )) {
+            ) && !this.placementMode) {
                 this.togglePause();
                 return;
             }
@@ -4154,9 +4314,6 @@
 
             if (this.trashBin && this.trashBin.active) {
                 this.trashBin.setDepth(this.trashBin.y);
-                if (this.trashBinLabel && this.trashBinLabel.active) {
-                    this.trashBinLabel.setDepth(this.trashBin.y + 1);
-                }
             }
 
             if (this.waitressShadow) {
@@ -4170,7 +4327,11 @@
             }
 
             if (!this.isPhoneActive && Phaser.Input.Keyboard.JustDown(this.keys.space)) {
-                this.interactWithClosest();
+                if (this.placementMode) {
+                    this.confirmPlacement();
+                } else {
+                    this.interactWithClosest();
+                }
             }
         }
         
@@ -4285,14 +4446,23 @@
             
             this.showFloatingText(400, 300, t('DAY_COMPLETE'), '#ffd700');
             triggerSfx('coin');
+
+            if (this.sponsorSystem && this.sponsorSystem.isMissionActive()) {
+                this.sponsorSystem.checkLevelEnd();
+            }
             
             if (this.priceSystem) {
                 this.priceSystem.updateInflation(GAME.level);
             }
             
-            if (GAME.score >= 15000) {
-                this.showFloatingText(400, 250, '🏆 HAI RAGGIUNTO 15.000€! LOCALE TUO!', '#ffd700');
+            if (GAME.score >= 15000 && !localStorage.getItem('waitress_ending_seen')) {
+                this.showFloatingText(400, 250, '🏆 HAI RAGGIUNTO 15.000€!', '#ffd700');
                 triggerSfx('coin');
+
+                this.time.delayedCall(2500, () => {
+                    this.scene.start('Ending');
+                });
+                return;
             }
             
             if (this.story) {
@@ -4369,6 +4539,7 @@
                 isCheater: GAME.isCheater || false,
                 settings: GAME.settings,
                 housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : [],
+                restaurantPurchased: window.RESTAURANT_STATE ? window.RESTAURANT_STATE.purchased : [],
                 lastRank: rank,
                 lastBonus: expositorBonus,
                 waste: GAME.waste,
@@ -4505,10 +4676,10 @@
                 bg.fillRect(i, 0, 20, 600);
             }
             
-            const card = this.add.rectangle(400, 300, 520, 440, 0x110906, 0.9);
+            const card = this.add.rectangle(400, 300, 520, 460, 0x110906, 0.9);
             card.setStrokeStyle(2.5, 0xd27d2d);
             
-            const title = this.add.text(400, 110, t('MENU_TITLE'), {
+            const title = this.add.text(400, 100, t('MENU_TITLE'), {
                 fontSize: '42px',
                 color: '#ffd700',
                 fontStyle: 'bold',
@@ -4524,14 +4695,14 @@
                 repeat: -1
             });
             
-            this.add.text(400, 165, t('MENU_SUBTITLE'), {
+            this.add.text(400, 155, t('MENU_SUBTITLE'), {
                 fontSize: '13px',
                 color: '#e0d5c1',
                 letterSpacing: 3,
                 fontFamily: 'Fredoka'
             }).setOrigin(0.5);
             
-            this.createButton(400, 240, t('GIOCA'), () => {
+            this.createButton(400, 230, t('GIOCA'), () => {
                 window.ARCADE.enabled = false;
                 GAME.arcadeMode = false;
                 triggerSfx('click');
@@ -4543,11 +4714,16 @@
                 if (typeof window.SaveMenu === 'function') {
                     this.openSaveMenu();
                 } else {
-                    this.scene.start('Game');
+                    const introSeen = localStorage.getItem('waitress_intro_seen') === 'true';
+                    if (!introSeen) {
+                        this.scene.start('Intro');
+                    } else {
+                        this.scene.start('Game');
+                    }
                 }
             });
             
-            this.createButton(400, 310, '🕹️ ARCADE', () => {
+            this.createButton(400, 300, '🕹️ ARCADE', () => {
                 window.ARCADE.reset();
                 window.ARCADE.applyConfig();
                 window.FORCE_TUTORIAL = false;
@@ -4555,17 +4731,17 @@
                 this.scene.start('Game');
             });
             
-            this.createButton(400, 380, t('IMPOSTAZIONI'), () => {
+            this.createButton(400, 370, t('IMPOSTAZIONI'), () => {
                 triggerSfx('click');
                 this.scene.start('Settings');
             });
             
-            this.createButton(400, 450, t('CREDITI'), () => {
+            this.createButton(400, 440, t('CREDITI'), () => {
                 triggerSfx('click');
                 this.scene.start('Credits');
             });
             
-            this.add.text(400, 530, 'Mirko Donato - 2026', {
+            this.add.text(400, 545, 'Mirko Donato - 2026', {
                 fontSize: '11px',
                 color: '#d27d2d',
                 fontStyle: 'italic',
@@ -4757,7 +4933,7 @@
 
             this.add.text(
                 530, 305,
-                `${purchasedCount} / ${HOUSE_STATE.items.length}`,
+                `${purchasedCount}`,
                 {
                     fontSize: '13px',
                     color: '#ffffff',
@@ -5215,8 +5391,8 @@
                 400,
                 460,
                 GAME.settings.aiEnabled
-                    ? '🧠 IA: ON'
-                    : '🧠 IA: OFF',
+                    ? 'ON'
+                    : 'OFF',
                 {
                     fontSize: '13px',
                     color: '#ffffff',
@@ -5239,8 +5415,8 @@
 
                 aiTxt.setText(
                     GAME.settings.aiEnabled
-                        ? '🧠 IA: ON'
-                        : '🧠 IA: OFF'
+                        ? 'ON'
+                        : 'OFF'
                 );
 
                 this.saveSettings();
@@ -5335,66 +5511,43 @@
         }
     }
 
-    class CreditsScene extends Phaser.Scene {
-        constructor() {
-            super('Credits');
-        }
-        
-        create() {
-            const card = this.add.rectangle(400, 300, 500, 420, 0x110906, 0.85);
-            card.setStrokeStyle(2, 0xd27d2d);
-            
-            this.add.text(400, 80, t('CREDITS_TITLE'), {
-                fontSize: '28px',
-                color: '#ffd700',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            const credits = [
-                t('CREDITS_IDEATION'),
-                'Mirko Yuri Donato',
-                '',
-                t('CREDITS_TECH'),
-                'Phaser 3 / Web Audio API',
-                '',
-                t('CREDITS_LICENSE'),
-                'MIT - 2026'
-            ];
-            
-            this.add.text(400, 270, credits.join('\n'), {
-                fontSize: '13px',
-                color: '#e0d5c1',
-                align: 'center',
-                lineSpacing: 5,
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            const backBtn = this.add.rectangle(400, 460, 240, 40, 0xd27d2d);
-            backBtn.setStrokeStyle(1.5, 0xffffff);
-            backBtn.setInteractive({ useHandCursor: true });
-            
-            this.add.text(400, 460, t('TORNA'), {
-                fontSize: '14px',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                fontFamily: 'Fredoka'
-            }).setOrigin(0.5);
-            
-            backBtn.on('pointerdown', () => {
-                triggerSfx('click');
-                this.scene.start('Menu');
-            });
-        }
-    }
+    const scenesList = [PreloadScene, MenuScene, SettingsScene, GameScene, GameOverScene];
 
-    const scenesList = [PreloadScene, MenuScene, SettingsScene, CreditsScene, GameScene, GameOverScene];
-    
+
+
+
+    if (window.NewPlayerScene) {
+        scenesList.push(window.NewPlayerScene);
+    }
+    if (window.IntroScene) {
+        scenesList.push(window.IntroScene);
+    }
+    if (window.EndingScene) {
+        scenesList.push(window.EndingScene);
+    }
     if (window.HouseScene) {
         scenesList.push(window.HouseScene);
     }
     if (window.LevelSummaryScene) {
         scenesList.push(window.LevelSummaryScene);
+    }
+    if (typeof window.CreditsScene !== 'undefined') {
+        scenesList.push(window.CreditsScene);
+    }
+    if (window.MoroniDialogScene) {
+        scenesList.push(window.MoroniDialogScene);
+    }
+    if (window.ClanDialogScene) {
+        scenesList.push(window.ClanDialogScene);
+    }
+    if (window.BriscolaDialogScene) {
+        scenesList.push(window.BriscolaDialogScene);
+    }
+    if (window.BriscolaGameScene) {
+        scenesList.push(window.BriscolaGameScene);
+    }
+    if (window.BriscolaWagerScene) {
+        scenesList.push(window.BriscolaWagerScene);
     }
 
     const config = {
@@ -5427,6 +5580,24 @@
             setTimeout(() => {
                 loadingScreen.style.display = 'none';
             }, 500);
+        }
+
+        if (!window.ARCADE && window.ArcadeSystem) {
+            window.ARCADE = window.ArcadeSystem;
+        }
+        if (!window.ARCADE) {
+            window.ARCADE = {
+                enabled: false,
+                mode: false,
+                reset: function() {},
+                applyConfig: function() {},
+                isSystemEnabled: function() { return true; },
+                getTargetForLevel: function(level) { return 6 + (level * 4); },
+                save: function() {}
+            };
+        }
+        if (!window.ARCADE.isSystemEnabled) {
+            window.ARCADE.isSystemEnabled = function() { return true; };
         }
 
         const game = new Phaser.Game(config);

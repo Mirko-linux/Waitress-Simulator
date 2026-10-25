@@ -1,6 +1,6 @@
-// ============================================
-// TUTORIAL SYSTEM - VERSIONE COMPLETA FUNZIONANTE
-// ============================================
+
+
+
 
 class TutorialSystem {
     constructor(scene) {
@@ -30,12 +30,19 @@ class TutorialSystem {
             this.scene.spawnEvent = null;
         }
 
+        if (window.START_TUTORIAL_DIRECTLY) {
+            window.START_TUTORIAL_DIRECTLY = false;
+            window._tutorialStarting = false;
+            this.startTutorialGameplay();
+            return;
+        }
+
         this.createWelcomeScreen();
     }
 
-    // ==========================================
-    // 1. SCHERMATA BENVENUTO
-    // ==========================================
+
+
+
     createWelcomeScreen() {
         const scene = this.scene;
 
@@ -98,9 +105,9 @@ class TutorialSystem {
         window._tutorialStarting = false;
     }
 
-    // ==========================================
-    // 2. SKIP
-    // ==========================================
+
+
+
     skipTutorial() {
         localStorage.setItem('waitress_tutorial_done', 'true');
         this.cleanup();
@@ -114,9 +121,9 @@ class TutorialSystem {
         this.scene.startSpawning();
     }
 
-    // ==========================================
-    // 3. AVVIA TUTORIAL
-    // ==========================================
+
+
+
     startTutorialGameplay() {
         this.tutorialStep = 1;
         this.spawnTutorialCustomer();
@@ -124,9 +131,9 @@ class TutorialSystem {
         this.scene.gameActive = true;
     }
 
-    // ==========================================
-    // 4. CREA CLIENTE
-    // ==========================================
+
+
+
     spawnTutorialCustomer() {
         const scene = this.scene;
         const table = scene.tables.find(t => t.id === 1);
@@ -211,9 +218,9 @@ class TutorialSystem {
         });
     }
 
-    // ==========================================
-    // 5. PANNELLO TUTORIAL
-    // ==========================================
+
+
+
     updateTutorialPanel() {
         if (this.tutorialPanel) { this.tutorialPanel.destroy(); this.tutorialPanel = null; }
         if (this.arrowGraphic) { this.arrowGraphic.destroy(); this.arrowGraphic = null; }
@@ -276,12 +283,12 @@ class TutorialSystem {
 
         this.scene.tutorialStepTarget = current.target || null;
 
-        // Freccia
+
         if (current.target && this.tutorialStep < 6) {
             let tx = 0, ty = 0;
 
             if (current.target === 'take_order' || current.target === 'serve_food' || current.target === 'clear_table') {
-                // Frecce verso il tavolo 1
+
                 if (this.tutorialCustomer && this.tutorialCustomer.table) {
                     tx = this.tutorialCustomer.table.x;
                     ty = this.tutorialCustomer.table.y + 30;
@@ -316,9 +323,9 @@ class TutorialSystem {
         });
     }
 
-    // ==========================================
-    // 6. AVANZA STEP
-    // ==========================================
+
+
+
     progressStep() {
         if (this.completed) return;
         if (this.tutorialStep >= 6) {
@@ -334,14 +341,14 @@ class TutorialSystem {
         }
 
         if (this.tutorialStep === 5) {
-            // Entriamo nello step 5: il cliente è andato via, il tavolo è sporco
+
             this.forceTableDirty();
         }
 
         this.updateTutorialPanel();
     }
 
-    // Forza la cucina a completare subito l'ordine della pizza
+
     forceKitchenComplete() {
         const scene = this.scene;
         if (!scene.kitchen) return;
@@ -364,7 +371,7 @@ class TutorialSystem {
         if (typeof scene.kitchen.cookingTime !== 'undefined') scene.kitchen.cookingTime = 0;
     }
 
-    // Forza il tavolo 1 ad essere sporco e rimuove il cliente
+
     forceTableDirty() {
         const scene = this.scene;
         const table = (this.tutorialCustomer && this.tutorialCustomer.table)
@@ -400,9 +407,9 @@ class TutorialSystem {
         }
     }
 
-    // ==========================================
-    // 7. FINE TUTORIAL
-    // ==========================================
+
+
+
     finishTutorial() {
         if (this.completed) return;
         this.completed = true;
@@ -453,9 +460,9 @@ class TutorialSystem {
         this.scene.startSpawning();
     }
 
-    // ==========================================
-    // 8. CLEANUP
-    // ==========================================
+
+
+
     cleanup() {
         if (this._arrivalTimer) { this._arrivalTimer.remove(); this._arrivalTimer = null; }
         if (this.tutorialPanel) { this.tutorialPanel.destroy(); this.tutorialPanel = null; }

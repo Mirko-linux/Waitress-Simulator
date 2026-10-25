@@ -16,7 +16,7 @@
 - **Gastronomia Palermitana:** Un menù ricco di piatti e bevande sia locali  (_cannolo_, _chinotto_, _panino con la milza_...) sia internazionali (_la pizza_, _la birra_...)
 - **Ciclo di Gioco e Progressione:** Completa gli obiettivi giornalieri (servire un numero target di clienti), supera i livelli e accumula guadagni.
 - **Gestione Stoviglie & Cucina:** Lava i piatti sporchi nel lavello prima che si accumulino, gestisci i fornelli, le friggitrici e i dispenser delle bevande.
-- **Integrazione IA & Dialoghi:** Conversazioni dinamiche e immersive con i clienti (tramite il modulo `AIDialogueManager`).
+- **Integrazione IA & Dialoghi:** Risposte immediate pre-generate per ciascun cliente, fallback sempre disponibili e generazione WebLLM asincrona per input nuovi (tramite `AIDialogueManager`).
 - **Sistemi di Crimine, Finanza e Copertura:** Gestisci la reputazione, il sospetto delle forze dell'ordine e nascondi gli illeciti nello scomparto segreto del ristorante prima che scatti un'ispezione della Guardia di Finanza!
 - **Supporto Multilingua (18+ Lingue):** Traduzioni automatiche e localizzazione dinamica integrate (Italiano, Español, Français, Deutsch, Русский, 日本語, 中文, e molte altre).
 
@@ -24,3 +24,13 @@
 
 ## Esecuzione del videogioco
 Per eseguire il videogioco è sufficiente un qualsiasi server web locale (come HTTP-Server o Live Server di Visual Studio Code) ed un browser moderno con supporto HTML5 WebGL / Canvas. Non richiede build o compilazioni esterne complesse in quanto scritto in JavaScript  utilizzando il framework Phaser 3.
+
+### Database dialoghi
+
+I template sono in `json/dialogue_templates.json`; il database pronto all'uso è `json/npc_dialogues.json` e viene caricato in memoria all'avvio. Per rigenerare le varianti dopo aver modificato i template, esegui dalla cartella del progetto:
+
+```powershell
+node scripts\generate-dialogue-database.js
+```
+
+Il gioco continua a usare le risposte pre-generate e i fallback anche senza WebGPU. WebLLM viene avviato solo in background quando arriva un messaggio fuori dagli intenti salvati; la risposta iniziale non attende il modello.

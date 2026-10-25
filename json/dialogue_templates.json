@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "openers": [
+    "Certo,",
+    "Guarda,",
+    "Sai,",
+    "Beh,",
+    "Eh,",
+    "Senti,",
+    "Ti dirò,",
+    "A dire il vero,",
+    "In effetti,",
+    "Mah,"
+  ],
+  "fallbacks": [
+    "Non ho capito bene, ma dimmi pure.",
+    "Ora ho la testa altrove, riprova tra poco.",
+    "Scusami, mi sono distratta un momento.",
+    "Parliamone con calma, ti ascolto."
+  ],
+  "npcs": {
+    "Maria": {
+      "fallbacks": [
+        "Scusa, stavo ripensando al mio ultimo giro in bici.",
+        "Non ho capito, ma raccontami tutto mentre mi riposo.",
+        "Aspetta un secondo, ho ancora il fiatone della pedalata."
+      ],
+      "intents": [
+        {
+          "id": "greeting",
+          "keywords": ["ciao", "salve", "buongiorno", "buonasera"],
+          "replies": ["Ciao! Che bello vederti, come va?", "Ehi, sono appena tornata da un giro in bici!", "Ciao! Oggi c'è proprio una bella giornata per pedalare."]
+        },
+        {
+          "id": "thanks",
+          "keywords": ["grazie", "gentile", "complimenti", "brava"],
+          "replies": ["Grazie, sei sempre un tesoro!", "Che gentile, mi hai rimesso di buonumore.", "Grazie davvero, dopo la pedalata ci voleva."]
+        },
+        {
+          "id": "farewell",
+          "keywords": ["arrivederci", "a dopo", "devo andare", "ci vediamo"],
+          "replies": ["A presto, mi aspetta un altro giro!", "Ciao, ci vediamo dopo la prossima pedalata.", "Vado, ma torno volentieri a trovarti."]
+        },
+        {
+          "id": "food",
+          "keywords": ["mangiare", "bere", "cibo", "menu", "ordine", "consigli"],
+          "replies": ["Dopo aver pedalato, un panino è perfetto.", "Prendo qualcosa di buono e un'acqua fresca.", "Mi fido del tuo consiglio, ho una fame tremenda."]
+        },
+        {
+          "id": "relationships",
+          "keywords": ["amore", "fidanzato", "famiglia", "amica", "amico"],
+          "replies": ["Mi piace circondarmi di persone energiche.", "Le amicizie migliori sono quelle che pedalano con te.", "Quando sto bene con qualcuno, trovo sempre tempo."]
+        },
+        {
+          "id": "work",
+          "keywords": ["lavoro", "ufficio", "studio", "esame", "scuola"],
+          "replies": ["Il lavoro va meglio dopo una bella pedalata.", "Cerco di ritagliarmi sempre un po' di tempo per me.", "Una pausa attiva aiuta a rimettere in ordine i pensieri."]
+        },
+        {
+          "id": "hobbies",
+          "keywords": ["bici", "bicicletta", "pedalare", "sport", "hobby"],
+          "replies": ["La bicicletta è la mia passione più grande.", "Pedalare mi fa sentire libera e piena di energia.", "Ogni strada nuova è una piccola avventura."]
+        },
+        {
+          "id": "wellbeing",
+          "keywords": ["come stai", "come va", "giornata", "tutto bene"],
+          "replies": ["Sto benissimo, oggi ho pedalato un sacco.", "Sono un po' stanca, ma felice.", "La giornata migliora sempre con una buona compagnia."]
+        }
+      ]
+    },
+    "Elena": {
+      "fallbacks": [
+        "Scusa, stavo pensando agli esami. Che mi dicevi?",
+        "Non ho capito bene, ma sono qui e ti ascolto.",
+        "Un attimo, ho la testa piena di appunti."
+      ],
+      "intents": [
+        {
+          "id": "greeting",
+          "keywords": ["ciao", "salve", "buongiorno", "buonasera"],
+          "replies": ["Ciao! Che bello vederti, come stai?", "Ehi! Ho appena finito lezione, finalmente una pausa.", "Ciao! Oggi provo a non pensare agli esami."]
+        },
+        {
+          "id": "thanks",
+          "keywords": ["grazie", "gentile", "complimenti", "brava"],
+          "replies": ["Grazie, sei davvero carina!", "Che gentile, mi hai salvato la giornata.", "Grazie mille, sei sempre così disponibile."]
+        },
+        {
+          "id": "farewell",
+          "keywords": ["arrivederci", "a dopo", "devo andare", "ci vediamo"],
+          "replies": ["A presto! Ora devo tornare a studiare.", "Ci vediamo, fammi sapere come va!", "Ciao! Ci si rivede dopo le lezioni."]
+        },
+        {
+          "id": "food",
+          "keywords": ["mangiare", "bere", "cibo", "menu", "ordine", "consigli"],
+          "replies": ["Prendo qualcosa di buono, ho fame dopo le lezioni.", "Una pizza o delle patatine mi tirano su.", "Mi consigli qualcosa? Oggi ho saltato il pranzo."]
+        },
+        {
+          "id": "relationships",
+          "keywords": ["amore", "fidanzato", "famiglia", "amica", "amico"],
+          "replies": ["Le persone sincere mi fanno sentire a casa.", "Mi piace avere amici con cui ridere.", "La famiglia mi sostiene anche nei periodi degli esami."]
+        },
+        {
+          "id": "work",
+          "keywords": ["lavoro", "ufficio", "studio", "esame", "scuola"],
+          "replies": ["Gli esami si avvicinano e ho ancora tanto da ripassare.", "Studio all'università, ma una pausa ci vuole.", "Oggi le lezioni sono state lunghe, però interessanti."]
+        },
+        {
+          "id": "hobbies",
+          "keywords": ["musica", "film", "libro", "leggere", "hobby", "viaggio"],
+          "replies": ["Nel tempo libero mi piace uscire con gli amici.", "Un bel film è perfetto dopo aver studiato.", "Mi piace scoprire posti nuovi quando posso."]
+        },
+        {
+          "id": "wellbeing",
+          "keywords": ["come stai", "come va", "giornata", "tutto bene"],
+          "replies": ["Bene, anche se oggi ho studiato parecchio.", "Sono un po' stanca, ma di buon umore.", "Va tutto bene, grazie di avermelo chiesto."]
+        }
+      ]
+    },
+    "Francesco": {
+      "fallbacks": [
+        "Scusami, mi sono perso nei tuoi occhi. Dicevi?",
+        "Non ho capito, ma con te ascolterei per ore.",
+        "Aspetta, stavo cercando la frase giusta per risponderti."
+      ],
+      "intents": [
+        {
+          "id": "greeting",
+          "keywords": ["ciao", "salve", "buongiorno", "buonasera"],
+          "replies": ["Ciao, splendore! Sei sempre bellissima.", "Buongiorno! Adesso la giornata è già migliorata.", "Ehi, non vedevo l'ora di salutarti."]
+        },
+        {
+          "id": "thanks",
+          "keywords": ["grazie", "gentile", "complimenti", "brava"],
+          "replies": ["Per te farei molto più di questo.", "Grazie a te, sei sempre speciale.", "Sei tu che rendi tutto più bello."]
+        },
+        {
+          "id": "farewell",
+          "keywords": ["arrivederci", "a dopo", "devo andare", "ci vediamo"],
+          "replies": ["A presto, non vedo l'ora di rivederti.", "Ciao, porterò il tuo sorriso con me.", "Ci vediamo dopo, splendore."]
+        },
+        {
+          "id": "food",
+          "keywords": ["mangiare", "bere", "cibo", "menu", "ordine", "consigli"],
+          "replies": ["Mi fido del tuo gusto, scegli tu per me.", "Prendo un caffè, così resto qui a parlare.", "Qualcosa di buono, purché me lo consigli tu."]
+        },
+        {
+          "id": "relationships",
+          "keywords": ["amore", "fidanzato", "famiglia", "amica", "amico"],
+          "replies": ["Quando tengo a qualcuno, glielo faccio capire.", "Mi piace essere romantico con chi amo.", "Le persone speciali meritano attenzioni speciali."]
+        },
+        {
+          "id": "work",
+          "keywords": ["lavoro", "ufficio", "studio", "esame", "scuola"],
+          "replies": ["Il lavoro conta, ma un sorriso conta di più.", "Oggi ho finito tutto e posso rilassarmi.", "Mi prendo una pausa, ne avevo proprio bisogno."]
+        },
+        {
+          "id": "hobbies",
+          "keywords": ["musica", "film", "libro", "leggere", "hobby", "viaggio"],
+          "replies": ["Mi piacciono le serate eleganti e la buona musica.", "Un bel film è ancora meglio in compagnia.", "Amo fare sorprese alle persone a cui tengo."]
+        },
+        {
+          "id": "wellbeing",
+          "keywords": ["come stai", "come va", "giornata", "tutto bene"],
+          "replies": ["Ora che ci sei tu, decisamente meglio.", "Sto bene, soprattutto quando parliamo.", "La mia giornata è migliorata appena ti ho vista."]
+        }
+      ]
+    },
+    "Rosa": {
+      "fallbacks": [
+        "Oh cara, mi sono persa nei ricordi. Ripeti?",
+        "La mia memoria fa qualche scherzo, ma ti ascolto.",
+        "Aspetta, stavo pensando a una storia di tanti anni fa."
+      ],
+      "intents": [
+        {
+          "id": "greeting",
+          "keywords": ["ciao", "salve", "buongiorno", "buonasera"],
+          "replies": ["Oh cara, che piacere vederti!", "Buongiorno, tesoro. Come sei gentile a passare.", "Ciao, mi fa sempre piacere fare due chiacchiere."]
+        },
+        {
+          "id": "thanks",
+          "keywords": ["grazie", "gentile", "complimenti", "brava"],
+          "replies": ["Grazie cara, sei proprio un tesoro.", "Che gentile, mi ricordi mia nipote.", "Grazie di cuore, non lo dimenticherò."]
+        },
+        {
+          "id": "farewell",
+          "keywords": ["arrivederci", "a dopo", "devo andare", "ci vediamo"],
+          "replies": ["A presto, cara. Ti racconterò un'altra storia.", "Arrivederci tesoro, stammi bene.", "Torna a trovarmi, mi farà tanto piacere."]
+        },
+        {
+          "id": "food",
+          "keywords": ["mangiare", "bere", "cibo", "menu", "ordine", "consigli"],
+          "replies": ["Una cassata mi ricorda i bei tempi passati.", "Prenderei un cannolo e un caffè, grazie.", "Qualcosa di dolce è sempre una buona idea."]
+        },
+        {
+          "id": "relationships",
+          "keywords": ["amore", "fidanzato", "famiglia", "amica", "amico"],
+          "replies": ["La famiglia è il dono più prezioso.", "I vecchi amici restano sempre nel cuore.", "L'affetto sincero non passa mai di moda."]
+        },
+        {
+          "id": "work",
+          "keywords": ["lavoro", "ufficio", "studio", "esame", "scuola"],
+          "replies": ["Ai miei tempi si lavorava sodo e si cantava.", "Ogni lavoro fatto con cura dà soddisfazione.", "I giovani studiano tanto, devono essere orgogliosi."]
+        },
+        {
+          "id": "hobbies",
+          "keywords": ["musica", "film", "libro", "leggere", "hobby", "viaggio"],
+          "replies": ["Mi piace raccontare storie dei tempi passati.", "Una passeggiata tranquilla mi fa sempre bene.", "Conservo ancora le vecchie fotografie di famiglia."]
+        },
+        {
+          "id": "wellbeing",
+          "keywords": ["come stai", "come va", "giornata", "tutto bene"],
+          "replies": ["Sto bene, cara, grazie di avermelo chiesto.", "Oggi mi sento in vena di raccontare.", "La giornata è bella quando qualcuno ti ascolta."]
+        }
+      ]
+    },
+    "Sofia": {
+      "fallbacks": [
+        "Scusa, stavo valutando il servizio. Puoi ripetere?",
+        "Non ho colto il punto, sii un po' più precisa.",
+        "Un attimo, stavo pensando a una questione importante."
+      ],
+      "intents": [
+        {
+          "id": "greeting",
+          "keywords": ["ciao", "salve", "buongiorno", "buonasera"],
+          "replies": ["Buongiorno. Spero che il servizio sia impeccabile.", "Salve, mi auguro che oggi sia tutto all'altezza.", "Ciao. Hai scelto un momento fortunato per vedermi."]
+        },
+        {
+          "id": "thanks",
+          "keywords": ["grazie", "gentile", "complimenti", "brava"],
+          "replies": ["Bene, apprezzo la tua attenzione.", "Grazie, riconosco quando qualcuno lavora bene.", "È il minimo, ma accetto volentieri il complimento."]
+        },
+        {
+          "id": "farewell",
+          "keywords": ["arrivederci", "a dopo", "devo andare", "ci vediamo"],
+          "replies": ["Arrivederci, spero di ritrovare lo stesso standard.", "A presto, se il servizio continuerà così.", "Ci vediamo. Ho ancora alcune cose da fare."]
+        },
+        {
+          "id": "food",
+          "keywords": ["mangiare", "bere", "cibo", "menu", "ordine", "consigli"],
+          "replies": ["Vorrei qualcosa di qualità, senza compromessi.", "Il risotto, purché sia preparato come si deve.", "Consigliami il piatto migliore, non quello più economico."]
+        },
+        {
+          "id": "relationships",
+          "keywords": ["amore", "fidanzato", "famiglia", "amica", "amico"],
+          "replies": ["La discrezione è essenziale nelle relazioni.", "Frequento persone che sanno distinguersi.", "La mia cerchia è ristretta, ma di alto livello."]
+        },
+        {
+          "id": "work",
+          "keywords": ["lavoro", "ufficio", "studio", "esame", "scuola"],
+          "replies": ["Gli affari richiedono disciplina e buone decisioni.", "Le mie giornate sono piene di impegni importanti.", "Pretendo molto da me stessa e da chi lavora con me."]
+        },
+        {
+          "id": "hobbies",
+          "keywords": ["musica", "film", "libro", "leggere", "hobby", "viaggio"],
+          "replies": ["Preferisco viaggi raffinati e luoghi esclusivi.", "Nel tempo libero scelgo esperienze di qualità.", "La lettura è piacevole, se il libro merita."]
+        },
+        {
+          "id": "wellbeing",
+          "keywords": ["come stai", "come va", "giornata", "tutto bene"],
+          "replies": ["Sto bene, grazie. La giornata è sotto controllo.", "Tutto procede come previsto, per fortuna.", "La giornata è accettabile, con qualche miglioramento possibile."]
+        }
+      ]
+    },
+    "Chiara": {
+      "fallbacks": [
+        "Scusa, pensavo ai compiti da correggere. Dicevi?",
+        "Non ho capito bene, puoi spiegarmelo con calma?",
+        "Un momento, sto organizzando mentalmente la giornata."
+      ],
+      "intents": [
+        {
+          "id": "greeting",
+          "keywords": ["ciao", "salve", "buongiorno", "buonasera"],
+          "replies": ["Buongiorno! Ho appena finito di correggere compiti.", "Ciao, che piacere vederti. Come procede la giornata?", "Salve! Finalmente una piccola pausa dal lavoro."]
+        },
+        {
+          "id": "thanks",
+          "keywords": ["grazie", "gentile", "complimenti", "brava"],
+          "replies": ["Grazie, apprezzo molto la tua gentilezza.", "Che carina, grazie davvero.", "Prego! È sempre bello aiutarsi."]
+        },
+        {
+          "id": "farewell",
+          "keywords": ["arrivederci", "a dopo", "devo andare", "ci vediamo"],
+          "replies": ["Arrivederci, devo tornare a scuola.", "A presto, magari dopo la riunione.", "Ci vediamo. Buona giornata e buon lavoro."]
+        },
+        {
+          "id": "food",
+          "keywords": ["mangiare", "bere", "cibo", "menu", "ordine", "consigli"],
+          "replies": ["Qualcosa di veloce, ho poco tempo.", "Prendo una pizza, poi devo rientrare a scuola.", "Un panino e una cola sarebbero perfetti."]
+        },
+        {
+          "id": "relationships",
+          "keywords": ["amore", "fidanzato", "famiglia", "amica", "amico"],
+          "replies": ["La famiglia viene prima di tutto.", "Cerco di essere presente per le persone a cui tengo.", "I miei amici sanno che possono contare su di me."]
+        },
+        {
+          "id": "work",
+          "keywords": ["lavoro", "ufficio", "studio", "esame", "scuola"],
+          "replies": ["Insegno con passione, anche se correggere stanca.", "Organizzare il lavoro aiuta a non perdere tempo.", "La scuola è impegnativa, ma i ragazzi danno soddisfazione."]
+        },
+        {
+          "id": "hobbies",
+          "keywords": ["musica", "film", "libro", "leggere", "hobby", "viaggio"],
+          "replies": ["Mi piace leggere quando riesco a ritagliarmi del tempo.", "Una serata tranquilla con la famiglia mi basta.", "Un buon libro è la mia pausa preferita."]
+        },
+        {
+          "id": "wellbeing",
+          "keywords": ["come stai", "come va", "giornata", "tutto bene"],
+          "replies": ["Bene, grazie. Oggi ho tante cose da fare.", "Sono un po' stanca, ma tutto procede.", "La giornata va meglio con una pausa così."]
+        }
+      ]
+    },
+    "Massimo": {
+      "fallbacks": [
+        "Boh, stavo pensando al cantiere. Che dicevi?",
+        "Non ho capito, vai al punto e facciamo prima.",
+        "Aspetta, ho la testa piena di problemi di lavoro."
+      ],
+      "intents": [
+        {
+          "id": "greeting",
+          "keywords": ["ciao", "salve", "buongiorno", "buonasera"],
+          "replies": ["Boh, ciao. Speriamo sia una giornata decente.", "Buongiorno, almeno qui c'è un po' di calma.", "Ciao. Siediti pure, ma non facciamola lunga."]
+        },
+        {
+          "id": "thanks",
+          "keywords": ["grazie", "gentile", "complimenti", "brava"],
+          "replies": ["Va bene, grazie. Almeno qualcuno è efficiente.", "Non c'è di che, basta che si faccia in fretta.", "Apprezzo, anche se non sono uno che si commuove."]
+        },
+        {
+          "id": "farewell",
+          "keywords": ["arrivederci", "a dopo", "devo andare", "ci vediamo"],
+          "replies": ["Vabbè, ci si vede se il cantiere lascia respirare.", "A dopo, adesso devo rimettermi al lavoro.", "Ciao. Non fare tardi, che domani si ricomincia."]
+        },
+        {
+          "id": "food",
+          "keywords": ["mangiare", "bere", "cibo", "menu", "ordine", "consigli"],
+          "replies": ["Una birra e un panino, e sbrigati.", "Prendo qualcosa di sostanzioso, ho lavorato tutto il giorno.", "Il solito: cibo semplice e senza troppe storie."]
+        },
+        {
+          "id": "relationships",
+          "keywords": ["amore", "fidanzato", "famiglia", "amica", "amico"],
+          "replies": ["La famiglia è importante, anche se non lo dico spesso.", "Gli amici veri si vedono quando c'è da lavorare.", "Non sono uno da grandi discorsi, ma ci tengo."]
+        },
+        {
+          "id": "work",
+          "keywords": ["lavoro", "ufficio", "studio", "esame", "scuola"],
+          "replies": ["Al cantiere non si perde tempo, si lavora.", "Il lavoro è duro, ma almeno è concreto.", "Ogni giorno c'è un problema nuovo da risolvere."]
+        },
+        {
+          "id": "hobbies",
+          "keywords": ["musica", "film", "libro", "leggere", "hobby", "viaggio"],
+          "replies": ["Nel tempo libero preferisco riposare, senza complicazioni.", "Una birra tranquilla vale più di tanti programmi.", "Quando posso, mi guardo una partita e basta."]
+        },
+        {
+          "id": "wellbeing",
+          "keywords": ["come stai", "come va", "giornata", "tutto bene"],
+          "replies": ["Boh, si tira avanti. Il lavoro non manca.", "Sono stanco, ma poteva andare peggio.", "Tutto bene, basta che non mi si faccia aspettare."]
+        }
+      ]
+    },
+    "Andrea": {
+      "fallbacks": [
+        "Scusa, ero immerso nel debug. Puoi ripetere?",
+        "Non ho capito il contesto, mi serve un input più chiaro.",
+        "Un secondo, stavo ragionando su un bug complicato."
+      ],
+      "intents": [
+        {
+          "id": "greeting",
+          "keywords": ["ciao", "salve", "buongiorno", "buonasera"],
+          "replies": ["Ciao! Stavo facendo debugging, finalmente una pausa.", "Ehi, benvenuta. Come procede il sistema?", "Ciao! Oggi il codice mi sta dando del filo da torcere."]
+        },
+        {
+          "id": "thanks",
+          "keywords": ["grazie", "gentile", "complimenti", "brava"],
+          "replies": ["Grazie, feedback positivo ricevuto.", "Ottimo, mi fa piacere che sia stato utile.", "Grazie! È sempre bello quando tutto funziona."]
+        },
+        {
+          "id": "farewell",
+          "keywords": ["arrivederci", "a dopo", "devo andare", "ci vediamo"],
+          "replies": ["A dopo, torno a ottimizzare il progetto.", "Ciao! Ci vediamo al prossimo deploy.", "Ci sentiamo, devo chiudere ancora qualche bug."]
+        },
+        {
+          "id": "food",
+          "keywords": ["mangiare", "bere", "cibo", "menu", "ordine", "consigli"],
+          "replies": ["Un caffè doppio: devo restare concentrato.", "Prendo qualcosa di veloce, poi torno al debug.", "Mi consigli un piatto che ricarichi la batteria?"]
+        },
+        {
+          "id": "relationships",
+          "keywords": ["amore", "fidanzato", "famiglia", "amica", "amico"],
+          "replies": ["Le relazioni funzionano meglio con comunicazione chiara.", "Con gli amici giusti anche una giornata piena pesa meno.", "Tengo alle persone che sanno ascoltare davvero."]
+        },
+        {
+          "id": "work",
+          "keywords": ["lavoro", "ufficio", "studio", "esame", "scuola"],
+          "replies": ["Sto lavorando a un'app, il debug non finisce mai.", "Mi occupo di programmazione e sistemi informatici.", "Il codice è logica, pazienza e qualche caffè."]
+        },
+        {
+          "id": "hobbies",
+          "keywords": ["tecnologia", "coding", "codice", "computer", "videogioco", "hobby"],
+          "replies": ["Mi appassionano la tecnologia e i problemi difficili.", "Mi piace provare strumenti nuovi e capire come funzionano.", "Nel tempo libero sperimento con piccoli progetti software."]
+        },
+        {
+          "id": "wellbeing",
+          "keywords": ["come stai", "come va", "giornata", "tutto bene"],
+          "replies": ["Bene, il progetto compila e il caffè è caldo.", "Un po' stanco, ma ho risolto un bug.", "Va tutto bene, sto solo pensando a un algoritmo."]
+        }
+      ]
+    },
+    "Marco": {
+      "fallbacks": [
+        "Scusa amore, mi ero distratto un momento. Dicevi?",
+        "Non ho capito bene, ma sono qui con te.",
+        "Aspetta, stavo pensando a cosa fare stasera."
+      ],
+      "intents": [
+        {
+          "id": "greeting",
+          "keywords": ["ciao", "salve", "buongiorno", "buonasera"],
+          "replies": ["Ciao amore! Come sta andando la giornata?", "Ehi tesoro, finalmente un momento insieme.", "Ciao, mi sei mancata anche se ci siamo visti ieri."]
+        },
+        {
+          "id": "thanks",
+          "keywords": ["grazie", "gentile", "complimenti", "brava"],
+          "replies": ["Per te farei qualsiasi cosa, amore.", "Grazie a te, sei la migliore.", "Tesoro, non devi neanche ringraziarmi."]
+        },
+        {
+          "id": "farewell",
+          "keywords": ["arrivederci", "a dopo", "devo andare", "ci vediamo"],
+          "replies": ["Ci vediamo a casa, ti aspetto per cena.", "A dopo amore, non fare troppo tardi.", "Ciao tesoro, ci sentiamo più tardi."]
+        },
+        {
+          "id": "food",
+          "keywords": ["mangiare", "bere", "cibo", "menu", "ordine", "consigli"],
+          "replies": ["La solita pizza, magari la condividiamo.", "Prendo una birra e qualcosa da mangiare.", "Mi fido di te, scegli qualcosa che ci piaccia."]
+        },
+        {
+          "id": "relationships",
+          "keywords": ["amore", "fidanzato", "famiglia", "amica", "amico"],
+          "replies": ["Ti voglio bene, anche quando sono un po' pigro.", "La nostra relazione conta più di ogni altra cosa.", "Con te mi sento sempre a casa."]
+        },
+        {
+          "id": "work",
+          "keywords": ["lavoro", "ufficio", "studio", "esame", "scuola"],
+          "replies": ["Oggi non ho combinato molto, ma recupero domani.", "Il lavoro può aspettare, almeno per qualche minuto.", "Sto cercando di organizzarmi meglio, promesso."]
+        },
+        {
+          "id": "hobbies",
+          "keywords": ["musica", "film", "libro", "leggere", "hobby", "viaggio"],
+          "replies": ["Mi piace guardare un film tranquillo sul divano.", "Una serata insieme è il mio programma preferito.", "Per un viaggio ci sto, basta organizzarsi con calma."]
+        },
+        {
+          "id": "wellbeing",
+          "keywords": ["come stai", "come va", "giornata", "tutto bene"],
+          "replies": ["Ora va meglio, sono qui con te.", "Bene amore, anche se ho un po' fame.", "La giornata è tranquilla. Tu come stai?"]
+        }
+      ]
+    }
+  }
+}
