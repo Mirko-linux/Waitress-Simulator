@@ -578,6 +578,9 @@
             this.state.sponsorPermanent = true;
             this.state.active = false;
             this.saveState();
+            if (this.scene.missions) {
+                this.scene.missions.complete('sponsor_moroni');
+            }
 
             this.crateSprites.forEach(crate => {
                 if (crate && crate.active) crate.destroy();
@@ -589,6 +592,9 @@
             this.state.failed = true;
             this.state.active = false;
             this.saveState();
+            if (this.scene.missions) {
+                this.scene.missions.fail('sponsor_moroni');
+            }
 
             this.crateSprites.forEach(crate => {
                 if (crate && crate.active) crate.destroy();
@@ -668,7 +674,7 @@
         }
 
         isMissionActive() {
-            return this.state.active;
+            return this.state.active && this.state.day === (window.GAME ? window.GAME.level : 0);
         }
     }
 

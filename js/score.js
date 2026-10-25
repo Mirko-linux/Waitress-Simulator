@@ -21,14 +21,7 @@
         }
 
         init(data) {
-            let calculatedRent = data.rent || 50;
-            
-
-            if (window.PriceSystem) {
-                const tempPriceSys = new window.PriceSystem(this);
-                tempPriceSys.updateInflation(data.level || 1);
-                calculatedRent = tempPriceSys.getRentPrice(50);
-            }
+            const calculatedRent = data.rent || 50;
 
             const earned = data.earned || 0;
             const wastePenalty = data.wastePenalty || 0;
@@ -55,7 +48,7 @@
                 net: net,
                 served: data.served || 0,
                 target: data.target || 10,
-                lives: data.lives || 3,
+                lives: typeof data.lives === 'number' ? data.lives : (typeof window.getMaxLives === 'function' ? window.getMaxLives() : 3),
                 level: data.level || 1,
                 waste: data.waste || 0,
                 wastePenalty: wastePenalty
@@ -121,7 +114,7 @@
             const stats = [
                 { label: 'Clienti Serviti:', value: `${this.levelData.served} / ${this.levelData.target}`, color: '#2ecc71' },
                 { label: 'Incassi totali:', value: `${this.levelData.earned} €`, color: '#2ecc71' },
-                { label: 'Affitto (con inflazione):', value: `- ${this.levelData.rent} €`, color: '#e74c3c' },
+                { label: 'Affitto:', value: `- ${this.levelData.rent} €`, color: '#e74c3c' },
                 { label: 'Spreco cibo:', value: `- ${this.levelData.wastePenalty} €`, color: '#e74c3c' },
                 { label: 'Saldo netto:', value: `${this.levelData.net} €`, color: '#2ecc71' },
                 { label: 'Vite Rimaste:', value: '❤️'.repeat(Math.max(0, this.levelData.lives)), color: '#e74c3c' }
@@ -161,7 +154,7 @@
                     score: window.GAME.score,
                     level: window.GAME.level + 1,
                     customersServed: 0,
-                    lives: 3,
+                    lives: typeof window.GAME.lives === 'number' ? window.GAME.lives : this.levelData.lives,
                     dirtyPlates: 0,
                     settings: window.GAME.settings,
                     housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : [],

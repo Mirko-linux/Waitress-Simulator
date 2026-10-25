@@ -235,7 +235,9 @@ class SaveMenu {
         localStorage.removeItem('waitress_save_data');
         localStorage.removeItem('waitress_crime_data');
         localStorage.removeItem('waitress_story_data');
-        localStorage.removeItem('waitress_quest_data');
+        localStorage.removeItem('waitress_missions_data');
+        localStorage.removeItem('waitress_briscola_state');
+        localStorage.removeItem('waitress_sponsor_state');
 
 
         localStorage.removeItem('waitress_identity_created');
@@ -252,7 +254,7 @@ class SaveMenu {
         GAME.isCheater = false;
         GAME.suspicion = 0;
         GAME.dirtyPlates = 0;
-        GAME.lives = 3;
+        GAME.lives = typeof window.getMaxLives === 'function' ? window.getMaxLives() : 3;
         GAME.carriedOrders = [];
         localStorage.removeItem('waitress_cheater_flag');
         if (window.HOUSE_STATE) window.HOUSE_STATE.purchased = [];

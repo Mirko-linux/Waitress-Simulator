@@ -15,7 +15,7 @@
         startingScore: 0,
         startingLevel: 1,
 
-        patienceDuration: 25000,
+        patienceDuration: 12000,
         eatingDuration: 12000,
         washDuration: 1200,
 
@@ -60,7 +60,6 @@
         },
 
         systems: {
-            priceSystem: true,
             questSystem: false,
             crimeSystem: false,
             supplierSystem: true,
@@ -151,7 +150,9 @@
         window.GAME.level = this.startingLevel;
         window.GAME.customersServed = 0;
         window.GAME.customersTarget = this.getTargetForLevel(this.startingLevel);
-        window.GAME.lives = this.lives;
+        window.GAME.lives = typeof window.getMaxLivesForDifficulty === 'function'
+            ? window.getMaxLivesForDifficulty(this.difficulty)
+            : this.lives;
         window.GAME.dirtyPlates = 0;
         window.GAME.carriedOrders = [];
         window.GAME.isCheater = false;

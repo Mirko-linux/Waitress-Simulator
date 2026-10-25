@@ -6,7 +6,35 @@ const HOUSE_CONFIG = {
     }
 };
 
-const MAX_LIVES = 3;
+function getHouseMaxLives() {
+    if (typeof window.getMaxLives === 'function') {
+        return window.getMaxLives();
+    }
+
+    const difficulty = window.GAME && window.GAME.settings
+        ? window.GAME.settings.difficulty
+        : 'normale';
+
+    if (difficulty === 'facile') return 4;
+    if (difficulty === 'difficile') return 2;
+    return 3;
+}
+
+function updateHouseSave(mutator) {
+    try {
+        const raw = localStorage.getItem('waitress_save_data');
+        const parsed = raw ? JSON.parse(raw) : null;
+        const data = parsed && parsed.data ? { ...parsed.data } : { ...(parsed || {}) };
+
+        mutator(data);
+
+        localStorage.setItem('waitress_save_data', JSON.stringify(data));
+
+        if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
+            window.SaveManager.saveGame(data).catch(() => {});
+        }
+    } catch (e) {}
+}
 
 const CALENDAR_CONFIG = {
     startMonth: 7,
@@ -100,21 +128,24 @@ class HouseScene extends Phaser.Scene {
             window.GAME = { score: 0, level: 1, lives: 3, customersServed: 0, dirtyPlates: 0 };
         }
 
-        if (typeof window.GAME.lives !== 'number') window.GAME.lives = 3;
-        window.GAME.lives = Math.min(MAX_LIVES, Math.max(0, window.GAME.lives));
-
         try {
             const rawSave = localStorage.getItem('waitress_save_data');
             if (rawSave) {
                 const parsed = JSON.parse(rawSave);
                 const data = parsed.data || parsed;
+                if (data.settings) {
+                    window.GAME.settings = { ...(window.GAME.settings || {}), ...data.settings };
+                }
                 if (typeof data.score === 'number') window.GAME.score = data.score;
                 if (typeof data.level === 'number') window.GAME.level = data.level;
                 if (typeof data.lives === 'number') {
-                    window.GAME.lives = Math.min(MAX_LIVES, Math.max(0, data.lives));
+                    window.GAME.lives = data.lives;
                 }
             }
         } catch(e) {}
+
+        if (typeof window.GAME.lives !== 'number') window.GAME.lives = getHouseMaxLives();
+        window.GAME.lives = Math.min(getHouseMaxLives(), Math.max(0, window.GAME.lives));
 
         const coffeeDay = localStorage.getItem('waitress_coffee_day');
         const currentDay = window.GAME.level || 1;
@@ -223,7 +254,7 @@ class HouseScene extends Phaser.Scene {
             fontSize: '14px', color: '#e67e22', fontFamily: 'Fredoka'
         }).setDepth(101).setScrollFactor(0);
 
-        this.livesText = this.add.text(610, 14, '❤️'.repeat(Math.max(0, window.GAME.lives || 3)), {
+        this.livesText = this.add.text(610, 14, '❤️'.repeat(Math.max(0, typeof window.GAME.lives === 'number' ? window.GAME.lives : getHouseMaxLives())), {
             fontSize: '14px', color: '#e74c3c', fontFamily: 'Fredoka'
         }).setDepth(101).setScrollFactor(0);
 
@@ -234,7 +265,7 @@ class HouseScene extends Phaser.Scene {
         if (!this.scoreText) return;
         const score = (window.GAME && typeof window.GAME.score === 'number') ? window.GAME.score : 0;
         const level = (window.GAME && window.GAME.level) ? window.GAME.level : 1;
-        const lives = (window.GAME && typeof window.GAME.lives === 'number') ? window.GAME.lives : 3;
+        const lives = (window.GAME && typeof window.GAME.lives === 'number') ? window.GAME.lives : getHouseMaxLives();
 
         this.scoreText.setText(`INCASSO: ${score}€`);
         this.levelText.setText(`GIORNO: ${level}`);
@@ -762,21 +793,20 @@ class HouseScene extends Phaser.Scene {
             return;
         }
 
-        const hasMaxLives = window.GAME.lives >= MAX_LIVES;
+        const maxLives = getHouseMaxLives();
+        const hasMaxLives = window.GAME.lives >= maxLives;
 
         this.coffeeInProgress = true;
 
         window.GAME.score -= COFFEE_COST;
 
-        const saveData = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
-        if (saveData.data) saveData.data.score = window.GAME.score;
-        else saveData.score = window.GAME.score;
-        localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
+        updateHouseSave((data) => {
+            data.score = window.GAME.score;
+        });
 
         this.updateHouseHUD();
 
         this.showFloatingText(this.player.x, this.player.y - 40, '☕ Preparando il caffè...', '#f39c12');
-
         this.playCoffeeSound();
 
         this.time.delayedCall(3000, () => {
@@ -784,13 +814,12 @@ class HouseScene extends Phaser.Scene {
             this.coffeeUsedToday = true;
             localStorage.setItem('waitress_coffee_day', String(window.GAME.level || 1));
 
-            if (!hasMaxLives && window.GAME.lives < MAX_LIVES) {
-                window.GAME.lives = Math.min(MAX_LIVES, window.GAME.lives + 1);
+            if (!hasMaxLives && window.GAME.lives < maxLives) {
+                window.GAME.lives = Math.min(maxLives, window.GAME.lives + 1);
 
-                const saveData2 = JSON.parse(localStorage.getItem('waitress_save_data') || '{}');
-                if (saveData2.data) saveData2.data.lives = window.GAME.lives;
-                else saveData2.lives = window.GAME.lives;
-                localStorage.setItem('waitress_save_data', JSON.stringify(saveData2));
+                updateHouseSave((data) => {
+                    data.lives = window.GAME.lives;
+                });
 
                 this.showFloatingText(this.player.x, this.player.y - 40, '❤️ +1 Vita!', '#2ecc71');
             } else {
@@ -831,9 +860,10 @@ class HouseScene extends Phaser.Scene {
 
         this.time.delayedCall(1000, () => {
             const previousLevel = window.GAME.level;
+            const maxLives = getHouseMaxLives();
 
             window.GAME.level = previousLevel + 1;
-            window.GAME.lives = MAX_LIVES;
+            window.GAME.lives = maxLives;
             window.GAME.customersServed = 0;
             window.GAME.dirtyPlates = 0;
             window.GAME.carriedOrders = [];
@@ -845,16 +875,17 @@ class HouseScene extends Phaser.Scene {
             localStorage.removeItem('waitress_replay_day');
             localStorage.removeItem('waitress_original_day');
 
-            const saveData = {
-                score: window.GAME.score,
-                level: window.GAME.level,
-                customersServed: 0,
-                lives: MAX_LIVES,
-                dirtyPlates: 0,
-                settings: window.GAME.settings,
-                housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
-            };
-            localStorage.setItem('waitress_save_data', JSON.stringify(saveData));
+            updateHouseSave((data) => {
+                data.score = window.GAME.score;
+                data.level = window.GAME.level;
+                data.customersServed = 0;
+                data.lives = maxLives;
+                data.dirtyPlates = 0;
+                data.settings = window.GAME.settings;
+                if (window.HOUSE_STATE) {
+                    data.housePurchased = window.HOUSE_STATE.purchased;
+                }
+            });
 
             this.cameras.main.fadeIn(1000, 0, 0, 0);
             this.updateHouseHUD();

@@ -1579,6 +1579,9 @@
         ignoreMission() {
             if (this.abandonTimer) { this.abandonTimer.remove(); this.abandonTimer = null; }
             this.missionFailed = true; this.state.failed = false; this.state.phase = 'idle'; this.state.day = 0; this.saveState();
+            if (this.scene.missions) {
+                this.scene.missions.cancel('briscola_rosa');
+            }
             this.pendingBriscola = false; this.missionStarted = false; this.dialogOpen = false;
             this.scene.sponsorBlocksCustomers = false;
             if (this.npc) this.leaveNPC(() => {});
@@ -1641,6 +1644,9 @@
             if (playerWins) {
                 this.missionComplete = true; this.missionFailed = false;
                 this.state.completed = true; this.state.failed = false; this.state.rewardGiven = true; this.state.phase = 'completed'; this.saveState();
+                if (this.scene.missions) {
+                    this.scene.missions.complete('briscola_rosa');
+                }
                 if (window.GAME) window.GAME.score += BRISCOLA_CONFIG.rewardMoney;
                 let relationships = {};
                 try { relationships = JSON.parse(localStorage.getItem('waitress_npc_relationships') || '{}'); } catch (e) {}
@@ -1651,6 +1657,9 @@
             }
             this.missionFailed = true; this.missionComplete = false;
             this.state.failed = true; this.state.completed = false; this.state.phase = 'failed'; this.saveState();
+            if (this.scene.missions) {
+                this.scene.missions.fail('briscola_rosa');
+            }
             this.showMissionFailedScreen(playerScore, opponentScore);
         }
 

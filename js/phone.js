@@ -110,7 +110,7 @@
 
             if (this.shouldTriggerClanCall()) {
                 this.ringTimer = this.scene.time.delayedCall(3000, () => {
-                    if (this.scene.gameActive && !this.isCallActive && !this.isMenuOpen) {
+                    if (this.scene.gameActive && !this.isCallActive && !this.isMenuOpen && this.shouldTriggerClanCall()) {
                         this.callerName = 'clan';
                         this.clanCallDelivered = true;
 
@@ -153,6 +153,7 @@
 
             if (window.GAME.level === 8) return false;
             if (window.GAME.level < 5) return false;
+            if (this.scene.missions && !this.scene.missions.canStart('clan_first')) return false;
 
 
             const today = window.GAME.level;
@@ -263,6 +264,12 @@
                 this.scene.setPhoneGameplayLock(false);
             }
 
+            if (this.scene.missions && !this.scene.missions.canStart('clan_first')) {
+                this.callerName = null;
+                this.scheduleNextCall();
+                return;
+            }
+
             if (!this.scene.scene.get('ClanDialog')) {
                 this.scene.scene.add('ClanDialog', window.ClanDialogScene, false);
             }
@@ -270,6 +277,12 @@
             this.scene.scene.launch('ClanDialog', {
                 mode: 'phone',
                 onAccept: () => {
+                    if (this.scene.missions && !this.scene.missions.activate('clan_first')) {
+                        if (this.scene.showFloatingText) {
+                            this.scene.showFloatingText(400, 260, '⚠️ Hai già una missione in corso.', '#ff4444');
+                        }
+                        return;
+                    }
                     if (this.scene.crime) {
                         this.scene.crime.hasAcceptedClanMission = true;
                         this.scene.crime.clanSheetCode = String(Phaser.Math.Between(100000, 999999));
@@ -311,6 +324,9 @@
 
                         this.clanCallDelivered = true;
                         this.clanRefusedPermanently = true;
+                        if (this.scene.missions) {
+                            this.scene.missions.fail('clan_first');
+                        }
                         if (this.scene.crime) {
                             this.scene.crime.clanBetrayed = true;
                             this.scene.crime.clanRefusedPermanently = true;

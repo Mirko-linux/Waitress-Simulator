@@ -773,7 +773,7 @@ class CrimeSystem {
         this.scene.time.delayedCall(5000, () => {
             window.GAME.score = Math.max(0, window.GAME.score - fine);
             window.GAME.level += days;
-            window.GAME.lives = 3;
+            window.GAME.lives = typeof window.getMaxLives === 'function' ? window.getMaxLives() : 3;
             window.GAME.customersServed = 0;
             window.GAME.dirtyPlates = 0;
             window.GAME.carriedOrder = null;
@@ -795,7 +795,7 @@ class CrimeSystem {
                 score: window.GAME.score,
                 level: window.GAME.level,
                 customersServed: 0,
-                lives: 3,
+                lives: window.GAME.lives,
                 dirtyPlates: 0,
                 settings: window.GAME.settings,
                 housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : []
@@ -1145,11 +1145,6 @@ class CrimeSystem {
         this.hasPoison = false;
         this.inventory = this.inventory.filter(i => i !== 'poison');
 
-        if (this.hasAcceptedClanMission && this.scene.quest && typeof this.scene.quest.getClanTargetName === 'function') {
-            const target = this.scene.quest.getClanTargetName();
-            if (target) this.missionTargetName = target;
-        }
-
         this.addSuspicion(40, 'poison');
         this.saveCrimeData();
 
@@ -1162,6 +1157,7 @@ class CrimeSystem {
 
     acceptClanMission() {
         if (this.hasAcceptedClanMission) return;
+        if (this.scene.missions && !this.scene.missions.activate('clan_first')) return;
         this.hasAcceptedClanMission = true;
         this.clanSheetCode = String(Phaser.Math.Between(100000, 999999));
         this.clanSheetExpiry = window.GAME.level + 5;
@@ -1399,12 +1395,21 @@ spawnClanMember() {
             this.scene.scene.resume();
         }
 
+        if (this.scene.missions && !this.scene.missions.activate('clan_first')) {
+            if (typeof this.scene.showFloatingText === 'function') {
+                this.scene.showFloatingText(400, 260, '⚠️ Hai già una missione in corso.', '#ff4444');
+            }
+            this.makeClanMemberLeave();
+            return;
+        }
+
         if (typeof this.scene.showFloatingText === 'function') {
             this.scene.showFloatingText(400, 260, '🤝 Hai accettato la missione del clan.', '#9b59b6');
             this.scene.showFloatingText(400, 300, '📄 Il mafioso ti consegna un foglio con un codice...', '#ffd700');
         }
 
         this.hasClanSheet = true;
+        this.hasAcceptedClanMission = true;
         if (!this.inventory.includes('clan_sheet')) {
             this.inventory.push('clan_sheet');
         }
@@ -1434,6 +1439,9 @@ spawnClanMember() {
             }
             this.clanBetrayed = true;
             this.clanRefusedPermanently = true;
+            if (this.scene.missions) {
+                this.scene.missions.fail('clan_first');
+            }
             this.addSuspicion(25, 'clan');
             this.saveCrimeData();
 
@@ -1593,6 +1601,9 @@ _cleanupClanMember() {
 
         this.clanMissionCompleted = true;
         this.hasAcceptedClanMission = false;
+        if (this.scene.missions) {
+            this.scene.missions.complete('clan_first');
+        }
         window.GAME.score += 500;
         if (typeof this.scene.updateHUD === 'function') this.scene.updateHUD();
         this.addSuspicion(10, 'clan');
@@ -1614,6 +1625,9 @@ _cleanupClanMember() {
 
         this.clanBetrayed = true;
         this.hasClanSheet = false;
+        if (this.scene.missions) {
+            this.scene.missions.fail('clan_first');
+        }
         this.inventory = this.inventory.filter(i => i !== 'clan_sheet');
         window.GAME.score += 1000;
         if (typeof this.scene.updateHUD === 'function') this.scene.updateHUD();

@@ -88,7 +88,7 @@
             maxTotal: 4
         },
         customers: {
-            patienceDuration: 25000,
+            patienceDuration: 12000,
             eatingDuration: 12000
         },
         dishes: {
@@ -175,14 +175,14 @@
 
     function applyUpgrades() {
         CONFIG.waitress.speed = 300;
-        CONFIG.customers.patienceDuration = 25000;
+        CONFIG.customers.patienceDuration = 12000;
         CONFIG.dishes.washDuration = 1200;
 
         if (window.HOUSE_STATE && window.HOUSE_STATE.purchased.includes('bed')) {
             CONFIG.waitress.speed = 360;
         }
         if (window.HOUSE_STATE && window.HOUSE_STATE.purchased.includes('tv')) {
-            CONFIG.customers.patienceDuration = 32000;
+            CONFIG.customers.patienceDuration = 16000;
         }
         if (window.HOUSE_STATE && window.HOUSE_STATE.purchased.includes('coffee')) {
             CONFIG.dishes.washDuration = 700;
@@ -279,10 +279,32 @@
         }
     }
 
+    function getMaxLivesForDifficulty(difficulty) {
+        switch (difficulty) {
+            case 'facile': return 4;
+            case 'difficile': return 2;
+            default: return 3;
+        }
+    }
+
+    function getMaxLives() {
+        const difficulty = GAME && GAME.settings ? GAME.settings.difficulty : 'normale';
+        return getMaxLivesForDifficulty(difficulty);
+    }
+
+    function clampLives(value) {
+        const max = getMaxLives();
+        if (typeof value !== 'number' || Number.isNaN(value)) return max;
+        return Math.min(max, Math.max(0, value));
+    }
+
     window.GAME = GAME;
     window.NPC_REGISTRY = NPC_REGISTRY;
     window.triggerSfx = triggerSfx;
     window.unlockAudioContext = unlockAudioContext;
+    window.getMaxLivesForDifficulty = getMaxLivesForDifficulty;
+    window.getMaxLives = getMaxLives;
+    window.clampLives = clampLives;
 
     class PreloadScene extends Phaser.Scene {
         constructor() {
@@ -320,6 +342,8 @@
             });
 
             this.load.on('loaderror', (file) => {});
+
+            this.load.json('missions', 'json/missions.json');
 
             this.load.image('floor_sala', 'assets/ambiente/1.png');
             this.load.image('floor_cucina', 'assets/ambiente/2.png');
@@ -484,8 +508,7 @@
             this.phone = null;
             this.isPaused = false;
             this.spawnEvent = null;
-            this.priceSystem = null;
-            this.quest = null;
+            this.missions = null;
             this.crime = null;
             this.supplier = null;
             this.trayIndicator = null;
@@ -643,14 +666,11 @@
 
             const A = window.ARCADE;
 
-            if (A.isSystemEnabled('priceSystem') && typeof window.PriceSystem === 'function') {
-                this.priceSystem = new window.PriceSystem(this);
-            }
             if (A.isSystemEnabled('supplierSystem') && typeof window.SupplierSystem === 'function') {
                 this.supplier = new window.SupplierSystem(this);
             }
-            if (A.isSystemEnabled('questSystem') && typeof window.QuestSystem === 'function') {
-                this.quest = new window.QuestSystem(this);
+            if (A.isSystemEnabled('questSystem') && typeof window.MissionSystem === 'function') {
+                this.missions = new window.MissionSystem(this);
             }
             if (A.isSystemEnabled('crimeSystem') && typeof window.CrimeSystem === 'function') {
                 this.crime = new window.CrimeSystem(this);
@@ -710,11 +730,14 @@
                 }
             } catch(e) {}
 
-            if (savedData && savedData.level > 0) {
+            if (!GAME.arcadeMode && savedData && savedData.level > 0) {
                 GAME.score = savedData.score || 0;
                 GAME.level = savedData.level || 1;
                 GAME.customersServed = savedData.customersServed || 0;
-                GAME.lives = savedData.lives || 3;
+                if (savedData.settings) {
+                    GAME.settings = { ...GAME.settings, ...savedData.settings };
+                }
+                GAME.lives = clampLives(savedData.lives);
                 GAME.dirtyPlates = savedData.dirtyPlates || 0;
                 GAME.customersTarget = 6 + (GAME.level * 4);
                 GAME.carriedOrders = [];
@@ -744,13 +767,9 @@
                 if (savedData.restaurantPurchased && window.RESTAURANT_STATE) {
                     window.RESTAURANT_STATE.purchased = savedData.restaurantPurchased;
                 }
-                if (savedData.settings) {
-                    GAME.settings = { ...GAME.settings, ...savedData.settings };
-                }
             } else {
                 GAME.customersServed = 0;
                 GAME.dirtyPlates = 0;
-                GAME.lives = 3;
                 GAME.customersTarget = 10;
                 GAME.level = 1;
                 GAME.carriedOrders = [];
@@ -762,8 +781,19 @@
                     soundEnabled: true,
                     difficulty: 'normale',
                     controls: 'wasd',
-                    aiEnabled: true
+                    aiEnabled: true,
+                    ...GAME.settings
                 };
+                GAME.lives = getMaxLives();
+            }
+
+            if (GAME.lives <= 0) {
+                GAME.level = 1;
+                GAME.lives = getMaxLives();
+                GAME.customersServed = 0;
+                GAME.customersTarget = 6 + (GAME.level * 4);
+                GAME.dirtyPlates = 0;
+                GAME.carriedOrders = [];
             }
 
             if (replayDay && replayDay > 0) {
@@ -772,7 +802,6 @@
                 GAME.customersTarget = 6 + (GAME.level * 4);
                 GAME.carriedOrders = [];
                 GAME.dirtyPlates = 0;
-                GAME.lives = 3;
 
                 this.showFloatingText(400, 300, `📅 Replay Giorno ${replayDay}`, '#ffd700');
             }
@@ -820,23 +849,19 @@
                 this.story.storyState.moneySaved = GAME.score;
             }
 
-            if (this.story && this.crime) {
-                if (this.story.canTriggerClanMission(GAME.level)) {
-                    this.time.delayedCall(8000, () => {
-                        if (this.story && this.story.canTriggerClanMission(GAME.level)) {
-                            this.story.triggerClanCall();
-                        }
-                    });
-                }
-            }
-
             this.createPassPiatti();
             this.createHiddenCompartment();
 
             if (typeof window.SponsorSystem === 'function') {
                 this.sponsorSystem = new window.SponsorSystem(this);
                 if (this.sponsorSystem.isAvailable(GAME.level)) {
-                    this.sponsorSystem.startMission();
+                    const canStartSponsor = !this.missions || this.missions.activate('sponsor_moroni');
+                    if (canStartSponsor) {
+                        this.sponsorSystem.startMission();
+                        if (this.missions && !this.sponsorSystem.isMissionActive()) {
+                            this.missions.cancel('sponsor_moroni');
+                        }
+                    }
                 }
             }
 
@@ -844,7 +869,12 @@
                 this.briscolaSystem = new window.BriscolaSystem(this);
                 if (this.briscolaSystem.isAvailable(GAME.level) && !this.briscolaSystem.state.completed) {
                     this.time.delayedCall(500, () => {
+                        const canStartBriscola = !this.missions || this.missions.activate('briscola_rosa');
+                        if (!canStartBriscola) return;
                         this.briscolaSystem.startMission();
+                        if (this.missions && !this.briscolaSystem.missionStarted) {
+                            this.missions.cancel('briscola_rosa');
+                        }
                     });
                 }
             }
@@ -976,7 +1006,7 @@
             if (GAME.customersTarget === 0) {
                 GAME.customersServed = 0;
                 GAME.dirtyPlates = 0;
-                GAME.lives = 3;
+                GAME.lives = getMaxLives();
                 GAME.level = 1;
                 GAME.customersTarget = 6 + GAME.level * 4;
                 GAME.carriedOrders = [];
@@ -1464,7 +1494,7 @@
                 fontFamily: 'Fredoka'
             }).setDepth(101);
             
-            this.livesText = this.add.text(420, 14, '❤️ ❤️ ❤️', {
+            this.livesText = this.add.text(420, 14, '❤️'.repeat(Math.max(0, GAME.lives)), {
                 fontSize: '14px',
                 color: '#e74c3c',
                 fontFamily: 'Fredoka'
@@ -1853,7 +1883,7 @@
                 score: GAME.score,
                 level: GAME.level,
                 customersServed: 0,
-                lives: 3,
+                lives: GAME.lives,
                 dirtyPlates: 0,
                 isCheater: GAME.isCheater || false,
                 settings: GAME.settings,
@@ -1981,7 +2011,7 @@
                 this.servedText.setText(`${t('SERVITI')} ${GAME.customersServed}/${GAME.customersTarget}`);
             }
             if (this.livesText && this.livesText.active) {
-                this.livesText.setText(`❤️ ${'❤️'.repeat(Math.max(0, GAME.lives))}`);
+                this.livesText.setText('❤️'.repeat(Math.max(0, GAME.lives)));
             }
             if (this.trayText && this.trayText.active) {
                 this.trayText.setText(`${t('VASSOIO')} ${this.waitressState.tray.length}/${CONFIG.tray.maxTotal}`);
@@ -2482,10 +2512,15 @@
                         return;
                     }
 
+                    const waitingStatuses = [
+                        'ordinazione_pronta',
+                        'attesa_cibo'
+                    ];
+
                     if (
                         !customer.table ||
                         customer.table.customer !== customer ||
-                        customer.table.status !== 'ordinazione_pronta'
+                        !waitingStatuses.includes(customer.table.status)
                     ) {
                         return;
                     }
@@ -2705,10 +2740,11 @@
 
             this.showFloatingText(customer.table.x, customer.table.y - 40, t('LEAVING_ANGRY'), '#ff0000');
             triggerSfx('alert');
-            GAME.lives--;
+            GAME.lives = Math.max(0, GAME.lives - 1);
             this.updateHUD();
 
             if (customer.table) {
+                const tableId = customer.table.id;
                 customer.table.occupied = false;
                 customer.table.reserved = true;
                 customer.table._leavingCustomer = customer;
@@ -2717,6 +2753,13 @@
                 customer.table._activeOrder = null;
                 if (!customer.table.dirty) customer.table.status = 'libero';
                 else customer.table.status = 'piatto_sporco';
+
+                const orderIdx = (GAME.carriedOrders || []).findIndex(o => o.tableId === tableId);
+                if (orderIdx > -1) {
+                    GAME.carriedOrders.splice(orderIdx, 1);
+                    this.ordersTaken = Math.max(0, this.ordersTaken - 1);
+                    this.updateNotepadUI(true);
+                }
             }
 
             if (customer.timerEvent) {
@@ -2742,9 +2785,6 @@
             if (!customer) return;
 
             let basePay = 14;
-            if (this.priceSystem) {
-                basePay = this.priceSystem.getFoodPrice(customer.order === 'Moroni' ? 'Birra' : customer.order);
-            }
             
             const customerConfig = NPC_REGISTRY[customer.name] || {};
             const tipMultiplier = customerConfig.tipMultiplier || customer.tipMultiplier || 1.0;
@@ -4134,8 +4174,8 @@
                 }
             }
 
-            if (this.quest && typeof this.quest.update === 'function') {
-                this.quest.update();
+            if (this.missions && typeof this.missions.update === 'function') {
+                this.missions.update();
             }
 
             if (this.taxSystem && typeof this.taxSystem.updateTaxHUD === 'function') {
@@ -4171,10 +4211,13 @@
                     && !this.briscolaSystem.state.failed
                     && !this.briscolaSystem.missionStarted
                     && !this.briscolaSystem.pendingBriscola
-                    && !this.briscolaSystem.briscolaRunning;
+                    && !this.briscolaSystem.briscolaRunning
+                    && (!this.missions || this.missions.canStart('briscola_rosa'));
 
                 if (briscolaAvailable) {
-                    this.briscolaSystem.startMission();
+                    if (!this.missions || this.missions.activate('briscola_rosa')) {
+                        this.briscolaSystem.startMission();
+                    }
                 } else {
                     GAME.customersServed = GAME.customersTarget;
                     GAME.score += 100;
@@ -4191,8 +4234,8 @@
                     this.showFloatingText(elena.x, elena.y - 50, '❤️ SINTONIA MASSIMA!', '#ff4757');
                     triggerSfx('coin');
                     
-                    if (this.quest && typeof this.quest.startElenaAdoptionQuest === 'function') {
-                        this.quest.startElenaAdoptionQuest();
+                    if (this.missions && typeof this.missions.startElenaAdoptionQuest === 'function') {
+                        this.missions.startElenaAdoptionQuest();
                     }
                     if (this.story) {
                         this.story.storyState.elenaAdoptionQuest = true;
@@ -4366,8 +4409,8 @@
                 if (result.specialEvent === 'BREAKUP') {
                     this.gameOver();
                 } else if (result.specialEvent === 'ADOPTION_READY') {
-                    if (this.quest && typeof this.quest.startElenaAdoptionQuest === 'function') {
-                        this.quest.startElenaAdoptionQuest();
+                    if (this.missions && typeof this.missions.startElenaAdoptionQuest === 'function') {
+                        this.missions.startElenaAdoptionQuest();
                     }
                 }
             } else {
@@ -4397,13 +4440,8 @@
                 }
                 
                 if (this.currentCustomer.name === 'Elena' && this.currentCustomer.relationScore >= 100) {
-                    if (this.quest && typeof this.quest.startElenaAdoptionQuest === 'function') {
-                        const alreadyActive = this.quest.activeQuests && this.quest.activeQuests.find(q => q.id === 'elena_adoption');
-                        const alreadyCompleted = this.quest.completedQuests && this.quest.completedQuests.includes('elena_adoption');
-                        
-                        if (!alreadyActive && !alreadyCompleted) {
-                            this.quest.startElenaAdoptionQuest();
-                        }
+                    if (this.missions && typeof this.missions.startElenaAdoptionQuest === 'function') {
+                        this.missions.startElenaAdoptionQuest();
                     }
                 }
             }
@@ -4433,7 +4471,6 @@
 
                 GAME.level++;
                 GAME.customersServed = 0;
-                GAME.lives = 3;
                 GAME.dirtyPlates = 0;
                 GAME.carriedOrders = [];
                 GAME.customersTarget = A.getTargetForLevel(GAME.level);
@@ -4451,13 +4488,13 @@
                 this.sponsorSystem.checkLevelEnd();
             }
             
-            if (this.priceSystem) {
-                this.priceSystem.updateInflation(GAME.level);
-            }
-            
             if (GAME.score >= 15000 && !localStorage.getItem('waitress_ending_seen')) {
                 this.showFloatingText(400, 250, '🏆 HAI RAGGIUNTO 15.000€!', '#ffd700');
                 triggerSfx('coin');
+
+                if (this.missions) {
+                    this.missions.complete('main_restaurant');
+                }
 
                 this.time.delayedCall(2500, () => {
                     this.scene.start('Ending');
@@ -4534,7 +4571,7 @@
                 score: GAME.score,
                 level: isReplay ? originalDay : (GAME.level + 1),
                 customersServed: 0,
-                lives: 3,
+                lives: GAME.lives,
                 dirtyPlates: 0,
                 isCheater: GAME.isCheater || false,
                 settings: GAME.settings,
@@ -4590,7 +4627,6 @@
                 } else {
                     GAME.level++;
                     GAME.customersServed = 0;
-                    GAME.lives = 3;
                     GAME.dirtyPlates = 0;
                     GAME.carriedOrders = [];
                     GAME.customersTarget = 6 + GAME.level * 4;
@@ -4839,6 +4875,32 @@
         create() {
             this.cameras.main.setBackgroundColor('#1a0202');
 
+            const failedLevel = GAME.level;
+
+            if (!GAME.arcadeMode) {
+                GAME.level = 1;
+                GAME.lives = getMaxLives();
+                GAME.customersServed = 0;
+                GAME.customersTarget = 6 + GAME.level * 4;
+                GAME.dirtyPlates = 0;
+                GAME.carriedOrders = [];
+
+                const restartData = {
+                    score: GAME.score,
+                    level: GAME.level,
+                    customersServed: 0,
+                    lives: GAME.lives,
+                    dirtyPlates: 0,
+                    settings: GAME.settings,
+                    housePurchased: window.HOUSE_STATE ? window.HOUSE_STATE.purchased : [],
+                    restaurantPurchased: window.RESTAURANT_STATE ? window.RESTAURANT_STATE.purchased : []
+                };
+                localStorage.setItem('waitress_save_data', JSON.stringify(restartData));
+                if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
+                    window.SaveManager.saveGame(restartData);
+                }
+            }
+
             const card = this.add.rectangle(
                 400, 300,
                 520, 450,
@@ -4900,7 +4962,7 @@
 
             this.add.text(
                 530, 275,
-                `${GAME.level}`,
+                `${failedLevel}`,
                 {
                     fontSize: '13px',
                     color: '#ffffff',
@@ -5047,6 +5109,17 @@
 
         create() {
             this.cameras.main.setBackgroundColor('#1a0a04');
+
+            try {
+                const raw = localStorage.getItem('waitress_save_data');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    const data = parsed.data || parsed;
+                    if (data.settings) {
+                        GAME.settings = { ...GAME.settings, ...data.settings };
+                    }
+                }
+            } catch (e) {}
 
             const card = this.add.rectangle(
                 400, 300,
@@ -5210,6 +5283,16 @@
                                 : 0xffd700
                         );
                     });
+
+                    if (GAME.lives > getMaxLives()) {
+                        GAME.lives = getMaxLives();
+                    }
+
+                    if (this.difficultyDescription) {
+                        this.difficultyDescription.setText(
+                            this.getDifficultyDescription()
+                        );
+                    }
 
                     this.saveSettings();
                 });
@@ -5464,35 +5547,55 @@
                         'waitress_save_data'
                     );
 
-                let data = raw
+                const packet = raw
                     ? JSON.parse(raw)
-                    : {};
+                    : null;
+
+                if (packet && packet.data && packet.sig) {
+                    packet.data.settings = {
+                        ...GAME.settings
+                    };
+                    packet.data.lives = GAME.lives;
+
+                    if (window.SaveManager && typeof window.SaveManager.generateHash === 'function') {
+                        packet.sig = window.SaveManager.generateHash(packet.data);
+                    }
+
+                    localStorage.setItem(
+                        'waitress_save_data',
+                        JSON.stringify(packet)
+                    );
+
+                    if (window.SaveManager && typeof window.SaveManager.saveGame === 'function') {
+                        window.SaveManager.saveGame(packet.data).catch(() => {});
+                    }
+
+                    return;
+                }
+
+                const data = packet || {};
 
                 data.settings = {
                     ...GAME.settings
                 };
+                data.lives = GAME.lives;
 
                 localStorage.setItem(
                     'waitress_save_data',
                     JSON.stringify(data)
                 );
 
-            } catch (e) {
-                console.warn(
-                    'Errore salvataggio impostazioni',
-                    e
-                );
-            }
+            } catch (e) {}
         }
 
         getDifficultyDescription() {
             switch (GAME.settings.difficulty) {
                 case 'facile':
-                    return 'I clienti arrivano più lentamente';
+                    return '4 vite. I clienti arrivano più lentamente';
                 case 'difficile':
-                    return 'I clienti arrivano più velocemente';
+                    return '2 vite. I clienti arrivano più velocemente';
                 default:
-                    return 'Velocità normale dei clienti';
+                    return '3 vite. Velocità normale dei clienti';
             }
         }
 

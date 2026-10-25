@@ -90,23 +90,6 @@ class StorySystem {
             });
         }
     }
-
-    canTriggerClanMission(currentLevel) {
-        if (this.storyState.clanMissionCompleted) return false;
-        if (this.storyState.clanBetrayed) return false;
-        if (this.storyState.clanMissionAccepted) return false;
-        if (currentLevel < 5) return false;
-        if (this.storyState.clanCallReceived) return false;
-        return true;
-    }
-
-    triggerClanCall() {
-        this.storyState.clanCallReceived = true;
-        this.saveStoryData();
-        if (this.scene.crime) {
-            this.scene.crime.triggerClanCall();
-        }
-    }
 }
 
 window.StorySystem = StorySystem;

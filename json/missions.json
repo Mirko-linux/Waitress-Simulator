@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "rules": {
+    "oneActiveSecondaryAtATime": true,
+    "primaryMissionsAreAlwaysAvailable": true
+  },
+  "primary": [
+    {
+      "id": "main_restaurant",
+      "type": "primary",
+      "title": "Riacquista il ristorante",
+      "description": "Il proprietario mette in vendita il locale. Accumula 15.000€ per riscattarlo e completare la storia.",
+      "activation": {
+        "kind": "story",
+        "day": 3
+      },
+      "objective": {
+        "kind": "money",
+        "target": 15000,
+        "milestones": [1000, 5000, 10000, 15000]
+      },
+      "exclusive": false,
+      "repeatable": false,
+      "status": "implemented",
+      "rewards": {
+        "unlock": "ending"
+      },
+      "sources": ["js/story.js", "js/game.js", "js/ending.js"]
+    }
+  ],
+  "secondary": [
+    {
+      "id": "sponsor_moroni",
+      "type": "secondary",
+      "title": "Lo sponsor Moroni",
+      "description": "Vendi almeno 3 birre Moroni durante il giorno 8 per rispettare l'accordo con lo sponsor.",
+      "activation": {
+        "kind": "day",
+        "day": 8
+      },
+      "objective": {
+        "kind": "sell",
+        "item": "Moroni",
+        "target": 3
+      },
+      "exclusive": true,
+      "repeatable": false,
+      "status": "implemented",
+      "rewards": {
+        "unlock": "moroni_menu",
+        "permanent": true
+      },
+      "failure": {
+        "kind": "day_end",
+        "condition": "beers_sold_below_target"
+      },
+      "sources": ["js/sponsor.js"]
+    },
+    {
+      "id": "briscola_rosa",
+      "type": "secondary",
+      "title": "La pensione di Rosa",
+      "description": "Il giorno 11 accetta la sfida a briscola del nipote di Rosa e batti l'Anziano per salvare la pensione.",
+      "activation": {
+        "kind": "day",
+        "day": 11
+      },
+      "objective": {
+        "kind": "win",
+        "game": "briscola",
+        "opponent": "Anziano"
+      },
+      "exclusive": true,
+      "repeatable": false,
+      "status": "implemented",
+      "rewards": {
+        "money": 200,
+        "relationship": {
+          "npc": "Rosa",
+          "amount": 40
+        }
+      },
+      "failure": {
+        "kind": "lose_match"
+      },
+      "sources": ["js/briscola.js"]
+    },
+    {
+      "id": "clan_first",
+      "type": "secondary",
+      "title": "Il primo incarico del clan",
+      "description": "Rispondi alla chiamata del clan, accetta l'incarico e avvelena il cliente indicato.",
+      "activation": {
+        "kind": "day",
+        "minDay": 5,
+        "avoidDays": [8, 11]
+      },
+      "objective": {
+        "kind": "poison_target",
+        "target": "clan_target"
+      },
+      "exclusive": true,
+      "repeatable": false,
+      "status": "partial",
+      "rewards": {
+        "money": 500,
+        "suspicion": 10
+      },
+      "consequences": {
+        "refuse": {
+          "money": -300,
+          "suspicion": 25,
+          "vandalism": true
+        }
+      },
+      "sources": ["js/phone.js", "js/crime.js", "js/clan_dialog.js"]
+    },
+    {
+      "id": "elena_adoption",
+      "type": "secondary",
+      "title": "L'adozione di Ludovica",
+      "description": "Porta tutti i clienti al 100% di sintonia e accumula 15.000€. Elena ti chiederà di adottare Ludovica.",
+      "activation": {
+        "kind": "relationship",
+        "npc": "Elena",
+        "target": 100,
+        "requiresAllCustomers": 100,
+        "minMoney": 15000
+      },
+      "objective": {
+        "kind": "choice",
+        "options": ["adopt", "refuse"]
+      },
+      "exclusive": false,
+      "repeatable": false,
+      "status": "partial",
+      "rewards": {
+        "unlock": "ludovica_at_home"
+      },
+      "sources": ["js/missions.js", "js/ai.js", "docs/clienti.md"]
+    },
+    {
+      "id": "clan_second",
+      "type": "secondary",
+      "title": "Il secondo incarico del clan",
+      "description": "Secondo incarico del clan, previsto ma non ancora collegato al flusso di gioco.",
+      "activation": {
+        "kind": "event",
+        "event": "clan_first_completed"
+      },
+      "objective": {
+        "kind": "unknown"
+      },
+      "exclusive": true,
+      "repeatable": false,
+      "status": "planned",
+      "rewards": {},
+      "sources": ["js/story.js", "js/crime.js"]
+    }
+  ]
+}

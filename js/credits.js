@@ -419,6 +419,8 @@ class CreditsScene extends Phaser.Scene {
         localStorage.removeItem('waitress_cheater_flag');
         localStorage.removeItem('waitress_score_history');
         localStorage.removeItem('waitress_sponsor_state');
+        localStorage.removeItem('waitress_missions_data');
+        localStorage.removeItem('waitress_briscola_state');
 
 
         if (window.GAME) {
@@ -426,7 +428,7 @@ class CreditsScene extends Phaser.Scene {
             window.GAME.level = 1;
             window.GAME.customersServed = 0;
             window.GAME.customersTarget = 10;
-            window.GAME.lives = 3;
+            window.GAME.lives = typeof window.getMaxLives === 'function' ? window.getMaxLives() : 3;
             window.GAME.dirtyPlates = 0;
             window.GAME.carriedOrders = [];
             window.GAME.isCheater = false;

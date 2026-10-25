@@ -27,10 +27,6 @@ Per eseguire il videogioco è sufficiente un qualsiasi server web locale (come H
 
 ### Database dialoghi
 
-I template sono in `json/dialogue_templates.json`; il database pronto all'uso è `json/npc_dialogues.json` e viene caricato in memoria all'avvio. Per rigenerare le varianti dopo aver modificato i template, esegui dalla cartella del progetto:
+I template sono in `json/dialogue_templates.json`; il database usato dal gioco è `json/npc_dialogues.json`, caricato in memoria all'avvio. Se il file è vuoto o non raggiungibile, `AIDialogueManager` usa i fallback definiti in `js/ai.js`.
 
-```powershell
-node scripts\generate-dialogue-database.js
-```
-
-Il gioco continua a usare le risposte pre-generate e i fallback anche senza WebGPU. WebLLM viene avviato solo in background quando arriva un messaggio fuori dagli intenti salvati; la risposta iniziale non attende il modello.
+La generazione delle varianti è affidata a `scripts/genera_npc.py`, che non fa parte del repository e richiede un'istanza locale di LM Studio. Il gioco continua a usare le risposte pre-generate e i fallback anche senza WebGPU. WebLLM viene avviato solo in background quando arriva un messaggio fuori dagli intenti salvati; la risposta iniziale non attende il modello.
