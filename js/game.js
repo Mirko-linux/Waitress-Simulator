@@ -88,7 +88,7 @@
             maxTotal: 4
         },
         customers: {
-            patienceDuration: 12000,
+            patienceDuration: 18000,
             eatingDuration: 12000
         },
         dishes: {
@@ -175,14 +175,14 @@
 
     function applyUpgrades() {
         CONFIG.waitress.speed = 300;
-        CONFIG.customers.patienceDuration = 12000;
+        CONFIG.customers.patienceDuration = 18000;
         CONFIG.dishes.washDuration = 1200;
 
         if (window.HOUSE_STATE && window.HOUSE_STATE.purchased.includes('bed')) {
             CONFIG.waitress.speed = 360;
         }
         if (window.HOUSE_STATE && window.HOUSE_STATE.purchased.includes('tv')) {
-            CONFIG.customers.patienceDuration = 16000;
+            CONFIG.customers.patienceDuration = 24000;
         }
         if (window.HOUSE_STATE && window.HOUSE_STATE.purchased.includes('coffee')) {
             CONFIG.dishes.washDuration = 700;

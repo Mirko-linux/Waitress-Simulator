@@ -15,7 +15,7 @@
         startingScore: 0,
         startingLevel: 1,
 
-        patienceDuration: 12000,
+        patienceDuration: 18000,
         eatingDuration: 12000,
         washDuration: 1200,
 
