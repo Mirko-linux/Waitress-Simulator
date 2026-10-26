@@ -116,7 +116,7 @@ class TutorialSystem {
         this.scene.tutorialStepTarget = null;
 
         window.GAME.level = 1;
-        window.GAME.customersTarget = 6 + window.GAME.level * 4;
+        window.GAME.customersTarget = Math.min(30, 6 + window.GAME.level * 4);
         this.scene.gameActive = true;
         this.scene.startSpawning();
     }
@@ -427,7 +427,7 @@ class TutorialSystem {
 
         window.GAME.level = 1;
         window.GAME.customersServed = 0;
-        window.GAME.customersTarget = 6 + window.GAME.level * 4;
+        window.GAME.customersTarget = Math.min(30, 6 + window.GAME.level * 4);
         window.GAME.lives = typeof window.getMaxLives === 'function' ? window.getMaxLives() : 3;
         window.GAME.dirtyPlates = 0;
         window.GAME.carriedOrder = null;

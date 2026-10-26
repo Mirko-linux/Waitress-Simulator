@@ -298,6 +298,13 @@
         return Math.min(max, Math.max(0, value));
     }
 
+    const MAX_CUSTOMERS_TARGET = 30;
+
+    function getCustomersTargetForLevel(level) {
+        const safeLevel = Math.max(1, Number(level) || 1);
+        return Math.min(MAX_CUSTOMERS_TARGET, 6 + safeLevel * 4);
+    }
+
     window.GAME = GAME;
     window.NPC_REGISTRY = NPC_REGISTRY;
     window.triggerSfx = triggerSfx;
@@ -305,6 +312,7 @@
     window.getMaxLivesForDifficulty = getMaxLivesForDifficulty;
     window.getMaxLives = getMaxLives;
     window.clampLives = clampLives;
+    window.getCustomersTargetForLevel = getCustomersTargetForLevel;
 
     class PreloadScene extends Phaser.Scene {
         constructor() {
@@ -739,7 +747,7 @@
                 }
                 GAME.lives = clampLives(savedData.lives);
                 GAME.dirtyPlates = savedData.dirtyPlates || 0;
-                GAME.customersTarget = 6 + (GAME.level * 4);
+                GAME.customersTarget = getCustomersTargetForLevel(GAME.level);
                 GAME.carriedOrders = [];
 
                 let isSaveTampered = false;
@@ -791,7 +799,7 @@
                 GAME.level = 1;
                 GAME.lives = getMaxLives();
                 GAME.customersServed = 0;
-                GAME.customersTarget = 6 + (GAME.level * 4);
+                GAME.customersTarget = getCustomersTargetForLevel(GAME.level);
                 GAME.dirtyPlates = 0;
                 GAME.carriedOrders = [];
             }
@@ -799,7 +807,7 @@
             if (replayDay && replayDay > 0) {
                 GAME.level = replayDay;
                 GAME.customersServed = 0;
-                GAME.customersTarget = 6 + (GAME.level * 4);
+                GAME.customersTarget = getCustomersTargetForLevel(GAME.level);
                 GAME.carriedOrders = [];
                 GAME.dirtyPlates = 0;
 
@@ -888,7 +896,7 @@
                 GAME.level = 0;
             } else {
                 if (GAME.customersTarget === 0) {
-                    GAME.customersTarget = 6 + GAME.level * 4;
+                    GAME.customersTarget = getCustomersTargetForLevel(GAME.level);
                 }
                 if (!this.isCheater && !this.sponsorBlocksCustomers) {
                     this.startSpawning();
@@ -1008,7 +1016,7 @@
                 GAME.dirtyPlates = 0;
                 GAME.lives = getMaxLives();
                 GAME.level = 1;
-                GAME.customersTarget = 6 + GAME.level * 4;
+                GAME.customersTarget = getCustomersTargetForLevel(GAME.level);
                 GAME.carriedOrders = [];
             }
             
@@ -1865,7 +1873,7 @@
 
             GAME.level = targetDay;
             GAME.customersServed = 0;
-            GAME.customersTarget = 6 + (GAME.level * 4);
+            GAME.customersTarget = getCustomersTargetForLevel(GAME.level);
             GAME.carriedOrders = [];
             GAME.dirtyPlates = 0;
 
@@ -4629,7 +4637,7 @@
                     GAME.customersServed = 0;
                     GAME.dirtyPlates = 0;
                     GAME.carriedOrders = [];
-                    GAME.customersTarget = 6 + GAME.level * 4;
+                    GAME.customersTarget = getCustomersTargetForLevel(GAME.level);
                     this.scene.restart();
                 }
             });
@@ -4881,7 +4889,7 @@
                 GAME.level = 1;
                 GAME.lives = getMaxLives();
                 GAME.customersServed = 0;
-                GAME.customersTarget = 6 + GAME.level * 4;
+                GAME.customersTarget = getCustomersTargetForLevel(GAME.level);
                 GAME.dirtyPlates = 0;
                 GAME.carriedOrders = [];
 
@@ -5695,7 +5703,7 @@
                 reset: function() {},
                 applyConfig: function() {},
                 isSystemEnabled: function() { return true; },
-                getTargetForLevel: function(level) { return 6 + (level * 4); },
+                getTargetForLevel: function(level) { return Math.min(30, 6 + (level * 4)); },
                 save: function() {}
             };
         }

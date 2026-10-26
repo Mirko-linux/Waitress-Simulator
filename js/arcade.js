@@ -128,9 +128,9 @@
 
     ARCADE.getTargetForLevel = function (level) {
         if (this.endless && level >= this.endlessFromLevel) {
-            return this.endlessTargetBase + (level * this.endlessTargetGrowth);
+            return Math.min(30, this.endlessTargetBase + (level * this.endlessTargetGrowth));
         }
-        return this.level.baseTarget + (level * this.level.targetPerLevel);
+        return Math.min(30, this.level.baseTarget + (level * this.level.targetPerLevel));
     };
 
     ARCADE.getRent = function () {

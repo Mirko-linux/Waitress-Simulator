@@ -99,6 +99,9 @@ class HouseScene extends Phaser.Scene {
         this.calendarMonthOffset = 0;
 
         this.mailSystem = null;
+
+        this.isPaused = false;
+        this.pauseContainer = null;
     }
 
     preload() {
@@ -123,6 +126,11 @@ class HouseScene extends Phaser.Scene {
 
     create() {
         window.houseScene = this;
+
+        this.isPaused = false;
+        this.pauseContainer = null;
+        this.time.paused = false;
+        this.physics.resume();
 
         if (!window.GAME) {
             window.GAME = { score: 0, level: 1, lives: 3, customersServed: 0, dirtyPlates: 0 };
@@ -235,6 +243,84 @@ class HouseScene extends Phaser.Scene {
             this.closeComputerHub();
             this.scene.start('Game');
         });
+    }
+
+    handlePauseInput() {
+        if (this.isTyping || this.iveaPlacementMode || this.isLeaving) return;
+
+        if (this.isComputerOpen && !this.isPaused) {
+            this.closeComputerHub();
+            return;
+        }
+
+        this.togglePause();
+    }
+
+    togglePause() {
+        this.isPaused = !this.isPaused;
+
+        if (this.isPaused) {
+            this.moveDirection = { x: 0, y: 0 };
+            if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
+            this.physics.pause();
+            this.time.paused = true;
+            this.createPauseOverlay();
+            return;
+        }
+
+        this.physics.resume();
+        this.time.paused = false;
+
+        if (this.pauseContainer) {
+            this.pauseContainer.destroy();
+            this.pauseContainer = null;
+        }
+    }
+
+    createPauseOverlay() {
+        if (this.pauseContainer) return;
+
+        const container = this.add.container(0, 0).setDepth(3000).setScrollFactor(0);
+
+        const bg = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.7).setInteractive();
+        const title = this.add.text(400, 220, '⏸️ PAUSA', {
+            fontSize: '48px',
+            color: '#ffd700',
+            fontStyle: 'bold',
+            fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
+
+        container.add([bg, title]);
+
+        this.createPauseButton(container, 400, 300, 'RIPRENDI', 0x2ecc71, () => this.togglePause());
+        this.createPauseButton(container, 400, 360, 'TORNA AL MENU', 0xe74c3c, () => {
+            this.togglePause();
+            this.scene.start('Menu');
+        });
+
+        this.pauseContainer = container;
+    }
+
+    createPauseButton(container, x, y, text, color, callback) {
+        const bg = this.add.rectangle(x, y, 280, 44, 0x1a0a04)
+            .setStrokeStyle(2, color)
+            .setInteractive({ useHandCursor: true });
+
+        const txt = this.add.text(x, y, text, {
+            fontSize: '16px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+            fontFamily: 'Fredoka'
+        }).setOrigin(0.5);
+
+        bg.on('pointerover', () => bg.setFillStyle(color, 0.3));
+        bg.on('pointerout', () => bg.setFillStyle(0x1a0a04));
+        bg.on('pointerdown', () => {
+            if (window.triggerSfx) window.triggerSfx('click');
+            callback();
+        });
+
+        container.add([bg, txt]);
     }
 
     createHouseHUD() {
@@ -672,12 +758,15 @@ class HouseScene extends Phaser.Scene {
         this.keys = this.input.keyboard.addKeys({ w: Phaser.Input.Keyboard.KeyCodes.W, a: Phaser.Input.Keyboard.KeyCodes.A, s: Phaser.Input.Keyboard.KeyCodes.S, d: Phaser.Input.Keyboard.KeyCodes.D });
 
         this.input.keyboard.on('keydown', (event) => {
-            if (this.isTyping || this.isComputerOpen || this.iveaPlacementMode) return;
+            if (this.isTyping || this.isComputerOpen || this.iveaPlacementMode || this.isPaused) return;
             if (event.key === 'w' || event.key === 'W') this.moveDirection.y = -1;
             if (event.key === 's' || event.key === 'S') this.moveDirection.y = 1;
             if (event.key === 'a' || event.key === 'A') this.moveDirection.x = -1;
             if (event.key === 'd' || event.key === 'D') this.moveDirection.x = 1;
         });
+
+        this.input.keyboard.on('keydown-ESC', () => this.handlePauseInput());
+        this.input.keyboard.on('keydown-P', () => this.handlePauseInput());
 
         this.input.keyboard.on('keyup', (event) => {
             if (['w','W','s','S'].includes(event.key)) this.moveDirection.y = 0;
@@ -700,6 +789,11 @@ class HouseScene extends Phaser.Scene {
     }
 
     update() {
+        if (this.isPaused) {
+            if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
+            return;
+        }
+
         if (this.mailSystem && typeof this.mailSystem.checkDeadline === 'function') {
             this.mailSystem.checkDeadline();
         }
@@ -867,7 +961,7 @@ class HouseScene extends Phaser.Scene {
             window.GAME.customersServed = 0;
             window.GAME.dirtyPlates = 0;
             window.GAME.carriedOrders = [];
-            window.GAME.customersTarget = 6 + (window.GAME.level * 4);
+            window.GAME.customersTarget = Math.min(30, 6 + (window.GAME.level * 4));
 
             this.coffeeUsedToday = false;
             localStorage.removeItem('waitress_coffee_day');

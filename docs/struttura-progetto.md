@@ -53,6 +53,7 @@ I primi file registrano classi e sistemi globali (`window.HouseScene`, `window.M
 - `FOOD_TEXTURES`, la mappa tra nomi dei piatti e texture;
 - `NPC_REGISTRY`, che espone i personaggi definiti in `ai.js`;
 - lo stato globale `GAME` (denaro, livello, vite, piatti sporchi, sospetto, modalità arcade, impostazioni);
+- l'helper `getCustomersTargetForLevel`, che calcola l'obiettivo clienti del livello e lo blocca a 30;
 - gli helper del sistema vite `getMaxLivesForDifficulty`, `getMaxLives` e `clampLives`, esposti su `window`;
 - `SynthAudio` e `triggerSfx`, per gli effetti sonori sintetizzati quando manca un file audio;
 - le scene `Preload`, `Menu`, `Settings`, `Game` e `GameOver`;
@@ -80,7 +81,7 @@ Definisce `LevelSummaryScene`, il riepilogo di fine giornata. Calcola il puntegg
 
 ### `house.js`
 
-Definisce `HouseScene`, la casa della cameriera. Gestisce la mappa dell'appartamento, l'HUD, il letto, la macchinetta del caffè, il computer e i mobili. Dal computer si aprono calendario, statistiche, potenziamenti, contatti, negozio IVEA, Hidden Vault e dichiarazione delle tasse. Dormire recupera tutte le vite e fa avanzare il giorno; il caffè costa 1 € e restituisce una vita (una volta al giorno). Contiene anche il calendario che mappa i giorni di gioco su date reali a partire da luglio 2026.
+Definisce `HouseScene`, la casa della cameriera. Gestisce la mappa dell'appartamento, l'HUD, la pausa con ESC o P (che ferma il tempo e il giocatore), il letto, la macchinetta del caffè, il computer e i mobili. Dal computer si aprono calendario, statistiche, potenziamenti, contatti, negozio IVEA, Hidden Vault e dichiarazione delle tasse. Dormire recupera tutte le vite e fa avanzare il giorno; il caffè costa 1 € e restituisce una vita (una volta al giorno). Contiene anche il calendario che mappa i giorni di gioco su date reali a partire da luglio 2026.
 
 ### `tutorial.js`
 
@@ -148,7 +149,7 @@ Definisce `MissionSystem`: legge il catalogo da `json/missions.json` (con fallba
 
 ### `briscola.js`
 
-Definisce il gioco di carte siciliano: `BriscolaSystem`, la scena di dialogo, la scelta della puntata, la partita vera e propria, la cutscene finale e la schermata di missione fallita. È legato alla missione di Rosa e alle ricompense in denaro.
+Definisce il gioco di carte siciliano: `BriscolaSystem`, la scena di dialogo, la scelta della puntata, la partita vera e propria, la cutscene finale e la schermata di missione fallita. È legato alla missione di Rosa e alle ricompense in denaro. Il tavolo libero dell'anziano compare solo dopo aver completato la missione, di lunedì, sabato e domenica, quando è stato servito almeno metà dei clienti del livello.
 
 ### `clan_dialog.js`
 

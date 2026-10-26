@@ -777,7 +777,7 @@ class CrimeSystem {
             window.GAME.customersServed = 0;
             window.GAME.dirtyPlates = 0;
             window.GAME.carriedOrder = null;
-            window.GAME.customersTarget = 6 + (window.GAME.level * 4);
+            window.GAME.customersTarget = Math.min(30, 6 + (window.GAME.level * 4));
 
             this.suspicionLevel = 0;
             this.hasPoison = false;

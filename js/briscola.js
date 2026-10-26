@@ -1233,16 +1233,26 @@
         }
 
         showScheduledNPC() {
+            if (!this.state || !this.state.completed) return;
+            if (!this.scene || !this.scene.gameActive) return;
+            if (window.GAME && window.GAME.arcadeMode) return;
+
             const gameDay = window.GAME && window.GAME.level;
             if (!Number.isInteger(gameDay) || gameDay < 1 || !CALENDAR_CONFIG) return;
+
             const weekday = new Date(CALENDAR_CONFIG.startYear, CALENDAR_CONFIG.startMonth, gameDay).getDay();
-            if (weekday !== 1 && weekday !== 5) return;
-            if (this.missionStarted || this.casualRunning || this.casualSpawned) return;
-            
+            const isCardDay = weekday === 0 || weekday === 1 || weekday === 6;
+            if (!isCardDay) return;
+
+            if (this.missionStarted || this.casualRunning || this.casualSpawned || this.npc) return;
+            if (this.state.lastCasualDay === gameDay) return;
 
             const target = (window.GAME && window.GAME.customersTarget) ? window.GAME.customersTarget : 0;
             const served = (window.GAME && window.GAME.customersServed) ? window.GAME.customersServed : 0;
-            if (served < target * 0.5) return;
+            if (target <= 0 || served < Math.ceil(target * 0.5)) return;
+
+            this.state.lastCasualDay = gameDay;
+            this.saveState();
 
             this.casualSpawned = true;
             
@@ -1386,7 +1396,10 @@
                 this.scene.showFloatingText(400, 300, 'Pareggio: puntata restituita', '#ffd700');
             }
 
-            this.scene.time.delayedCall(700, () => this.scene.levelComplete());
+            this.scene.time.delayedCall(700, () => {
+                if (!this.scene.gameActive) return;
+                this.leaveNPC(() => {});
+            });
         }
 
         loadState() {
@@ -1395,11 +1408,11 @@
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     if (parsed && typeof parsed === 'object') {
-                        return { completed: !!parsed.completed, failed: !!parsed.failed, day: Number(parsed.day || 0), rewardGiven: !!parsed.rewardGiven, phase: parsed.phase || 'idle' };
+                        return { completed: !!parsed.completed, failed: !!parsed.failed, day: Number(parsed.day || 0), rewardGiven: !!parsed.rewardGiven, phase: parsed.phase || 'idle', lastCasualDay: Number(parsed.lastCasualDay || 0) };
                     }
                 }
             } catch (e) {}
-            return { completed: false, failed: false, day: 0, rewardGiven: false, phase: 'idle' };
+            return { completed: false, failed: false, day: 0, rewardGiven: false, phase: 'idle', lastCasualDay: 0 };
         }
 
         saveState() { try { localStorage.setItem('waitress_briscola_state', JSON.stringify(this.state)); } catch (e) {} }

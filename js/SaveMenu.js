@@ -294,7 +294,7 @@ class SaveMenu {
             localStorage.setItem('waitress_tutorial_done', 'true');
             window.FORCE_TUTORIAL = false;
             GAME.level = 1;
-            GAME.customersTarget = 6 + GAME.level * 4;
+            GAME.customersTarget = Math.min(30, 6 + GAME.level * 4);
             this.scene.scene.start('NewPlayer');
         });
     }
